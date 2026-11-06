@@ -85,6 +85,8 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         .inner_size(pin.width.clamp(160., 3840.), pin.height.clamp(100., 2160.))
         .min_inner_size(160., 100.)
         .resizable(true)
+        // 悬浮页通过托盘和管理界面访问，避免多个页面占用任务栏。
+        .skip_taskbar(true)
         .always_on_top(pin.always_on_top)
         .decorations(pin.decorations)
         .shadow(pin.decorations)
