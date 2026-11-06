@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "manager",
+  "description": "仅允许本地管理界面调用窗口管理命令和订阅状态事件。",
+  "webviews": ["main"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-snapshot",
+    "allow-create-pin",
+    "allow-pick-source",
+    "allow-pin-action",
+    "allow-update-settings",
+    "allow-quit-app"
+  ]
+}

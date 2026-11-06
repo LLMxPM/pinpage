@@ -14,7 +14,11 @@
 *.toml text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
+*.lock text eol=lf
+*.ps1 text eol=lf
+*.svg text eol=lf
 .gitignore text eol=lf
+.prettierignore text eol=lf
 .gitattributes text eol=lf
 *.bat text eol=crlf
 *.cmd text eol=crlf

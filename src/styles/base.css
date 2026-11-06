@@ -1,0 +1,233 @@
+/* 功能：统一工作台色彩、排版、表单与基础交互状态。 */
+:root {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: #28333f;
+  background: #f6f7f9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --accent: #e76747;
+  --muted: #8a929e;
+  --line: #e9ecf0;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 720px;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #f3b6a6;
+  outline-offset: 3px;
+}
+input:not([type='checkbox']) {
+  width: 100%;
+  border: 1px solid #e2e6eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #273442;
+  padding: 12px 14px;
+  outline: none;
+  font-size: 13px;
+}
+input:not([type='checkbox']):focus {
+  border-color: #e99a85;
+  box-shadow: 0 0 0 3px #fdf0eb;
+}
+input::placeholder {
+  color: #a0a7b1;
+}
+input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+.panel {
+  background: #fff;
+  border: 1px solid #e6e9ed;
+  border-radius: 13px;
+  box-shadow: 0 2px 4px #22304402;
+}
+.primary {
+  padding: 11px 19px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.primary:hover:not(:disabled) {
+  background: #d8593a;
+  border-color: #d8593a;
+}
+.secondary {
+  padding: 10px 15px;
+  border: 1px solid #e1e5ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #586474;
+  font-size: 12px;
+}
+.secondary:hover:not(:disabled) {
+  background: #f7f8fa;
+  border-color: #cbd1d9;
+}
+.icon-button {
+  width: 31px;
+  height: 31px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #929aa5;
+  flex-shrink: 0;
+}
+.icon-button:hover:not(:disabled) {
+  background: #f0f2f5;
+  color: #475668;
+}
+.check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #667080;
+}
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+  border: 1px solid #dce6f2;
+  border-radius: 9px;
+  padding: 11px 14px;
+  background: #edf4fc;
+  color: #526f92;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.notice > svg {
+  flex-shrink: 0;
+}
+.notice > span {
+  flex: 1;
+}
+.error-notice {
+  background: #fff0ec;
+  color: #aa4e38;
+  border-color: #f5d3c9;
+}
+.warning-notice {
+  background: #fff8e8;
+  color: #8d7136;
+  border-color: #f1e4be;
+}
+.notice code {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #ffffff90;
+  font-size: 11px;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: #1d293a50;
+  backdrop-filter: blur(3px);
+  padding: 25px;
+}
+.settings-dialog {
+  width: 440px;
+  padding: 25px;
+  box-shadow: 0 20px 80px #20304722;
+}
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.dialog-heading h2 {
+  font-size: 18px;
+}
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.setting-toggle strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.setting-toggle small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.field-label {
+  display: block;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #6b7582;
+}
+.field-label input {
+  margin-top: 8px;
+}
+.settings-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 15px 0 25px;
+}
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

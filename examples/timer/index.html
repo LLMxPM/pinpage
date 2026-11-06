@@ -1,0 +1,24 @@
+<!-- 功能：提供自适应的本地专注计时器，演示模块与 JSON 资源加载。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>专注计时器</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">A LITTLE TIME FOR FOCUS</div>
+      <h1>把这一刻，留给专注。</h1>
+      <div id="presets" aria-label="计时预设"></div>
+      <div id="time" role="timer" aria-live="off">25:00</div>
+      <p id="status" role="status">准备好，从现在开始。</p>
+      <div class="actions">
+        <button id="toggle">开始专注</button><button id="reset" class="secondary">重置</button>
+      </div>
+      <footer>慢慢来，一件事一次。<span id="resource-status"></span></footer>
+    </main>
+    <script type="module" src="./timer.js"></script>
+  </body>
+</html>

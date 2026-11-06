@@ -1,0 +1,5 @@
+[
+  { "label": "专注 25 分钟", "minutes": 25 },
+  { "label": "休息 5 分钟", "minutes": 5 },
+  { "label": "深度 50 分钟", "minutes": 50 }
+]

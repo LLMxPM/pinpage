@@ -1,0 +1,13 @@
+/* 功能：用可辨识的布局确认本地 CSS 资源被正确加载。 */
+body {
+  margin: 24px;
+  background: #edf5ef;
+  color: #3b6851;
+  font:
+    14px/1.8 'Segoe UI',
+    'Microsoft YaHei',
+    sans-serif;
+}
+h1 {
+  font-size: 18px;
+}

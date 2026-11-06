@@ -1,0 +1,116 @@
+/* 功能：定义新建悬浮页表单、来源标签与文件选择器的样式。 */
+.new-pin {
+  padding: 23px 25px 20px;
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 21px;
+}
+.heading-icon {
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+  background: #f5f6f8;
+  border: 1px solid #e9ecf0;
+  color: #8d98a6;
+  border-radius: 9px;
+}
+.section-heading h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.section-heading p {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #a4abb5;
+}
+.source-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 13px;
+}
+.source-tabs > button {
+  font-size: 11px;
+  padding: 7px 11px;
+  color: #929aa5;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+}
+.source-tabs > button.active {
+  color: #d86b4e;
+  background: #fdf0eb;
+}
+.input-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.input-wrap > svg {
+  position: absolute;
+  left: 14px;
+  color: #abb3bd;
+}
+.input-wrap input {
+  padding-left: 42px;
+  height: 44px;
+  background: #fcfcfd;
+}
+.creation-row {
+  display: flex;
+  gap: 11px;
+  margin-top: 12px;
+}
+.creation-row .name-input {
+  background: #fcfcfd;
+}
+.creation-options {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 18px;
+}
+.creation-options > span {
+  margin-left: auto;
+  font-size: 10px;
+  color: #b0b7bf;
+}
+.creation-options .check-row {
+  font-size: 10px;
+}
+.file-picker {
+  width: 100%;
+  min-height: 45px;
+  border: 1px dashed #d6dce4;
+  border-radius: 8px;
+  background: #fcfcfd;
+  color: #8b96a4;
+  padding: 10px 13px;
+}
+.file-picker > span {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.file-picker small {
+  color: var(--accent);
+  font-size: 10px;
+}
+.file-selection .subtle {
+  margin-top: 10px;
+  font-size: 10px;
+}
+.root-hint {
+  font-size: 10px;
+  color: #a1a8b2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 7px;
+}
