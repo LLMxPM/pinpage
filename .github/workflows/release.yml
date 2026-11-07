@@ -121,4 +121,13 @@ jobs:
               --title "PinPage $RELEASE_TAG" \
               --generate-notes \
               "${prerelease[@]}"
+            {
+              gh release view "$RELEASE_TAG" --json body -q .body
+              printf '\n---\n\n'
+              printf -- '- 下载下方 `*-setup.exe` 安装包，需要 WebView2 Runtime（Windows 11 通常已内置）。\n'
+              printf -- '- 使用同名 `.sha256` 文件核对安装包完整性。\n'
+              printf -- '- 安装包尚未进行代码签名，Windows SmartScreen 可能提示「未知发布者」。\n'
+              printf -- '- 完整提交记录：https://github.com/%s/commits/%s\n' "$GITHUB_REPOSITORY" "$RELEASE_TAG"
+            } > release-notes.md
+            gh release edit "$RELEASE_TAG" --notes-file release-notes.md
           fi
