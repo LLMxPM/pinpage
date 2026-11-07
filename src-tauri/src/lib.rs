@@ -32,6 +32,7 @@ pub fn run() {
             commands::create_pin,
             commands::pick_source,
             commands::pin_action,
+            commands::update_pin,
             commands::update_settings,
             commands::quit_app
         ])
@@ -55,7 +56,7 @@ pub fn run() {
             if settings.restore_session {
                 let app = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    for pin in settings.pins {
+                    for pin in settings.pins.into_iter().filter(|pin| pin.enabled) {
                         if let Err(error) = windows::open_pin(&app, &pin) {
                             state::report(&app, format!("恢复 {} 失败：{error}", pin.name));
                         }

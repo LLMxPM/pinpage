@@ -1,11 +1,18 @@
 // 功能：生成 Tauri 构建资源及应用命令权限。
 fn main() {
+    // Rust 测试可执行文件也需要启用 Common Controls 6，以加载窗口子类化接口。
+    #[cfg(windows)]
+    {
+        println!("cargo:rustc-link-arg-tests=/MANIFEST:EMBED");
+        println!("cargo:rustc-link-arg-tests=/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'");
+    }
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "snapshot",
             "create_pin",
             "pick_source",
             "pin_action",
+            "update_pin",
             "update_settings",
             "quit_app",
         ]),

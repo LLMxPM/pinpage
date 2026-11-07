@@ -118,6 +118,11 @@ pub async fn create_pin(
         scale: 1.,
         always_on_top: input.always_on_top,
         decorations: input.decorations,
+        enabled: true,
+        mode: input.mode,
+        rounded: false,
+        position_locked: false,
+        size_locked: false,
     };
     state.settings.lock().unwrap().pins.push(pin.clone());
     state::schedule_save(&app);
@@ -141,6 +146,18 @@ pub async fn pin_action(
 ) -> Result<(), String> {
     windows::ensure_manager(&window)?;
     windows::action(&app, &id, &action)
+}
+
+/// 更新单个页面设置，关闭的页面只保存配置，运行中的页面立即应用。
+#[tauri::command]
+pub async fn update_pin(
+    window: WebviewWindow,
+    app: AppHandle,
+    id: String,
+    input: crate::models::PinSettingsInput,
+) -> Result<(), String> {
+    windows::ensure_manager(&window)?;
+    windows::update(&app, &id, input)
 }
 
 /// 修改恢复设置与快捷键；注册失败则保留原设置和原快捷键。

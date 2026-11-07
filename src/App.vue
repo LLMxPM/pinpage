@@ -4,6 +4,7 @@ import AppIcon from './components/AppIcon.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
 import NewPinForm from './features/launcher/NewPinForm.vue';
 import PinCard from './features/pins/PinCard.vue';
+import PinSettingsDialog from './features/pins/PinSettingsDialog.vue';
 import { useWorkspace } from './features/pins/useWorkspace';
 import { desktopAvailable } from './services/desktop';
 
@@ -14,6 +15,9 @@ const {
   loading,
   error,
   settingsOpen,
+  editingPinId,
+  editingPin,
+  savePin,
   openCount,
   topCount,
   create,
@@ -141,6 +145,7 @@ function createExample() {
               :runtime="snapshot.runtime[pin.id]"
               :busy="busy"
               @action="action"
+              @settings="editingPinId = $event"
             /><button class="example-card" :disabled="busy" @click="createExample">
               <AppIcon name="plus" :size="23" /><strong>添加专注计时器</strong
               ><span>一个开箱即用的小示例</span>
@@ -160,6 +165,15 @@ function createExample() {
       :busy="busy"
       @close="settingsOpen = false"
       @save="saveSettings"
+    />
+    <PinSettingsDialog
+      v-if="editingPin"
+      :key="editingPin.id"
+      :pin="editingPin"
+      :busy="busy"
+      :error="error"
+      @close="editingPinId = null"
+      @save="savePin"
     />
   </div>
 </template>

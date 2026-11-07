@@ -4,6 +4,7 @@ import App from './App.vue';
 import './styles/base.css';
 import './styles/launcher.css';
 import './styles/pins.css';
+import './styles/pin-settings.css';
 import './styles/workspace.css';
 
 createApp(App).mount('#app');

@@ -10,6 +10,19 @@ pub enum PageSource {
     Example,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WindowMode {
+    #[default]
+    Floating,
+    Desktop,
+}
+
+/// 旧版本没有开关字段时，原有页面保持开启状态。
+fn default_enabled() -> bool {
+    true
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PinConfig {
@@ -23,6 +36,39 @@ pub struct PinConfig {
     pub scale: f64,
     pub always_on_top: bool,
     pub decorations: bool,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub mode: WindowMode,
+    #[serde(default)]
+    pub rounded: bool,
+    #[serde(default)]
+    pub position_locked: bool,
+    #[serde(default)]
+    pub size_locked: bool,
+}
+
+impl PinConfig {
+    /// 桌面模式使用无边框，浮动模式保留用户选择的系统边框。
+    pub fn effective_decorations(&self) -> bool {
+        self.mode == WindowMode::Floating && self.decorations
+    }
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PinSettingsInput {
+    pub name: String,
+    pub mode: WindowMode,
+    pub always_on_top: bool,
+    pub decorations: bool,
+    pub rounded: bool,
+    pub position_locked: bool,
+    pub size_locked: bool,
+    pub width: f64,
+    pub height: f64,
+    pub x: i32,
+    pub y: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -81,6 +127,8 @@ pub struct CreatePin {
     pub source: SourceInput,
     pub always_on_top: bool,
     pub decorations: bool,
+    #[serde(default)]
+    pub mode: WindowMode,
 }
 
 #[derive(Serialize)]

@@ -1,7 +1,7 @@
 // 功能：集中封装桌面 IPC，浏览器预览不伪装为已连接的原生应用。
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { CreatePin, LocalChoice, SettingsInput, Snapshot } from '../types';
+import type { CreatePin, LocalChoice, PinSettingsInput, SettingsInput, Snapshot } from '../types';
 
 export const desktopAvailable = isTauri();
 
@@ -23,6 +23,11 @@ export function createPin(input: CreatePin): Promise<void> {
 /// 请求原生窗口操作，实际权限与目标有效性由 Rust 再次校验。
 export function pinAction(id: string, action: string): Promise<void> {
   return invoke('pin_action', { id, action });
+}
+
+/// 保存单页的桌面模式、圆角、几何位置与锁定设置。
+export function updatePin(id: string, input: PinSettingsInput): Promise<void> {
+  return invoke('update_pin', { id, input });
 }
 
 /// 更新恢复设置与全局快捷键，冲突时后端返回明确错误。

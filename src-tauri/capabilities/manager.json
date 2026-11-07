@@ -10,6 +10,7 @@
     "allow-create-pin",
     "allow-pick-source",
     "allow-pin-action",
+    "allow-update-pin",
     "allow-update-settings",
     "allow-quit-app"
   ]

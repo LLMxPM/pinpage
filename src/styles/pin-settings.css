@@ -1,0 +1,121 @@
+/* 功能：布局单页显示模式、几何数值、锁定选项与卡片开启开关。 */
+.pin-settings-dialog {
+  width: min(540px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+.pin-settings-dialog .dialog-heading {
+  margin-bottom: 12px;
+}
+.mode-picker {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mode-picker legend {
+  font-size: 12px;
+  color: #6b7582;
+  margin-bottom: 9px;
+}
+.mode-picker label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #e4e8ee;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.mode-picker label.active {
+  background: #fff6f1;
+  border-color: #e7a38a;
+}
+.mode-picker input {
+  width: auto;
+  accent-color: var(--accent);
+}
+.mode-picker strong,
+.lock-settings strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.mode-picker small,
+.lock-settings small {
+  display: block;
+  color: #969faa;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.pin-setting-checks {
+  display: flex;
+  gap: 17px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.geometry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.geometry-hint {
+  color: #a2aab4;
+  font-size: 10px;
+  margin: 10px 0 16px;
+}
+.lock-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 15px 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+.lock-settings label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  cursor: pointer;
+}
+.pin-enable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #8995a4;
+  cursor: pointer;
+  padding: 7px 4px;
+}
+.pin-enable input {
+  accent-color: var(--accent);
+}
+.pin-actions .action-group {
+  gap: 0;
+}
+.pin-actions .action-group .icon-button {
+  width: 27px;
+}
+.pin-settings-dialog .settings-hint {
+  margin-bottom: 18px;
+}
+.creation-options select {
+  border: 1px solid #dfe4eb;
+  border-radius: 5px;
+  padding: 4px 6px;
+  color: #6b7582;
+  background: #fff;
+  font: inherit;
+}
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 900px) {
+  .pin-actions .action-group .icon-button {
+    width: 24px;
+  }
+}

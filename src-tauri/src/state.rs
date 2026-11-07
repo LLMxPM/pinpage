@@ -11,6 +11,7 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager};
 
 pub struct AppState {
+    pub operation: Mutex<()>,
     pub settings: Mutex<Settings>,
     pub runtime: Mutex<HashMap<String, PinRuntime>>,
     pub grants: Mutex<HashMap<String, PageSource>>,
@@ -48,6 +49,7 @@ impl AppState {
             }
         };
         Self {
+            operation: Mutex::new(()),
             settings: Mutex::new(settings),
             runtime: Mutex::new(HashMap::new()),
             grants: Mutex::new(HashMap::new()),

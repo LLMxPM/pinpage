@@ -16,6 +16,7 @@ const choosing = ref(false);
 const customRoot = ref(false);
 const top = ref(true);
 const borderless = ref(false);
+const windowMode = ref<'floating' | 'desktop'>('floating');
 
 /// 原生选择器返回授权票据；取消时保留原选择，错误显示在工作台。
 async function choose() {
@@ -44,6 +45,7 @@ function submit() {
     name: name.value,
     alwaysOnTop: top.value,
     decorations: !borderless.value,
+    mode: windowMode.value,
     source:
       mode.value === 'url'
         ? { kind: 'url', address: address.value }
@@ -106,7 +108,18 @@ function submit() {
         </button>
       </div>
       <div class="creation-options">
-        <label class="check-row"><input v-model="top" type="checkbox" />始终置顶</label
+        <label class="check-row"
+          >模式<select v-model="windowMode" aria-label="新页面显示模式">
+            <option value="floating">浮动窗口</option>
+            <option value="desktop">固定在桌面</option>
+          </select></label
+        >
+        <label class="check-row"
+          ><input
+            v-model="top"
+            type="checkbox"
+            :disabled="windowMode === 'desktop'"
+          />始终置顶</label
         ><label class="check-row"><input v-model="borderless" type="checkbox" />无边框模式</label
         ><span>每个页面独立运行</span>
       </div>

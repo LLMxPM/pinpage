@@ -1,7 +1,7 @@
 // 功能：协调管理界面的加载、原生操作、错误提示与事件订阅。
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import * as desktop from '../../services/desktop';
-import type { CreatePin, SettingsInput, Snapshot } from '../../types';
+import type { CreatePin, PinSettingsInput, SettingsInput, Snapshot } from '../../types';
 
 /// 管理快照与操作状态，避免过期异步请求覆盖最新窗口列表。
 export function useWorkspace() {
@@ -20,6 +20,7 @@ export function useWorkspace() {
   const loading = ref(desktop.desktopAvailable);
   const error = ref('');
   const settingsOpen = ref(false);
+  const editingPinId = ref<string | null>(null);
   let revision = 0;
   let disposed = false;
   let unlisten: (() => void) | undefined;
@@ -76,6 +77,16 @@ export function useWorkspace() {
     });
   }
 
+  /// 单页设置成功后关闭弹窗，失败时保留正在编辑的内容。
+  function savePin(input: PinSettingsInput) {
+    const id = editingPinId.value;
+    if (!id) return;
+    return run(async () => {
+      await desktop.updatePin(id, input);
+      editingPinId.value = null;
+    });
+  }
+
   onMounted(async () => {
     if (desktop.desktopAvailable) {
       try {
@@ -104,6 +115,11 @@ export function useWorkspace() {
     loading,
     error,
     settingsOpen,
+    editingPinId,
+    editingPin: computed(() =>
+      snapshot.value.settings.pins.find((pin) => pin.id === editingPinId.value),
+    ),
+    savePin,
     create,
     action,
     saveSettings,
@@ -112,6 +128,12 @@ export function useWorkspace() {
     openCount: computed(
       () => Object.values(snapshot.value.runtime).filter((pin) => pin.open).length,
     ),
-    topCount: computed(() => snapshot.value.settings.pins.filter((pin) => pin.alwaysOnTop).length),
+    topCount: computed(
+      () =>
+        snapshot.value.settings.pins.filter(
+          (pin) =>
+            snapshot.value.runtime[pin.id]?.open && pin.mode === 'floating' && pin.alwaysOnTop,
+        ).length,
+    ),
   };
 }

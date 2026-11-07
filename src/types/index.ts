@@ -18,6 +18,25 @@ export interface PinConfig {
   scale: number;
   alwaysOnTop: boolean;
   decorations: boolean;
+  enabled: boolean;
+  mode: 'floating' | 'desktop';
+  rounded: boolean;
+  positionLocked: boolean;
+  sizeLocked: boolean;
+}
+
+export interface PinSettingsInput {
+  name: string;
+  mode: PinConfig['mode'];
+  alwaysOnTop: boolean;
+  decorations: boolean;
+  rounded: boolean;
+  positionLocked: boolean;
+  sizeLocked: boolean;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
 }
 
 export interface PinRuntime {
@@ -50,6 +69,7 @@ export interface CreatePin {
   source: SourceInput;
   alwaysOnTop: boolean;
   decorations: boolean;
+  mode?: PinConfig['mode'];
 }
 
 export interface LocalChoice {

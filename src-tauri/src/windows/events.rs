@@ -50,10 +50,10 @@ pub fn watch_load(app: &AppHandle, id: &str) {
 }
 
 /// 保存物理位置与逻辑内容尺寸，防止切换 DPI 后尺寸被重复放大。
-fn capture(window: &WebviewWindow) {
+pub(super) fn capture(window: &WebviewWindow) {
     let (Ok(size), Ok(position), Ok(scale)) = (
         window.inner_size(),
-        window.outer_position(),
+        crate::platform::position(window),
         window.scale_factor(),
     ) else {
         return;
@@ -63,7 +63,13 @@ fn capture(window: &WebviewWindow) {
     }
     let state = window.state::<AppState>();
     let mut settings = state.settings.lock().unwrap();
+    let mut changed = false;
     if let Some(pin) = settings.pins.iter_mut().find(|p| p.id == window.label()) {
+        changed = pin.width != size.width as f64 / scale
+            || pin.height != size.height as f64 / scale
+            || pin.x != Some(position.x)
+            || pin.y != Some(position.y)
+            || pin.scale != scale;
         pin.width = size.width as f64 / scale;
         pin.height = size.height as f64 / scale;
         pin.x = Some(position.x);
@@ -71,30 +77,52 @@ fn capture(window: &WebviewWindow) {
         pin.scale = scale;
     }
     drop(settings);
-    state::schedule_save(window.app_handle());
+    if changed {
+        state::schedule_save(window.app_handle());
+        state::notify(window.app_handle());
+    }
 }
 
-/// 注册生命周期事件，用户关窗删除记录，应用退出时保留会话。
+/// 用户关窗只关闭页面，保留记录；异常销毁也保留配置用于重新开启。
 pub fn attach(window: &WebviewWindow) {
     let handle = window.clone();
     window.on_window_event(move |event| {
         let app = handle.app_handle();
         match event {
+            WindowEvent::CloseRequested { api, .. } => {
+                if !app.state::<AppState>().exiting.load(Ordering::SeqCst) {
+                    api.prevent_close();
+                    let app = app.clone();
+                    let id = handle.label().to_string();
+                    tauri::async_runtime::spawn(async move {
+                        if let Err(error) = super::action(&app, &id, "close") {
+                            state::report(&app, error);
+                        }
+                    });
+                }
+            }
             WindowEvent::Moved(_)
             | WindowEvent::Resized(_)
             | WindowEvent::ScaleFactorChanged { .. } => capture(&handle),
             WindowEvent::Destroyed => {
                 let state = app.state::<AppState>();
-                state.runtime.lock().unwrap().remove(handle.label());
-                if !state.exiting.load(Ordering::SeqCst) {
-                    state
-                        .settings
-                        .lock()
-                        .unwrap()
-                        .pins
-                        .retain(|p| p.id != handle.label());
-                    state::schedule_save(app);
+                let expected = state
+                    .settings
+                    .lock()
+                    .unwrap()
+                    .pins
+                    .iter()
+                    .find(|p| p.id == handle.label())
+                    .is_some_and(|p| !p.enabled);
+                if let Some(runtime) = state.runtime.lock().unwrap().get_mut(handle.label()) {
+                    runtime.open = false;
+                    runtime.visible = false;
+                    runtime.loading = false;
+                    if !expected && !state.exiting.load(Ordering::SeqCst) {
+                        runtime.error = Some("窗口意外关闭，可重新开启页面".into());
+                    }
                 }
+                state::schedule_save(app);
                 state::notify(app);
                 crate::tray::refresh(app);
             }

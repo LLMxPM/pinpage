@@ -37,13 +37,15 @@ fn menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         let submenu = Submenu::new(app, &pin.name, true)?;
         for (action, name) in [
             ("focus", "显示并激活"),
-            ("reopen", "重新打开"),
+            ("open", "开启页面"),
+            ("close", "关闭页面（保留配置）"),
             ("visibility", "显示 / 隐藏"),
             ("top", "切换置顶"),
             ("border", "切换边框"),
+            ("desktop", "切换桌面 / 浮动模式"),
             ("reload", "刷新"),
-            ("recover", "恢复边框并居中"),
-            ("close", "关闭并删除"),
+            ("recover", "找回窗口（浮动、边框、解锁位置）"),
+            ("delete", "删除页面记录"),
         ] {
             submenu.append(&MenuItem::with_id(
                 app,

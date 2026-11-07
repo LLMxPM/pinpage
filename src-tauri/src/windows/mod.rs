@@ -1,6 +1,10 @@
 // 功能：创建管理窗口与网页窗口，统一执行原生窗口操作。
+mod actions;
 mod events;
 mod geometry;
+mod settings;
+pub use actions::action;
+pub use settings::update;
 
 use crate::{
     content,
@@ -62,7 +66,10 @@ pub fn show_manager(app: &AppHandle) {
 pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&pin.id) {
         window.show().map_err(|e| e.to_string())?;
-        return window.set_focus().map_err(|e| e.to_string());
+        if pin.mode == crate::models::WindowMode::Floating {
+            window.set_focus().map_err(|e| e.to_string())?;
+        }
+        return Ok(());
     }
     let url = content::source_url(&pin.id, &pin.source)?;
     let navigation_id = pin.id.clone();
@@ -84,12 +91,12 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         .title(&pin.name)
         .inner_size(pin.width.clamp(160., 3840.), pin.height.clamp(100., 2160.))
         .min_inner_size(160., 100.)
-        .resizable(true)
+        .resizable(!pin.size_locked)
         // 悬浮页通过托盘和管理界面访问，避免多个页面占用任务栏。
         .skip_taskbar(true)
-        .always_on_top(pin.always_on_top)
-        .decorations(pin.decorations)
-        .shadow(pin.decorations)
+        .always_on_top(pin.mode == crate::models::WindowMode::Floating && pin.always_on_top)
+        .decorations(pin.effective_decorations())
+        .shadow(pin.effective_decorations())
         .disable_drag_drop_handler()
         .on_navigation(move |url| {
             let allowed = content::navigation_allowed(&navigation_id, &navigation_source, url);
@@ -131,96 +138,31 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         }
     };
     geometry::restore(&window, pin)?;
-    events::attach(&window);
-    events::watch_load(app, &pin.id);
-    state::notify(app);
-    Ok(())
-}
-
-/// 执行指定窗口操作，失败不提前修改配置；关闭失效记录也可直接删除。
-pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
-    let state = app.state::<AppState>();
-    let pin = state
+    let mut positioned = pin.clone();
+    let position = crate::platform::position(&window)?;
+    positioned.x = Some(position.x);
+    positioned.y = Some(position.y);
+    if let Err(error) = crate::platform::apply(&window, &positioned) {
+        let _ = window.destroy();
+        events::set_error(app, &pin.id, error.clone());
+        if let Some(runtime) = state.runtime.lock().unwrap().get_mut(&pin.id) {
+            runtime.open = false;
+        }
+        return Err(error);
+    }
+    if let Some(saved) = state
         .settings
         .lock()
         .unwrap()
         .pins
-        .iter()
-        .find(|p| p.id == id)
-        .cloned()
-        .ok_or("窗口记录不存在")?;
-    if action == "reopen" {
-        return open_pin(app, &pin);
+        .iter_mut()
+        .find(|p| p.id == pin.id)
+    {
+        saved.enabled = true;
     }
-    if action == "close" {
-        if let Some(window) = app.get_webview_window(id) {
-            window.destroy().map_err(|e| e.to_string())?;
-        }
-        state.settings.lock().unwrap().pins.retain(|p| p.id != id);
-        state.runtime.lock().unwrap().remove(id);
-    } else {
-        let window = app
-            .get_webview_window(id)
-            .ok_or("窗口未打开，请先重新打开")?;
-        match action {
-            "focus" => {
-                window
-                    .unminimize()
-                    .and_then(|_| window.show())
-                    .and_then(|_| window.set_focus())
-                    .map_err(|e| e.to_string())?;
-            }
-            "visibility" => {
-                if window.is_visible().map_err(|e| e.to_string())? {
-                    window.hide()
-                } else {
-                    window.show()
-                }
-                .map_err(|e| e.to_string())?;
-            }
-            "minimize" => window.minimize().map_err(|e| e.to_string())?,
-            "reload" => {
-                window.reload().map_err(|e| e.to_string())?;
-                events::watch_load(app, id);
-            }
-            "top" => window
-                .set_always_on_top(!pin.always_on_top)
-                .map_err(|e| e.to_string())?,
-            "border" => window
-                .set_decorations(!pin.decorations)
-                .and_then(|_| window.set_shadow(!pin.decorations))
-                .map_err(|e| e.to_string())?,
-            "recover" => {
-                window
-                    .set_decorations(true)
-                    .and_then(|_| window.set_shadow(true))
-                    .and_then(|_| window.unminimize())
-                    .and_then(|_| window.show())
-                    .map_err(|e| e.to_string())?;
-                geometry::recover(&window)?;
-            }
-            _ => return Err("不支持的窗口操作".into()),
-        }
-        let mut settings = state.settings.lock().unwrap();
-        if let Some(saved) = settings.pins.iter_mut().find(|p| p.id == id) {
-            if action == "top" {
-                saved.always_on_top = !pin.always_on_top;
-            }
-            if action == "border" {
-                saved.decorations = !pin.decorations;
-            }
-            if action == "recover" {
-                saved.decorations = true;
-            }
-        }
-        drop(settings);
-        if let Some(runtime) = state.runtime.lock().unwrap().get_mut(id) {
-            runtime.visible = window.is_visible().unwrap_or(true);
-        }
-    }
-    state::schedule_save(app);
+    events::attach(&window);
+    events::watch_load(app, &pin.id);
     state::notify(app);
-    crate::tray::refresh(app);
     Ok(())
 }
 
