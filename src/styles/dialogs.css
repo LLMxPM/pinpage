@@ -1,4 +1,4 @@
-/* 功能：统一弹窗容器、表单分组、帮助文案和底部操作区，保持小窗口可滚动。 */
+/* 功能：统一弹窗容器、表单分组、来源平铺按钮、帮助文案和底部操作区，保持小窗口可滚动。 */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -107,6 +107,27 @@
   font-size: 14px;
   font-weight: 600;
 }
+/* 来源三选横向平铺：新建与重新选择都是直达操作，不藏进菜单。 */
+.source-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.source-pick {
+  min-height: 38px;
+  padding: 9px 8px;
+  border: 1px solid #dce2e9;
+  border-radius: 8px;
+  background: #fff;
+  color: #465466;
+  font-size: 13px;
+  font-weight: 500;
+}
+.source-pick:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: #d5947d;
+  color: #ad5439;
+}
 .settings-quit {
   display: flex;
   align-items: center;
@@ -140,6 +161,13 @@
 @media (max-width: 540px) {
   .modal-backdrop {
     padding: 14px;
+  }
+  .source-picks {
+    grid-template-columns: 1fr;
+  }
+  .source-pick {
+    justify-content: flex-start;
+    padding: 10px 12px;
   }
   .app-dialog {
     max-height: calc(100dvh - 28px);

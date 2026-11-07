@@ -1,4 +1,4 @@
-<!-- 功能：编辑页面来源、显示模式、窗口几何与独立锁定，失败时保留输入。 -->
+<!-- 功能：编辑页面来源、窗口外观与几何锁定；来源与新建页一致横向平铺，尺寸与位置就近配置锁定，失败时保留输入。 -->
 <script setup lang="ts">
 import { computed, reactive, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -59,7 +59,7 @@ function save() {
     wide
     @close="emit('close')"
   >
-    <form :id="formId" @submit.prevent="save">
+    <form :id="formId" class="pin-settings-form" @submit.prevent="save">
       <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
       <fieldset class="form-fields" :disabled="working">
         <label class="field-label"
@@ -83,15 +83,15 @@ function save() {
                 t('ui.card.importedSource', { entry: currentEntry })
               }}
             </p>
-            <div class="import-actions">
-              <button type="button" class="file-picker" @click="draft.choose('directory')">
-                <AppIcon name="folder" /><strong>{{ t('ui.form.pickFolder') }}</strong>
+            <div class="source-picks">
+              <button type="button" class="source-pick" @click="draft.choose('directory')">
+                <AppIcon name="folder" :size="16" />{{ t('ui.form.pickFolder') }}
               </button>
-              <button type="button" class="file-picker" @click="draft.choose('file')">
-                <AppIcon name="window" /><strong>{{ t('ui.form.pickFile') }}</strong>
+              <button type="button" class="source-pick" @click="draft.choose('file')">
+                <AppIcon name="window" :size="16" />{{ t('ui.form.pickFile') }}
               </button>
-              <button type="button" class="file-picker" @click="draft.choose('package')">
-                <AppIcon name="download" /><strong>{{ t('ui.form.pickPackage') }}</strong>
+              <button type="button" class="source-pick" @click="draft.choose('package')">
+                <AppIcon name="download" :size="16" />{{ t('ui.form.pickPackage') }}
               </button>
             </div>
             <p v-if="draft.choosing" class="import-progress" role="status">
@@ -117,38 +117,51 @@ function save() {
             <AppIcon name="refresh" :size="15" />{{ t('ui.pinSettings.sourceDirty') }}
           </p>
         </div>
-        <fieldset class="mode-picker">
-          <legend>{{ t('ui.pinSettings.modeLegend') }}</legend>
-          <label :class="{ active: input.mode === 'floating' }"
-            ><input v-model="input.mode" type="radio" value="floating" /><span
-              ><strong>{{ t('ui.pinSettings.floating') }}</strong></span
-            ></label
-          >
-          <label :class="{ active: input.mode === 'desktop' }"
-            ><input v-model="input.mode" type="radio" value="desktop" /><span
-              ><strong>{{ t('ui.pinSettings.desktop') }}</strong></span
-            ></label
-          >
-        </fieldset>
-        <div class="pin-setting-checks">
-          <label class="check-row"
-            ><input v-model="showOnTop" type="checkbox" :disabled="input.mode === 'desktop'" />{{
-              t('ui.pinSettings.top')
-            }}</label
-          >
-          <label class="check-row"
-            ><input v-model="showBorder" type="checkbox" :disabled="input.mode === 'desktop'" />{{
-              t('ui.pinSettings.border')
-            }}</label
-          >
-          <label class="check-row"
-            ><input v-model="input.rounded" type="checkbox" :disabled="!borderless" />{{
-              t('ui.pinSettings.rounded')
-            }}</label
-          >
+        <div class="form-section">
+          <h3>{{ t('ui.pinSettings.appearance') }}</h3>
+          <fieldset class="mode-picker">
+            <legend>{{ t('ui.pinSettings.modeLegend') }}</legend>
+            <label :class="{ active: input.mode === 'floating' }"
+              ><input v-model="input.mode" type="radio" value="floating" /><span
+                ><strong>{{ t('ui.pinSettings.floating') }}</strong></span
+              ></label
+            >
+            <label :class="{ active: input.mode === 'desktop' }"
+              ><input v-model="input.mode" type="radio" value="desktop" /><span
+                ><strong>{{ t('ui.pinSettings.desktop') }}</strong></span
+              ></label
+            >
+          </fieldset>
+          <div class="pin-setting-checks">
+            <label class="check-row"
+              ><input v-model="showOnTop" type="checkbox" :disabled="input.mode === 'desktop'" />{{
+                t('ui.pinSettings.top')
+              }}</label
+            >
+            <label class="check-row"
+              ><input v-model="showBorder" type="checkbox" :disabled="input.mode === 'desktop'" />{{
+                t('ui.pinSettings.border')
+              }}</label
+            >
+            <label class="check-row"
+              ><input v-model="input.rounded" type="checkbox" :disabled="!borderless" />{{
+                t('ui.pinSettings.rounded')
+              }}</label
+            >
+          </div>
+          <p v-if="borderless" class="drag-hint">
+            <AppIcon name="info" :size="15" />{{ t('ui.pinSettings.dragHint') }}
+          </p>
         </div>
         <div class="form-section">
-          <h3>{{ t('ui.pinSettings.geometry') }}</h3>
+          <div class="section-head">
+            <h3>{{ t('ui.pinSettings.size') }}</h3>
+            <label class="setting-toggle"
+              ><span
+                ><strong>{{ t('ui.pinSettings.lockSize') }}</strong></span
+              ><input v-model="input.sizeLocked" class="switch" type="checkbox" role="switch"
+            /></label>
+          </div>
           <div class="geometry-fields">
             <label class="field-label"
               >{{ t('ui.pinSettings.width')
@@ -158,6 +171,18 @@ function save() {
               >{{ t('ui.pinSettings.height')
               }}<input v-model.number="input.height" type="number" min="100" max="2160" required
             /></label>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-head">
+            <h3>{{ t('ui.pinSettings.position') }}</h3>
+            <label class="setting-toggle"
+              ><span
+                ><strong>{{ t('ui.pinSettings.lockPosition') }}</strong></span
+              ><input v-model="input.positionLocked" class="switch" type="checkbox" role="switch"
+            /></label>
+          </div>
+          <div class="geometry-fields">
             <label class="field-label"
               >{{ t('ui.pinSettings.positionX')
               }}<input v-model.number="input.x" type="number" required
@@ -167,18 +192,6 @@ function save() {
               }}<input v-model.number="input.y" type="number" required
             /></label>
           </div>
-        </div>
-        <div class="lock-settings">
-          <label class="setting-toggle"
-            ><span
-              ><strong>{{ t('ui.pinSettings.lockPosition') }}</strong></span
-            ><input v-model="input.positionLocked" class="switch" type="checkbox" role="switch"
-          /></label>
-          <label class="setting-toggle"
-            ><span
-              ><strong>{{ t('ui.pinSettings.lockSize') }}</strong></span
-            ><input v-model="input.sizeLocked" class="switch" type="checkbox" role="switch"
-          /></label>
         </div>
       </fieldset>
     </form>

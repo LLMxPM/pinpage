@@ -1,4 +1,4 @@
-<!-- 功能：在统一弹窗中添加网址或导入页面，按需展开窗口选项，保留失败时的输入。 -->
+<!-- 功能：在统一弹窗中添加网址或导入页面，来源横向平铺一键直达，窗口选项按需展开，保留失败时的输入。 -->
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -22,20 +22,14 @@ const address = ref('');
 const name = ref('');
 const nameAuto = ref(true);
 const top = ref(true);
-const borderless = ref(false);
+// 新页面默认无边框，贴合悬浮看板的轻量定位；需要系统边框时可在创建表单或页面设置里打开。
+const borderless = ref(true);
 const windowMode = ref<'floating' | 'desktop'>('floating');
 // 选择器的预览、入口候选与错误收敛由共用组合式函数负责，本组件只管名称与窗口偏好。
 const { preview, entry, choosing, entryOptions, choose } = useImportSource({
   onError: (reason) => emit('error', reason),
   onPicked: adoptName,
 });
-const modeOptions = computed(
-  () =>
-    [
-      { value: 'floating', label: t('ui.form.modeFloating') },
-      { value: 'desktop', label: t('ui.form.modeDesktop') },
-    ] as const,
-);
 const displayTop = computed({
   get: () => windowMode.value === 'floating' && top.value,
   set: (value: boolean) => {
@@ -108,15 +102,15 @@ function submit() {
             autofocus
         /></label>
         <div v-else class="import-selection">
-          <div class="import-actions">
-            <button type="button" class="file-picker" @click="choose('directory')">
-              <AppIcon name="folder" /><strong>{{ t('ui.form.pickFolder') }}</strong>
+          <div class="source-picks">
+            <button type="button" class="source-pick" @click="choose('directory')">
+              <AppIcon name="folder" :size="16" />{{ t('ui.form.pickFolder') }}
             </button>
-            <button type="button" class="file-picker" @click="choose('file')">
-              <AppIcon name="window" /><strong>{{ t('ui.form.pickFile') }}</strong>
+            <button type="button" class="source-pick" @click="choose('file')">
+              <AppIcon name="window" :size="16" />{{ t('ui.form.pickFile') }}
             </button>
-            <button type="button" class="file-picker" @click="choose('package')">
-              <AppIcon name="download" /><strong>{{ t('ui.form.pickPackage') }}</strong>
+            <button type="button" class="source-pick" @click="choose('package')">
+              <AppIcon name="download" :size="16" />{{ t('ui.form.pickPackage') }}
             </button>
           </div>
           <p v-if="choosing" class="import-progress" role="status">{{ t('ui.common.working') }}</p>
@@ -141,12 +135,19 @@ function submit() {
         /></label>
         <details class="advanced-options">
           <summary>{{ t('ui.form.windowOptions') }}<AppIcon name="chevron" :size="16" /></summary>
-          <AppSelect
-            v-model="windowMode"
-            :label="t('ui.form.mode')"
-            :options="modeOptions"
-            :disabled="busy || choosing"
-          />
+          <fieldset class="mode-picker">
+            <legend>{{ t('ui.form.mode') }}</legend>
+            <label :class="{ active: windowMode === 'floating' }"
+              ><input v-model="windowMode" type="radio" value="floating" /><span
+                ><strong>{{ t('ui.form.modeFloating') }}</strong></span
+              ></label
+            >
+            <label :class="{ active: windowMode === 'desktop' }"
+              ><input v-model="windowMode" type="radio" value="desktop" /><span
+                ><strong>{{ t('ui.form.modeDesktop') }}</strong></span
+              ></label
+            >
+          </fieldset>
           <div class="creation-options">
             <label class="check-row"
               ><input v-model="displayTop" type="checkbox" :disabled="windowMode === 'desktop'" />{{

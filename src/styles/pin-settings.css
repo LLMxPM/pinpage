@@ -1,8 +1,19 @@
-/* 功能：统一页面设置的显示模式、几何数值、外观选项与锁定开关布局。 */
+/* 功能：页面设置弹窗布局——外观选项、尺寸/位置分组与锁定开关、无边框拖动提示。 */
+/* 收紧本弹窗的分组间距与字段间距，不改动其他弹窗共用的 form-section / field-label。 */
+.pin-settings-form .form-section {
+  margin-top: 16px;
+  padding-top: 14px;
+}
+.pin-settings-form .form-section > h3 {
+  margin-bottom: 10px;
+}
+.pin-settings-form .field-label {
+  margin-top: 0;
+}
 .mode-picker {
   border: 0;
   padding: 0;
-  margin: 22px 0 0;
+  margin: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -34,12 +45,12 @@
   font-size: 13px;
   font-weight: 600;
 }
-/* 来源区块：当前来源、修改提示与改动标记共用一套轻量文字层级。 */
+/* 来源区块：当前来源一行展示，重新选择与新建页共用平铺按钮（dialogs.css）。 */
 .source-current {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 12px 0;
+  margin: 0 0 10px;
   color: var(--muted);
   font-size: 13px;
   word-break: break-all;
@@ -57,14 +68,47 @@
 .source-dirty {
   color: #b34d32;
 }
-.form-section .import-selection {
+.pin-settings-form .import-selection {
   margin-top: 4px;
 }
 .pin-setting-checks {
   display: flex;
   gap: 12px 20px;
-  margin-top: 16px;
+  margin-top: 14px;
   flex-wrap: wrap;
+}
+/* 无边框时的拖动提示：弱化的信息条，不抢占设置项的注意力。 */
+.drag-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 8px 11px;
+  border: 1px solid #e8ecf1;
+  border-radius: 8px;
+  background: #f7f8fa;
+  color: #4c596b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.drag-hint svg {
+  margin-top: 1px;
+}
+/* 尺寸与位置分组：锁定开关放在组标题右侧，就近表达作用对象。 */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.section-head .setting-toggle {
+  margin: 0;
+  gap: 10px;
+}
+.section-head .setting-toggle strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4c596b;
 }
 .geometry-fields {
   display: grid;
@@ -79,20 +123,6 @@
 }
 .geometry-fields input {
   font-variant-numeric: tabular-nums;
-}
-.lock-settings {
-  background: #f7f8fa;
-  border: 1px solid #e8ecf1;
-  border-radius: 8px;
-  padding: 0 14px;
-  margin-top: 18px;
-}
-.lock-settings .setting-toggle {
-  margin: 0;
-  padding: 14px 0;
-}
-.lock-settings .setting-toggle + .setting-toggle {
-  border-top: 1px solid var(--line);
 }
 @media (max-width: 540px) {
   .mode-picker {

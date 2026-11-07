@@ -1,4 +1,4 @@
-/* 功能：统一新建页面的来源选择、导入卡片和可展开窗口选项。 */
+/* 功能：统一新建页面的来源页签、导入摘要和可展开窗口选项；来源平铺按钮见 dialogs.css。 */
 .source-tabs {
   display: flex;
   background: #f1f3f6;
@@ -6,7 +6,7 @@
   padding: 4px;
   border-radius: 9px;
   gap: 4px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 .source-tabs > button {
   flex: 1;
@@ -24,31 +24,6 @@
   background: #fff;
   border-color: #e8e1dc;
   box-shadow: 0 1px 3px #25324609;
-}
-.import-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.file-picker {
-  display: flex;
-  flex-direction: column;
-  min-height: 92px;
-  padding: 15px 10px;
-  border: 1px dashed #cbd3de;
-  border-radius: 8px;
-  background: #fcfcfd;
-  color: #677587;
-  gap: 9px;
-}
-.file-picker:hover:not(:disabled) {
-  background: var(--accent-soft);
-  border-color: #d5947d;
-  color: #ad5439;
-}
-.file-picker strong {
-  font-size: 13px;
-  font-weight: 500;
 }
 .import-summary {
   padding: 12px;
@@ -81,8 +56,8 @@
   font-weight: 400;
 }
 .advanced-options {
-  margin-top: 22px;
-  padding-top: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
 }
 .advanced-options > summary {
@@ -101,20 +76,12 @@
 .advanced-options[open] > summary svg {
   transform: rotate(180deg);
 }
+.advanced-options .mode-picker {
+  margin-top: 12px;
+}
 .creation-options {
   display: flex;
   align-items: center;
   gap: 24px;
-  margin-top: 16px;
-}
-@media (max-width: 540px) {
-  .import-actions {
-    grid-template-columns: 1fr;
-  }
-  .file-picker {
-    min-height: 62px;
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 12px;
-  }
+  margin-top: 14px;
 }

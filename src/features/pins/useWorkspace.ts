@@ -135,7 +135,7 @@ export function useWorkspace() {
         name: preview.label,
         source: { kind: 'import', ticket: preview.ticket, entry: preview.candidates[0] },
         alwaysOnTop: true,
-        decorations: true,
+        decorations: false,
       });
     }, `example:${example}`);
   }
