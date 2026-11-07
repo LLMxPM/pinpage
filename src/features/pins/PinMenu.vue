@@ -110,9 +110,6 @@ onUnmounted(() => {
       >
         <AppIcon name="download" :size="16" />{{ t('ui.card.actionExport') }}
       </button>
-      <button v-if="runtime?.open" :disabled="busy" @click="pick('close')">
-        <AppIcon name="power" :size="16" />{{ t('ui.card.close') }}
-      </button>
       <div class="menu-divider" />
       <button class="danger-text" :disabled="busy" @click="pick('delete')">
         <AppIcon name="trash" :size="16" />{{ t('ui.card.deleteTitle') }}

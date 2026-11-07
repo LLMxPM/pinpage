@@ -1,4 +1,4 @@
-<!-- 功能：呈现页面来源、运行状态和明确的主操作，将低频操作收纳到更多菜单。 -->
+<!-- 功能：紧凑呈现页面来源与运行状态，按状态放出开关/定位等主操作，低频操作收纳到更多菜单。 -->
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -54,7 +54,11 @@ const primary = computed(() => {
   <article class="pin-card panel" :aria-busy="working">
     <div class="pin-card-header">
       <div class="source-icon" :class="pin.source.kind">
-        <AppIcon :name="pin.source.kind === 'url' ? 'link' : 'folder'" :size="21" />
+        <AppIcon :name="pin.source.kind === 'url' ? 'link' : 'folder'" :size="18" />
+      </div>
+      <div class="pin-title-block">
+        <h2 :title="pin.name">{{ pin.name }}</h2>
+        <p class="source-address" :title="sourceText">{{ sourceText }}</p>
       </div>
       <span class="status-pill" :class="status.tone"><i />{{ t(status.key) }}</span
       ><PinMenu
@@ -65,8 +69,6 @@ const primary = computed(() => {
         @export="emit('export', pin.id)"
       />
     </div>
-    <h2 :title="pin.name">{{ pin.name }}</h2>
-    <p class="source-address" :title="sourceText">{{ sourceText }}</p>
     <div class="pin-meta">
       <span
         ><AppIcon :name="pin.mode === 'desktop' ? 'window' : 'expand'" :size="13" />{{
@@ -79,8 +81,21 @@ const primary = computed(() => {
     </div>
     <p v-if="runtimeError" class="pin-error" role="status">{{ runtimeError }}</p>
     <div class="pin-actions">
-      <button class="secondary" :disabled="busy" @click="emit('settings', pin.id)">
-        <AppIcon name="settings" :size="16" />{{ t('ui.card.settings') }}</button
+      <button
+        class="icon-button"
+        :disabled="busy"
+        :title="t('ui.card.settings')"
+        :aria-label="t('ui.card.settings')"
+        @click="emit('settings', pin.id)"
+      >
+        <AppIcon name="settings" :size="17" /></button
+      ><button
+        v-if="runtime?.open"
+        class="secondary"
+        :disabled="busy"
+        @click="emit('action', pin.id, 'close')"
+      >
+        <AppIcon name="power" :size="16" />{{ t('ui.card.close') }}</button
       ><button class="primary" :disabled="busy" @click="emit('action', pin.id, primary.operation)">
         <AppIcon
           :name="working ? 'refresh' : primary.icon"
