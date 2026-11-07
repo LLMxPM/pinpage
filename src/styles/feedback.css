@@ -1,0 +1,59 @@
+/* 功能：统一通知、错误、导出结果浮层，避免短暂反馈推动页面列表。 */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 16px;
+  border: 1px solid #dce6f2;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #edf4fc;
+  color: #486587;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.notice > svg {
+  margin-top: 2px;
+}
+.notice > span {
+  flex: 1;
+}
+.notice .icon-button {
+  width: 24px;
+  height: 24px;
+  margin-top: -2px;
+  color: inherit;
+}
+.error-notice {
+  background: #fff1ee;
+  color: #a23e32;
+  border-color: #f2d1c9;
+}
+.warning-notice {
+  background: #fff8e8;
+  color: #856326;
+  border-color: #eddfb9;
+}
+.success-notice {
+  background: #eff8f2;
+  color: #386b4a;
+  border-color: #cce2d4;
+}
+.notice code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #ffffff90;
+  font-size: 12px;
+}
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 40px));
+  margin: 0;
+  box-shadow: 0 8px 32px #24304418;
+}

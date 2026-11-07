@@ -1,0 +1,35 @@
+<!-- 功能：提供本地待办清单，支持添加、完成和删除任务，状态自动保存。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>今日待办</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="checklist-page">
+    <main class="widget">
+      <header>
+        <span class="eyebrow">一件事，一次</span
+        ><span id="task-progress" class="subtle" role="status">0 / 0 已完成</span>
+      </header>
+      <h1>今日待办</h1>
+      <form id="task-form">
+        <label class="sr-only" for="task-input">新的待办事项</label
+        ><input
+          id="task-input"
+          placeholder="接下来要做什么？"
+          maxlength="160"
+          required
+          autocomplete="off"
+        /><button id="add-task" type="submit">添加</button>
+      </form>
+      <ul id="tasks" aria-label="待办事项"></ul>
+      <p id="empty-hint" class="empty-hint">暂无待办</p>
+      <footer>
+        <span id="save-status" role="status">自动保存在本地</span><span>最多 100 项</span>
+      </footer>
+    </main>
+    <script src="./checklist.js" defer></script>
+  </body>
+</html>

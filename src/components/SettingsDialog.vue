@@ -1,23 +1,27 @@
-<!-- 功能：编辑界面语言、会话恢复与全局快捷键，保存失败时保留输入。 -->
+<!-- 功能：使用统一弹窗编辑语言、会话恢复与快捷键，并在表单内展示保存错误。 -->
 <script setup lang="ts">
+import { computed, reactive, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { reactive } from 'vue';
-import AppIcon from './AppIcon.vue';
-import type { LocalePreference, SettingsInput } from '../types';
+import AppDialog from './AppDialog.vue';
+import AppSelect from './AppSelect.vue';
+import { text } from '../i18n/messages';
+import type { SettingsInput, UiMessage } from '../types';
 
-const props = defineProps<{ settings: SettingsInput; busy: boolean }>();
+const props = defineProps<{ settings: SettingsInput; busy: boolean; error: UiMessage | null }>();
 const emit = defineEmits<{ close: []; save: [input: SettingsInput] }>();
 const { t } = useI18n();
 const input = reactive<SettingsInput>({ ...props.settings });
+const formId = useId();
+const languageOptions = computed(
+  () =>
+    [
+      { value: 'zh-CN', label: t('ui.settings.languageZh') },
+      { value: 'en-US', label: t('ui.settings.languageEn') },
+      { value: 'system', label: t('ui.settings.languageSystem') },
+    ] as const,
+);
 
-/// 语言选项固定使用各自自称，避免切换后找不到恢复入口。
-const languages: { value: LocalePreference; key: string }[] = [
-  { value: 'zh-CN', key: 'ui.settings.languageZh' },
-  { value: 'en-US', key: 'ui.settings.languageEn' },
-  { value: 'system', key: 'ui.settings.languageSystem' },
-];
-
-/// 仅提交可编辑设置，窗口配置由后端独立维护。
+/// 仅提交可编辑字段，快捷键冲突时保持弹窗和原有输入。
 function save() {
   emit('save', {
     locale: input.locale,
@@ -29,59 +33,47 @@ function save() {
 </script>
 
 <template>
-  <div class="modal-backdrop" @click.self="emit('close')" @keydown.esc="emit('close')">
-    <section
-      class="settings-dialog panel"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="settings-title"
-      tabindex="-1"
-    >
-      <div class="dialog-heading">
-        <h2 id="settings-title">{{ t('ui.settings.title') }}</h2>
-        <button class="icon-button" :aria-label="t('ui.settings.close')" @click="emit('close')">
-          <AppIcon name="close" />
-        </button>
-      </div>
-      <form @submit.prevent="save">
+  <AppDialog :title="t('ui.settings.title')" :busy="busy" @close="emit('close')">
+    <form :id="formId" @submit.prevent="save">
+      <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
+      <fieldset :disabled="busy" class="form-fields">
         <label class="setting-toggle"
           ><span
-            ><strong>{{ t('ui.settings.restoreSession') }}</strong
-            ><small>{{ t('ui.settings.restoreSessionHint') }}</small></span
-          ><input v-model="input.restoreSession" type="checkbox" /></label
-        ><label class="field-label"
-          >{{ t('ui.settings.language')
-          }}<select v-model="input.locale" :aria-label="t('ui.settings.language')">
-            <option v-for="item in languages" :key="item.value" :value="item.value">
-              {{ t(item.key) }}
-            </option>
-          </select></label
-        >
-        <p class="settings-hint">{{ t('ui.settings.languageHint') }}</p>
-        <label class="field-label"
-          >{{ t('ui.settings.managerShortcut')
-          }}<input
-            v-model="input.managerShortcut"
-            autofocus
-            required
-            :placeholder="t('ui.settings.managerPlaceholder')"
+            ><strong>{{ t('ui.settings.restoreSession') }}</strong></span
+          ><input v-model="input.restoreSession" class="switch" type="checkbox" role="switch"
         /></label>
-        <label class="field-label"
-          >{{ t('ui.settings.recoverShortcut')
-          }}<input
-            v-model="input.recoverShortcut"
-            required
-            :placeholder="t('ui.settings.recoverPlaceholder')"
-        /></label>
-        <p class="settings-hint">{{ t('ui.settings.shortcutHint') }}</p>
-        <div class="dialog-footer">
-          <button type="button" class="secondary" @click="emit('close')">
-            {{ t('ui.settings.cancel') }}</button
-          ><button class="primary" :disabled="busy" type="submit">
-            {{ t('ui.settings.save') }}
-          </button>
+        <AppSelect
+          v-model="input.locale"
+          :label="t('ui.settings.language')"
+          :options="languageOptions"
+          :disabled="busy"
+          autofocus
+        />
+        <div class="form-section">
+          <h3>{{ t('ui.settings.shortcuts') }}</h3>
+          <label class="field-label"
+            >{{ t('ui.settings.managerShortcut')
+            }}<input
+              v-model="input.managerShortcut"
+              required
+              :placeholder="t('ui.settings.managerPlaceholder')"
+          /></label>
+          <label class="field-label"
+            >{{ t('ui.settings.recoverShortcut')
+            }}<input
+              v-model="input.recoverShortcut"
+              required
+              :placeholder="t('ui.settings.recoverPlaceholder')"
+          /></label>
         </div>
-      </form>
-    </section>
-  </div>
+      </fieldset>
+    </form>
+    <template #footer>
+      <button type="button" class="secondary" :disabled="busy" @click="emit('close')">
+        {{ t('ui.common.cancel') }}</button
+      ><button class="primary" :disabled="busy" type="submit" :form="formId">
+        {{ busy ? t('ui.common.working') : t('ui.settings.save') }}
+      </button>
+    </template>
+  </AppDialog>
 </template>

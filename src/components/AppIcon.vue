@@ -19,6 +19,11 @@ const paths: Record<string, string> = {
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 8v5m0-9h.01',
   power: 'M12 2v10M6 5a9 9 0 1 0 12 0',
   download: 'M12 3v12m0 0 4-4m-4 4-4-4M4 20h16',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  note: 'M5 3h14v13l-5 5H5V3Zm9 18v-5h5M8 7h8M8 11h6',
+  checklist: 'm3 6 1 1 2-2m-3 8 1 1 2-2M10 6h11M10 13h11M3 20h3m4 0h11',
+  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
+  chevron: 'm8 10 4 4 4-4',
 };
 </script>
 

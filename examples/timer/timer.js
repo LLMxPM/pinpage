@@ -89,10 +89,12 @@ function render() {
   const buttonText = deadline !== null ? '暂停计时' : remaining === 0 ? '再来一次' : '开始专注';
   const statusText =
     deadline !== null
-      ? '专注当下，其他的稍后再说。'
+      ? '计时中'
       : remaining === 0
-        ? '这一轮完成了，休息一下吧。'
-        : '准备好，从现在开始。';
+        ? '本轮已完成'
+        : remaining < duration
+          ? '已暂停'
+          : '准备就绪';
   if (toggle.textContent !== buttonText) toggle.textContent = buttonText;
   if (status.textContent !== statusText) status.textContent = statusText;
 }
@@ -160,7 +162,7 @@ async function loadPresets() {
       document.querySelector('#presets').append(button);
     }
   } catch {
-    document.querySelector('#resource-status').textContent = '预设加载失败，仍可使用默认计时。';
+    document.querySelector('#resource-status').textContent = '预设加载失败';
   }
 }
 

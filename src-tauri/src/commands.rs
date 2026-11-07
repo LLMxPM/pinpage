@@ -70,7 +70,7 @@ pub async fn create_pin(
                 crate::models::ImportMode::Package => package::extract(&grant.path, &site)
                     .map(|extracted| (extracted.entry, extracted.storage)),
                 crate::models::ImportMode::Example => {
-                    examples::write_site(&site).map(|entry| (entry, None))
+                    examples::write_site(&site, grant.example).map(|entry| (entry, None))
                 }
             };
             match prepared {

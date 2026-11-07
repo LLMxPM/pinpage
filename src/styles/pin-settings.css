@@ -1,121 +1,75 @@
-/* 功能：布局单页显示模式、几何数值、锁定选项与卡片开启开关。 */
-.pin-settings-dialog {
-  width: min(540px, 100%);
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-}
-.pin-settings-dialog .dialog-heading {
-  margin-bottom: 12px;
-}
+/* 功能：统一页面设置的显示模式、几何数值、外观选项与锁定开关布局。 */
 .mode-picker {
   border: 0;
   padding: 0;
-  margin: 20px 0 0;
+  margin: 22px 0 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 .mode-picker legend {
-  font-size: 12px;
-  color: #6b7582;
-  margin-bottom: 9px;
+  font-size: 13px;
+  color: #4c596b;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 .mode-picker label {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 12px;
-  border: 1px solid #e4e8ee;
+  padding: 13px 12px;
+  border: 1px solid #dce2e9;
   border-radius: 8px;
   cursor: pointer;
 }
 .mode-picker label.active {
-  background: #fff6f1;
-  border-color: #e7a38a;
+  background: var(--accent-soft);
+  border-color: #e2a58e;
 }
 .mode-picker input {
-  width: auto;
-  accent-color: var(--accent);
+  margin: 0;
 }
-.mode-picker strong,
-.lock-settings strong {
+.mode-picker strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-}
-.mode-picker small,
-.lock-settings small {
-  display: block;
-  color: #969faa;
-  font-size: 10px;
-  line-height: 1.6;
-  margin-top: 4px;
 }
 .pin-setting-checks {
   display: flex;
-  gap: 17px;
+  gap: 12px 20px;
   margin-top: 16px;
   flex-wrap: wrap;
 }
 .geometry-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 12px;
+  gap: 14px;
+  margin-top: 12px;
+  align-items: start;
 }
-.geometry-hint {
-  color: #a2aab4;
-  font-size: 10px;
-  margin: 10px 0 16px;
+.geometry-fields .field-label {
+  margin: 0;
+  min-width: 0;
+}
+.geometry-fields input {
+  font-variant-numeric: tabular-nums;
 }
 .lock-settings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 15px 12px;
   background: #f7f8fa;
+  border: 1px solid #e8ecf1;
   border-radius: 8px;
+  padding: 0 14px;
+  margin-top: 18px;
 }
-.lock-settings label {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-  cursor: pointer;
+.lock-settings .setting-toggle {
+  margin: 0;
+  padding: 14px 0;
 }
-.pin-enable {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: #8995a4;
-  cursor: pointer;
-  padding: 7px 4px;
+.lock-settings .setting-toggle + .setting-toggle {
+  border-top: 1px solid var(--line);
 }
-.pin-enable input {
-  accent-color: var(--accent);
-}
-.pin-actions .action-group {
-  gap: 0;
-}
-.pin-actions .action-group .icon-button {
-  width: 27px;
-}
-.pin-settings-dialog .settings-hint {
-  margin-bottom: 18px;
-}
-.creation-options select {
-  border: 1px solid #dfe4eb;
-  border-radius: 5px;
-  padding: 4px 6px;
-  color: #6b7582;
-  background: #fff;
-  font: inherit;
-}
-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-@media (max-width: 900px) {
-  .pin-actions .action-group .icon-button {
-    width: 24px;
+@media (max-width: 540px) {
+  .mode-picker {
+    grid-template-columns: 1fr;
   }
 }

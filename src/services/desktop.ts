@@ -3,6 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type {
   CreatePin,
+  ExampleId,
   ExportResult,
   ImportPreview,
   PinSettingsInput,
@@ -18,8 +19,11 @@ export function getSnapshot(): Promise<Snapshot> {
 }
 
 /// 打开原生选择器导入网页；内置示例不经过选择器，直接返回预览。
-export function importPage(mode: ImportPreview['mode']): Promise<ImportPreview | null> {
-  return invoke('import_page', { mode });
+export function importPage(
+  mode: ImportPreview['mode'],
+  example?: ExampleId,
+): Promise<ImportPreview | null> {
+  return invoke('import_page', { mode, example });
 }
 
 /// 把导入页的站点副本与页面数据导出为页面包，取消保存时返回 null。

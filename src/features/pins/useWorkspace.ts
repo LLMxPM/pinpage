@@ -4,7 +4,14 @@ import { applyLocale } from '../../i18n';
 import { fromAppMessage, message, toUiMessage } from '../../i18n/messages';
 import * as desktop from '../../services/desktop';
 import { formatBytes } from '../../services/format';
-import type { CreatePin, PinSettingsInput, SettingsInput, Snapshot, UiMessage } from '../../types';
+import type {
+  CreatePin,
+  ExampleId,
+  PinSettingsInput,
+  SettingsInput,
+  Snapshot,
+  UiMessage,
+} from '../../types';
 
 /// 空快照与 Rust 默认配置保持一致，浏览器预览按中文呈现。
 function emptySnapshot(): Snapshot {
@@ -26,7 +33,8 @@ function emptySnapshot(): Snapshot {
 /// 管理快照与操作状态，避免过期异步请求覆盖最新窗口列表。
 export function useWorkspace() {
   const snapshot = ref<Snapshot>(emptySnapshot());
-  const busy = ref(false);
+  const pending = ref<string | null>(null);
+  const busy = computed(() => pending.value !== null);
   const loading = ref(desktop.desktopAvailable);
   /// 首个快照应用有效语言之前不渲染业务界面，减少英文用户看到中文闪烁。
   const ready = ref(!desktop.desktopAvailable);
@@ -67,44 +75,39 @@ export function useWorkspace() {
   }
 
   /// 统一呈现桌面操作错误，完成后刷新实际状态。
-  async function run(operation: () => Promise<void>) {
-    if (busy.value) return;
+  async function run(operation: () => Promise<void>, key = 'app'): Promise<boolean> {
+    if (busy.value) return false;
     if (!desktop.desktopAvailable) {
-      error.value = message('ui.desktop.desktopRequired', { command: 'pnpm tauri dev' });
-      return;
+      error.value = message('ui.desktop.desktopRequired');
+      return false;
     }
-    busy.value = true;
+    pending.value = key;
     error.value = null;
     try {
       await operation();
+      return true;
     } catch (reason) {
       error.value = toUiMessage(reason);
+      return false;
     } finally {
-      busy.value = false;
       await refresh();
+      pending.value = null;
     }
   }
 
   /// 创建页面，来源验证和系统窗口创建均在原生层完成。
   function create(input: CreatePin) {
-    return run(() => desktop.createPin(input));
+    return run(() => desktop.createPin(input), 'create');
   }
 
   /// 将单窗操作交给后端，避免前端乐观修改后与真实状态脱节。
   function action(id: string, operation: string) {
-    return run(() => desktop.pinAction(id, operation));
+    return run(() => desktop.pinAction(id, operation), `${id}:${operation}`);
   }
 
   /// 导出导入页的站点副本与页面数据，结果通过提示条反馈。
   async function exportPin(id: string) {
-    if (busy.value) return;
-    if (!desktop.desktopAvailable) {
-      error.value = message('ui.desktop.desktopRequired', { command: 'pnpm tauri dev' });
-      return;
-    }
-    busy.value = true;
-    error.value = null;
-    try {
+    return run(async () => {
       const result = await desktop.exportPage(id);
       if (result) {
         notify(
@@ -120,18 +123,13 @@ export function useWorkspace() {
               }),
         );
       }
-    } catch (reason) {
-      error.value = toUiMessage(reason);
-    } finally {
-      busy.value = false;
-      await refresh();
-    }
+    }, `${id}:export`);
   }
 
   /// 导入内置示例并立即创建页面，示例与用户导入页走同一条路径。
-  async function createExample() {
+  async function createExample(example: ExampleId = 'timer') {
     return run(async () => {
-      const preview = await desktop.importPage('example');
+      const preview = await desktop.importPage('example', example);
       if (!preview) return;
       await desktop.createPin({
         name: preview.label,
@@ -139,7 +137,7 @@ export function useWorkspace() {
         alwaysOnTop: true,
         decorations: true,
       });
-    });
+    }, `example:${example}`);
   }
 
   /// 保存设置成功后关闭弹层；失败时保留用户的输入和当前语言。
@@ -186,6 +184,7 @@ export function useWorkspace() {
   return {
     snapshot,
     busy,
+    pending,
     loading,
     ready,
     error,
@@ -206,13 +205,6 @@ export function useWorkspace() {
     pins: computed(() => snapshot.value.settings.pins),
     openCount: computed(
       () => Object.values(snapshot.value.runtime).filter((pin) => pin.open).length,
-    ),
-    topCount: computed(
-      () =>
-        snapshot.value.settings.pins.filter(
-          (pin) =>
-            snapshot.value.runtime[pin.id]?.open && pin.mode === 'floating' && pin.alwaysOnTop,
-        ).length,
     ),
   };
 }

@@ -1,0 +1,165 @@
+/* 功能：布局轻量示例库，以纯 CSS 示意图展示工具，不额外创建内容 WebView。 */
+.examples-section {
+  margin-top: 30px;
+}
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.example-tile {
+  min-width: 0;
+  overflow: hidden;
+}
+.example-preview {
+  height: 112px;
+  margin: 10px 10px 0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.example-preview strong {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 31px;
+  font-weight: 550;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.example-preview strong span {
+  opacity: 0.5;
+}
+
+.example-preview.timer {
+  background: #f9eee7;
+  color: #b96e52;
+}
+.preview-progress {
+  height: 3px;
+  width: 70px;
+  background: #e8c9b9;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+.preview-progress i {
+  display: block;
+  width: 35%;
+  height: 100%;
+  background: #bb7f62;
+}
+.example-preview.notes {
+  background: #fbf5df;
+  color: #b59a4d;
+  align-items: flex-start;
+  padding: 18px 26px;
+  gap: 12px;
+}
+.preview-lines {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+.preview-lines i {
+  display: block;
+  width: 90%;
+  height: 3px;
+  border-radius: 3px;
+  background: #d8cda4;
+}
+.preview-lines i:nth-child(2) {
+  width: 75%;
+}
+.preview-lines i:nth-child(3) {
+  width: 50%;
+}
+.example-preview.checklist {
+  background: #edf4f0;
+  color: #759b86;
+  gap: 12px;
+  padding: 22px 28px;
+}
+.example-preview.checklist > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+}
+.example-preview.checklist i {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border: 1px solid #aec7b7;
+  border-radius: 3px;
+}
+.example-preview.checklist i.checked {
+  color: #fff;
+  background: #89ab97;
+  border-color: #89ab97;
+}
+.example-preview.checklist b {
+  display: block;
+  width: 70%;
+  height: 3px;
+  border-radius: 3px;
+  background: #bdd0c4;
+}
+.example-preview.checklist > span:first-child b {
+  opacity: 0.55;
+}
+.example-preview.checklist > span:last-child b {
+  width: 45%;
+}
+.example-preview.clock {
+  background: #edf1f8;
+  color: #637da0;
+}
+
+.example-details {
+  padding: 15px;
+}
+.example-details h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.example-details button {
+  margin-top: 12px;
+}
+@media (max-width: 850px) {
+  .example-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .example-tile {
+    display: flex;
+  }
+  .example-preview {
+    width: 96px;
+    min-width: 96px;
+    height: auto;
+    min-height: 135px;
+    margin: 8px 0 8px 8px;
+  }
+  .example-preview strong {
+    font-size: 24px;
+  }
+  .example-preview.notes {
+    padding: 16px;
+  }
+  .example-preview.checklist {
+    padding: 16px 12px;
+  }
+  .example-details {
+    padding: 14px 12px;
+    flex: 1;
+  }
+}
+@media (max-width: 620px) {
+  .example-grid {
+    grid-template-columns: 1fr;
+  }
+}

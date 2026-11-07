@@ -6,31 +6,15 @@
     "ariaLabel": "Connecting to PinPage"
   },
   "sidebar": {
-    "space": "My space",
-    "workspace": "Floating desk",
     "settings": "Preferences",
-    "tipTop": "Keep what matters",
-    "tipBottom": "right in front of you.",
-    "tipHint": "Timers / boards / widgets",
     "quit": "Quit and save session"
   },
   "topbar": {
-    "workspace": "Workspace",
-    "openSettings": "Open settings"
-  },
-  "hero": {
-    "tagline": "YOUR LITTLE DESKTOP COMPANIONS",
-    "title": "Keep the pages that matter in view",
-    "mark": ".",
-    "subtitle": "Turn timers, boards and little tools into desktop windows you can reach."
+    "workspace": "Workspace"
   },
   "desktop": {
-    "connected": "Desktop connected",
-    "preview": "Interface preview",
-    "previewLead": "This is the browser preview. Run",
-    "previewTail": "to create native floating windows.",
-    "previewCommand": "pnpm tauri dev",
-    "desktopRequired": "Use this feature from the desktop app: {command}"
+    "preview": "Preview",
+    "desktopRequired": "Use the desktop app for this action"
   },
   "notice": {
     "closeError": "Dismiss error",
@@ -40,61 +24,38 @@
     "detailSuffix": "{text} ({detail})"
   },
   "form": {
-    "title": "Pin a new page",
-    "subtitle": "One web address, or import a local page.",
+    "title": "Add a page",
     "sourceGroup": "Page source",
     "tabUrl": "Web address",
     "tabImport": "Import page",
     "urlAria": "Web address",
     "urlPlaceholder": "https:// or localhost:3000",
     "pickFolder": "Import folder",
-    "pickFolderHint": "Whole folder",
     "pickFile": "Import single file",
-    "pickFileHint": "Entry only",
     "pickPackage": "Import page package",
-    "pickPackageHint": ".pinpage",
-    "pickExample": "Import sample",
-    "pickExampleHint": "With data",
-    "importedSummary": "{label} · {count} file · {bytes} | {label} · {count} files · {bytes}",
     "entry": "Entry",
-    "entryAria": "Import entry",
-    "entryValue": "Entry: {entry}",
-    "importHint": "Importing a folder copies everything; a single file copies only its entry. A page package restores both the site and its page data.",
     "nameAria": "Page name",
-    "namePlaceholder": "Name this page (optional)",
+    "namePlaceholder": "Enter a page name",
     "busy": "Working…",
-    "submit": "Create window",
+    "submit": "Create and open",
     "mode": "Mode",
-    "modeAria": "Display mode for the new page",
     "modeFloating": "Floating window",
     "modeDesktop": "Pinned to desktop",
     "top": "Always on top",
     "borderless": "Borderless mode",
-    "footnote": "Each page runs on its own",
-    "needDesktop": "Open the import entries from the desktop app.",
-    "needImport": "Import a folder or an HTML file first."
+    "needDesktop": "Import pages from the desktop app",
+    "optional": "Optional",
+    "windowOptions": "Window options"
   },
   "pins": {
-    "title": "My floating pages",
-    "subtitle": "Each one keeps its place, ready when you look back.",
+    "title": "My pages",
     "running": "{count} running",
-    "pinned": "{count} pinned",
     "loading": "Connecting to desktop windows…",
-    "emptyTitle": "Your first floating page starts here",
-    "emptyLead": "Add an address or import a page above,",
-    "emptyTail": "or open the focus timer to try it out.",
-    "tryTimer": "Try the timer",
-    "exampleTitle": "Add the focus timer",
-    "exampleHint": "A sample page with exportable data"
+    "emptyTitle": "Add your first page"
   },
   "card": {
     "importedSource": "Imported · {entry}",
-    "deleteAria": "Delete page {name}",
     "deleteTitle": "Delete the page record",
-    "switchOnAria": "Close floating page {name}",
-    "switchOffAria": "Open floating page {name}",
-    "switchOn": "Running",
-    "switchOff": "Open page",
     "statusAttention": "Needs attention",
     "statusNotOpen": "Not open",
     "statusClosed": "Closed",
@@ -102,33 +63,35 @@
     "statusRunning": "Running",
     "statusHidden": "Hidden",
     "metaDesktopMode": "Desktop mode",
-    "metaBordered": "Standard frame",
-    "metaBorderless": "Borderless",
     "metaPinned": "Pinned",
-    "metaPositionLocked": "Position locked",
-    "metaSizeLocked": "Size locked",
-    "metaRounded": "Rounded",
-    "actionSettings": "Page settings",
-    "actionFocus": "Show page",
     "actionUntop": "Unpin from top",
     "actionTop": "Pin to top",
-    "actionBorder": "Toggle frame",
     "actionReload": "Reload page",
     "actionExport": "Export page package",
     "actionExportTitle": "Export page package (with page data)",
-    "actionExportDisabled": "Web address pages have no site files to export",
-    "actionVisibility": "Show / hide",
-    "actionVisibilityAria": "Show or hide the window"
+    "settings": "Settings",
+    "open": "Open page",
+    "show": "Show page",
+    "locate": "Locate window",
+    "retry": "Reload page",
+    "hide": "Hide page",
+    "close": "Close page",
+    "moreAria": "More actions for {name}",
+    "metaFloating": "Floating window",
+    "removeBorder": "Hide system frame",
+    "restoreBorder": "Restore system frame",
+    "recover": "Recover window",
+    "exportNeedsOpen": "Open the page before exporting its package",
+    "deleteConfirm": "Delete “{name}”?",
+    "deleteImportedHint": "The page record and imported files will be permanently deleted",
+    "deleteHint": "The page record will be permanently deleted"
   },
   "pinSettings": {
     "title": "Page settings",
-    "close": "Close page settings",
     "name": "Page name",
     "modeLegend": "Display mode",
     "floating": "Floating window",
-    "floatingHint": "Can stay on top for a quick glance",
     "desktop": "Pinned to desktop",
-    "desktopHint": "Sits on the desktop layer, below normal windows",
     "top": "Always on top",
     "border": "Show system frame",
     "rounded": "Rounded borderless corners",
@@ -136,40 +99,47 @@
     "height": "Height",
     "positionX": "Horizontal position X",
     "positionY": "Vertical position Y",
-    "geometryHint": "Size follows the system scale factor; X / Y are screen pixels and may be negative.",
     "lockPosition": "Lock position",
-    "lockPositionHint": "Blocks dragging and snap moves",
     "lockSize": "Lock size",
-    "lockSizeHint": "Blocks resizing from the edges",
-    "lockHint": "You can still change the values here. Closing a page keeps these settings for the next time it opens.",
-    "cancel": "Cancel",
     "busy": "Applying…",
-    "save": "Save and apply"
+    "save": "Save and apply",
+    "geometry": "Size and position"
   },
   "settings": {
     "title": "Workspace settings",
-    "close": "Close settings",
     "restoreSession": "Restore last session",
-    "restoreSessionHint": "Reopen the pages that were kept when the app last quit.",
     "language": "Language",
     "languageZh": "简体中文",
     "languageEn": "English",
     "languageSystem": "System",
-    "languageHint": "The language only changes the app interface and never reloads open pages. Only Simplified Chinese is offered.",
     "managerShortcut": "Open the manager",
     "recoverShortcut": "Recover all windows",
     "managerPlaceholder": "Ctrl+Alt+P",
     "recoverPlaceholder": "Ctrl+Alt+B",
-    "shortcutHint": "Recovering restores the standard frame and centers the windows. Taken shortcuts keep the previous settings.",
-    "cancel": "Cancel",
-    "save": "Save settings"
-  },
-  "footer": {
-    "dragHint": "Borderless windows can be dragged with Alt + left click; the tray restores the frame.",
-    "motto": "Less switching, more focus."
+    "save": "Save settings",
+    "shortcuts": "Global shortcuts"
   },
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",
     "exportedWithoutData": "Exported {count} file, page data not included: {path} | Exported {count} files, page data not included: {path}"
+  },
+  "common": {
+    "closeDialog": "Close dialog",
+    "cancel": "Cancel",
+    "working": "Working…"
+  },
+  "workspace": {
+    "add": "Add page",
+    "addUrl": "Add web page",
+    "import": "Import local page"
+  },
+  "examples": {
+    "title": "Samples",
+    "timer": "Focus timer",
+    "notes": "Quick notes",
+    "checklist": "Daily checklist",
+    "clock": "Digital clock",
+    "add": "Add",
+    "addAria": "Add {name} sample"
   }
 }

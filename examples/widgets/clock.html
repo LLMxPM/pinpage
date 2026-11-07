@@ -1,0 +1,24 @@
+<!-- 功能：显示当前本地时间、日期与星期，支持记忆秒数显示偏好。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数字时钟</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="clock-page">
+    <main class="widget">
+      <header>
+        <span class="eyebrow">此时此刻</span
+        ><label class="seconds-toggle"><input id="show-seconds" type="checkbox" />显示秒数</label>
+      </header>
+      <div class="clock-face">
+        <p id="clock-date"></p>
+        <time id="clock-time" aria-live="off">--:--</time>
+        <p id="clock-weekday"></p>
+      </div>
+    </main>
+    <script src="./clock.js" defer></script>
+  </body>
+</html>

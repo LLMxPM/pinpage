@@ -1,0 +1,256 @@
+/* 功能：为便签、待办和时钟提供统一排版、输入控件、按钮及小窗口适配。 */
+:root {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: #354138;
+  background: #fafbf8;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 160px;
+  min-height: 100vh;
+}
+.widget {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 5vw, 30px);
+}
+header,
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.eyebrow {
+  font-size: 11px;
+  color: #768879;
+  letter-spacing: 2px;
+}
+.subtle,
+footer {
+  color: #7b877c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+footer {
+  margin-top: auto;
+  padding-top: 18px;
+}
+h1 {
+  margin: 20px 0 18px;
+  font-size: clamp(19px, 5vw, 25px);
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+input,
+textarea,
+button {
+  font: inherit;
+}
+input:not([type='checkbox']),
+textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dce4da;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  outline: none;
+}
+input:not([type='checkbox']):focus,
+textarea:focus {
+  border-color: #8aa68d;
+  box-shadow: 0 0 0 3px #8aa68d18;
+}
+button {
+  border: 1px solid #6d8d73;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: #6d8d73;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover {
+  background: #59785f;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #829e86;
+  outline-offset: 3px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.notes-page {
+  background: #fbf6e6;
+  color: #5b5137;
+}
+.notes-page .eyebrow,
+.notes-page footer,
+.notes-page .subtle {
+  color: #968460;
+}
+.notes-page input.note-title {
+  background: transparent;
+  padding: 0;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 0;
+  font-size: 22px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.notes-page textarea {
+  flex: 1;
+  min-height: 160px;
+  resize: none;
+  padding: 14px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1.9;
+}
+.notes-page textarea::placeholder,
+.notes-page input::placeholder {
+  color: #af9e7f;
+}
+#task-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#task-form input {
+  flex: 1;
+}
+#tasks {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-bottom: 1px solid #e5ebe2;
+  padding: 11px 0;
+}
+.task-row label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.task-row input {
+  accent-color: #6d8d73;
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+}
+.task-row span {
+  overflow-wrap: anywhere;
+}
+.task-row.done span {
+  text-decoration: line-through;
+  color: #95a091;
+}
+.task-row button {
+  border: 0;
+  background: transparent;
+  color: #9a857c;
+  font-size: 11px;
+  padding: 3px 0 3px 8px;
+}
+.task-row button:hover {
+  color: #a74a39;
+}
+.empty-hint {
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #879780;
+  margin: 30px 0;
+}
+.clock-page {
+  background: #eff3f9;
+  color: #435a79;
+}
+.clock-page .eyebrow,
+.clock-page footer {
+  color: #7e8fa5;
+}
+.clock-face {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 0;
+  gap: 16px;
+}
+.clock-face p {
+  margin: 0;
+  font-size: 14px;
+  color: #7a8ca4;
+}
+#clock-time {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: clamp(30px, 15vw, 88px);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.clock-page:has(#show-seconds:checked) #clock-time {
+  font-size: clamp(23px, 11vw, 70px);
+}
+.seconds-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #7e8fa5;
+  cursor: pointer;
+}
+.seconds-toggle input {
+  accent-color: #637da0;
+}
+@media (max-width: 240px) {
+  #task-form {
+    flex-wrap: wrap;
+  }
+  #task-form button {
+    width: 100%;
+  }
+  .subtle {
+    font-size: 10px;
+  }
+  footer {
+    font-size: 10px;
+  }
+}

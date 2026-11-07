@@ -9,6 +9,9 @@ export type LocalePreference = 'zh-CN' | 'en-US' | 'system';
 /// Rust 已解析的有效语言。
 export type AppLocale = 'zh-CN' | 'en-US';
 
+/// 内置示例来源，与 Rust 的 ExampleId 白名单一致，不接受任意资源路径。
+export type ExampleId = 'timer' | 'notes' | 'checklist' | 'clock';
+
 export type PageSource = { kind: 'url'; url: string } | { kind: 'bundled'; entry: string };
 
 export type SourceInput =

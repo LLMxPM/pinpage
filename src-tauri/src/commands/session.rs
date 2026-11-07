@@ -23,8 +23,10 @@ pub async fn import_page(
     window: WebviewWindow,
     app: AppHandle,
     mode: ImportMode,
+    example: Option<examples::ExampleId>,
 ) -> Result<Option<ImportPreview>, AppMessage> {
     windows::ensure_manager(&window)?;
+    let example = example.unwrap_or_default();
     tauri::async_runtime::spawn_blocking(move || {
         let locale = state::locale(&app);
         let name = |key: &str| i18n::text(locale, key, &Default::default());
@@ -92,11 +94,11 @@ pub async fn import_page(
             }
             // 示例使用随包资源，不需要选择器，也不产生外部授权路径。
             ImportMode::Example => {
-                let (files, bytes) = examples::measure();
+                let (files, bytes) = examples::measure(example);
                 (
                     std::path::PathBuf::new(),
                     vec![examples::ENTRY.to_string()],
-                    name(examples::LABEL_KEY),
+                    name(examples::label_key(example)),
                     files,
                     bytes,
                 )
@@ -112,6 +114,7 @@ pub async fn import_page(
                 path,
                 mode,
                 candidates: candidates.clone(),
+                example,
             },
         );
         Ok(Some(ImportPreview {

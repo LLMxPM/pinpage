@@ -31,14 +31,17 @@
   },
   "names": {
     "example": "专注计时器",
-    "webPage": "网页"
+    "webPage": "网页",
+    "notes": "随手便签",
+    "checklist": "今日待办",
+    "clock": "数字时钟"
   },
   "restore": {
     "title": "正在恢复页面数据",
     "hint": "正在恢复页面数据…"
   },
   "errors": {
-    "unknown": "操作未完成，请重试。",
+    "unknown": "操作未完成，请重试",
     "localeInvalid": "语言设置无效",
     "notManager": "此页面无权管理应用",
     "invalidUrl": "请输入有效的网址",
@@ -118,7 +121,7 @@
     "shortcutModifier": "快捷键至少需要 Ctrl、Alt、Shift 或 Super 修饰键",
     "shortcutTaken": "快捷键注册失败，可能已被其他应用占用",
     "trayRefreshFailed": "托盘菜单更新失败",
-    "settingsSavedTrayFailed": "设置已保存，但托盘菜单更新失败，下一次窗口操作会重试。",
+    "settingsSavedTrayFailed": "设置已保存，但托盘菜单更新失败，下一次窗口操作会重试",
     "platformUnsupported": "此版本的窗口模式设置仅支持 Windows",
     "readPosition": "无法读取窗口位置",
     "taskInterrupted": "窗口配置任务已中断",

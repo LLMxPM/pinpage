@@ -19,6 +19,8 @@ pub struct ImportGrant {
     pub mode: ImportMode,
     /// 目录导入时记录根级 HTML 候选，创建时只接受其中之一。
     pub candidates: Vec<String>,
+    /// 内置来源的类型随票据保存，创建时不能用前端输入替换来源。
+    pub example: crate::examples::ExampleId,
 }
 
 /// 应用数据目录下的导入页根目录，每个页面一个以 ID 命名的子目录。

@@ -1,0 +1,28 @@
+<!-- 功能：提供可自动保存的桌面便签，数据跟随导入页保存在本地。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>随手便签</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="notes-page">
+    <main class="widget">
+      <header>
+        <span class="eyebrow">随手记</span
+        ><span id="save-status" class="subtle" role="status">自动保存在本地</span>
+      </header>
+      <label class="sr-only" for="note-title">便签标题</label
+      ><input
+        id="note-title"
+        class="note-title"
+        placeholder="给灵感一个标题"
+        maxlength="60"
+      /><label class="sr-only" for="note-content">便签内容</label
+      ><textarea id="note-content" placeholder="输入便签内容" maxlength="10000"></textarea>
+      <footer><span id="note-count">0 / 10000</span></footer>
+    </main>
+    <script src="./notes.js" defer></script>
+  </body>
+</html>

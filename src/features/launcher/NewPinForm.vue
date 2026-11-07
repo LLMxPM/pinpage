@@ -1,30 +1,57 @@
-<!-- 功能：收集网页地址或导入式本地网页，创建具有独立窗口设置的悬浮页。 -->
+<!-- 功能：在统一弹窗中添加网址或导入页面，按需展开窗口选项，保留失败时的输入。 -->
 <script setup lang="ts">
+import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue';
+import AppDialog from '../../components/AppDialog.vue';
+import AppSelect from '../../components/AppSelect.vue';
 import AppIcon from '../../components/AppIcon.vue';
-import { message, toUiMessage } from '../../i18n/messages';
+import { message, text, toUiMessage } from '../../i18n/messages';
 import { desktopAvailable, importPage } from '../../services/desktop';
-import { formatBytes } from '../../services/format';
 import type { CreatePin, ImportPreview, UiMessage } from '../../types';
 
-defineProps<{ busy: boolean }>();
-const emit = defineEmits<{ create: [input: CreatePin]; error: [message: UiMessage] }>();
+const props = defineProps<{
+  busy: boolean;
+  error: UiMessage | null;
+  initialMode: 'url' | 'import';
+}>();
+const emit = defineEmits<{ create: [input: CreatePin]; error: [message: UiMessage]; close: [] }>();
 const { t } = useI18n();
-const mode = ref<'url' | 'import'>('url');
+const formId = useId();
+const mode = ref(props.initialMode);
 const address = ref('');
 const name = ref('');
 const preview = ref<ImportPreview | null>(null);
 const entry = ref('');
 const choosing = ref(false);
-/// 名称仍由来源自动推导时，切换导入来源后跟随更新；用户改过就不再覆盖。
 const nameAuto = ref(true);
 const top = ref(true);
 const borderless = ref(false);
 const windowMode = ref<'floating' | 'desktop'>('floating');
+const modeOptions = computed(
+  () =>
+    [
+      { value: 'floating', label: t('ui.form.modeFloating') },
+      { value: 'desktop', label: t('ui.form.modeDesktop') },
+    ] as const,
+);
+const entryOptions = computed(
+  () => preview.value?.candidates.map((value) => ({ value, label: value })) ?? [],
+);
+const displayTop = computed({
+  get: () => windowMode.value === 'floating' && top.value,
+  set: (value: boolean) => {
+    top.value = value;
+  },
+});
+const displayBorderless = computed({
+  get: () => windowMode.value === 'desktop' || borderless.value,
+  set: (value: boolean) => {
+    borderless.value = value;
+  },
+});
 
-/// 打开原生选择器扫描来源；内置示例直接返回预览，取消时保留上次结果。
-async function choose(importMode: ImportPreview['mode']) {
+/// 原生选择器取消时保留上次结果，用户主动命名后不再覆盖名称。
+async function choose(importMode: 'directory' | 'file' | 'package') {
   if (!desktopAvailable) {
     emit('error', message('ui.form.needDesktop'));
     return;
@@ -35,7 +62,6 @@ async function choose(importMode: ImportPreview['mode']) {
     if (!selected) return;
     preview.value = selected;
     entry.value = selected.candidates[0] ?? '';
-    // 用户未命名时按来源给出默认名称，改过名称后不再覆盖。
     if (nameAuto.value || !name.value) {
       name.value =
         selected.mode === 'directory'
@@ -43,19 +69,17 @@ async function choose(importMode: ImportPreview['mode']) {
           : selected.label.replace(/\.(html|htm)$/i, '');
       nameAuto.value = true;
     }
-  } catch (error) {
-    emit('error', toUiMessage(error));
+  } catch (reason) {
+    emit('error', toUiMessage(reason));
   } finally {
     choosing.value = false;
   }
 }
 
-/// 只提交网址或导入票据，原生层完成最终校验与文件复制。
+/// 仅提交来源票据和外观偏好，路径、网址与窗口权限由原生层最终校验。
 function submit() {
-  if (mode.value === 'import' && !preview.value) {
-    emit('error', message('ui.form.needImport'));
-    return;
-  }
+  if (props.busy || choosing.value) return;
+  if (mode.value === 'import' && !preview.value) return;
   emit('create', {
     name: name.value,
     alwaysOnTop: top.value,
@@ -70,122 +94,105 @@ function submit() {
 </script>
 
 <template>
-  <section class="new-pin panel" aria-labelledby="new-title">
-    <div class="section-heading">
-      <div class="heading-icon"><AppIcon name="plus" /></div>
-      <div>
-        <h2 id="new-title">{{ t('ui.form.title') }}</h2>
-        <p>{{ t('ui.form.subtitle') }}</p>
-      </div>
-    </div>
-    <form @submit.prevent="submit">
-      <div class="source-tabs" role="group" :aria-label="t('ui.form.sourceGroup')">
-        <button type="button" :class="{ active: mode === 'url' }" @click="mode = 'url'">
-          <AppIcon name="link" :size="16" />{{ t('ui.form.tabUrl') }}
-        </button>
-        <button type="button" :class="{ active: mode === 'import' }" @click="mode = 'import'">
-          <AppIcon name="folder" :size="16" />{{ t('ui.form.tabImport') }}
-        </button>
-      </div>
-      <div v-if="mode === 'url'" class="input-wrap">
-        <AppIcon name="link" :size="18" /><input
-          v-model="address"
-          :aria-label="t('ui.form.urlAria')"
-          :placeholder="t('ui.form.urlPlaceholder')"
-          required
-          autocomplete="url"
-          spellcheck="false"
-        />
-      </div>
-      <div v-else class="import-selection">
-        <div class="import-actions">
+  <AppDialog :title="t('ui.form.title')" :busy="busy || choosing" wide @close="emit('close')">
+    <form :id="formId" @submit.prevent="submit">
+      <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
+      <fieldset class="form-fields" :disabled="busy || choosing">
+        <div class="source-tabs" role="group" :aria-label="t('ui.form.sourceGroup')">
           <button
             type="button"
-            class="file-picker"
-            :disabled="choosing || busy"
-            @click="choose('directory')"
+            :class="{ active: mode === 'url' }"
+            :aria-pressed="mode === 'url'"
+            @click="mode = 'url'"
           >
-            <AppIcon name="folder" /><span>{{ t('ui.form.pickFolder') }}</span
-            ><small>{{ t('ui.form.pickFolderHint') }}</small>
+            <AppIcon name="link" :size="17" />{{ t('ui.form.tabUrl') }}
           </button>
           <button
             type="button"
-            class="file-picker"
-            :disabled="choosing || busy"
-            @click="choose('file')"
+            :class="{ active: mode === 'import' }"
+            :aria-pressed="mode === 'import'"
+            @click="mode = 'import'"
           >
-            <AppIcon name="window" /><span>{{ t('ui.form.pickFile') }}</span
-            ><small>{{ t('ui.form.pickFileHint') }}</small>
-          </button>
-          <button
-            type="button"
-            class="file-picker"
-            :disabled="choosing || busy"
-            @click="choose('package')"
-          >
-            <AppIcon name="download" /><span>{{ t('ui.form.pickPackage') }}</span
-            ><small>{{ t('ui.form.pickPackageHint') }}</small>
-          </button>
-          <button
-            type="button"
-            class="file-picker"
-            :disabled="choosing || busy"
-            @click="choose('example')"
-          >
-            <AppIcon name="clock" /><span>{{ t('ui.form.pickExample') }}</span
-            ><small>{{ t('ui.form.pickExampleHint') }}</small>
+            <AppIcon name="folder" :size="17" />{{ t('ui.form.tabImport') }}
           </button>
         </div>
-        <template v-if="preview">
-          <p class="import-summary">
-            {{
-              t('ui.form.importedSummary', {
-                label: preview.label,
-                count: preview.files,
-                bytes: formatBytes(preview.bytes),
-              })
-            }}
-          </p>
-          <label v-if="preview.candidates.length > 1" class="check-row import-entry">
-            {{ t('ui.form.entry') }}
-            <select v-model="entry" :aria-label="t('ui.form.entryAria')">
-              <option v-for="item in preview.candidates" :key="item" :value="item">
-                {{ item }}
-              </option>
-            </select>
-          </label>
-          <p v-else class="root-hint">{{ t('ui.form.entryValue', { entry }) }}</p>
-        </template>
-        <p v-else class="root-hint">{{ t('ui.form.importHint') }}</p>
-      </div>
-      <div class="creation-row">
-        <input
-          v-model="name"
-          class="name-input"
-          :aria-label="t('ui.form.nameAria')"
-          maxlength="80"
-          :placeholder="t('ui.form.namePlaceholder')"
-          @input="nameAuto = false"
-        /><button class="primary" :disabled="busy || choosing" type="submit">
-          <AppIcon name="pin" :size="16" />{{ busy ? t('ui.form.busy') : t('ui.form.submit') }}
-        </button>
-      </div>
-      <div class="creation-options">
-        <label class="check-row"
-          >{{ t('ui.form.mode')
-          }}<select v-model="windowMode" :aria-label="t('ui.form.modeAria')">
-            <option value="floating">{{ t('ui.form.modeFloating') }}</option>
-            <option value="desktop">{{ t('ui.form.modeDesktop') }}</option>
-          </select></label
-        >
-        <label class="check-row"
-          ><input v-model="top" type="checkbox" :disabled="windowMode === 'desktop'" />{{
-            t('ui.form.top')
-          }}</label
-        ><label class="check-row"
-          ><input v-model="borderless" type="checkbox" />{{ t('ui.form.borderless') }}</label
-        ><span>{{ t('ui.form.footnote') }}</span>
-      </div>
+        <label v-if="mode === 'url'" class="field-label"
+          >{{ t('ui.form.urlAria')
+          }}<input
+            v-model="address"
+            :placeholder="t('ui.form.urlPlaceholder')"
+            required
+            autocomplete="url"
+            spellcheck="false"
+            autofocus
+        /></label>
+        <div v-else class="import-selection">
+          <div class="import-actions">
+            <button type="button" class="file-picker" @click="choose('directory')">
+              <AppIcon name="folder" /><strong>{{ t('ui.form.pickFolder') }}</strong>
+            </button>
+            <button type="button" class="file-picker" @click="choose('file')">
+              <AppIcon name="window" /><strong>{{ t('ui.form.pickFile') }}</strong>
+            </button>
+            <button type="button" class="file-picker" @click="choose('package')">
+              <AppIcon name="download" /><strong>{{ t('ui.form.pickPackage') }}</strong>
+            </button>
+          </div>
+          <p v-if="choosing" class="import-progress" role="status">{{ t('ui.common.working') }}</p>
+          <div v-if="preview" class="import-summary">
+            <p><AppIcon name="check" :size="16" />{{ preview.label }}</p>
+            <AppSelect
+              v-if="preview.candidates.length > 1"
+              v-model="entry"
+              :label="t('ui.form.entry')"
+              :options="entryOptions"
+              :disabled="busy || choosing"
+            />
+          </div>
+        </div>
+        <label class="field-label"
+          >{{ t('ui.form.nameAria') }}<span class="optional">{{ t('ui.form.optional') }}</span
+          ><input
+            v-model="name"
+            maxlength="80"
+            :placeholder="t('ui.form.namePlaceholder')"
+            @input="nameAuto = false"
+        /></label>
+        <details class="advanced-options">
+          <summary>{{ t('ui.form.windowOptions') }}<AppIcon name="chevron" :size="16" /></summary>
+          <AppSelect
+            v-model="windowMode"
+            :label="t('ui.form.mode')"
+            :options="modeOptions"
+            :disabled="busy || choosing"
+          />
+          <div class="creation-options">
+            <label class="check-row"
+              ><input v-model="displayTop" type="checkbox" :disabled="windowMode === 'desktop'" />{{
+                t('ui.form.top')
+              }}</label
+            ><label class="check-row"
+              ><input
+                v-model="displayBorderless"
+                type="checkbox"
+                :disabled="windowMode === 'desktop'"
+              />{{ t('ui.form.borderless') }}</label
+            >
+          </div>
+        </details>
+      </fieldset>
     </form>
-  </section>
+    <template #footer>
+      <button type="button" class="secondary" :disabled="busy || choosing" @click="emit('close')">
+        {{ t('ui.common.cancel') }}</button
+      ><button
+        class="primary"
+        :disabled="busy || choosing || (mode === 'import' && !preview)"
+        type="submit"
+        :form="formId"
+      >
+        <AppIcon name="plus" :size="17" />{{ busy ? t('ui.form.busy') : t('ui.form.submit') }}
+      </button>
+    </template>
+  </AppDialog>
 </template>

@@ -8,12 +8,13 @@
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "check": "vue-tsc --noEmit",
     "check:i18n": "node scripts/check-i18n.mjs",
-    "format": "prettier --write src locales scripts examples tests/fixtures index.html vite.config.ts package.json tsconfig.json src-tauri/tauri.conf.json src-tauri/capabilities",
-    "format:check": "prettier --check src locales scripts examples tests/fixtures index.html vite.config.ts package.json tsconfig.json src-tauri/tauri.conf.json src-tauri/capabilities",
+    "format": "prettier --write src locales scripts examples tests index.html vite.config.ts package.json tsconfig.json src-tauri/tauri.conf.json src-tauri/capabilities",
+    "format:check": "prettier --check src locales scripts examples tests index.html vite.config.ts package.json tsconfig.json src-tauri/tauri.conf.json src-tauri/capabilities",
     "build": "pnpm check:i18n && pnpm check && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml"
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "test:ui": "node --experimental-strip-types --test tests/pin-settings-form.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
