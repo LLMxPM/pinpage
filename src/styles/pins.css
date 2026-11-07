@@ -61,7 +61,8 @@
   background: #edf2f9;
   color: #7b97be;
 }
-.source-icon.local {
+.source-icon.local,
+.source-icon.bundled {
   background: #f7f0e4;
   color: #baa06b;
 }

@@ -1,10 +1,11 @@
 // 功能：验证旧配置兼容、开关持久化及单页设置的几何约束。
 use super::*;
 
-/// 模拟首版配置，验证新增字段不会导致旧页面被重置。
+/// 模拟缺少新增字段的配置，验证旧页面不会被重置。
 fn old_pin() -> PinConfig {
     serde_json::from_value(serde_json::json!({
-        "id": "p-test", "name": "计时器", "source": {"kind": "example"},
+        "id": "p-test", "name": "计时器",
+        "source": {"kind": "bundled", "entry": "index.html"},
         "width": 420, "height": 360, "x": 10, "y": 20, "scale": 1.25,
         "alwaysOnTop": true, "decorations": true
     }))

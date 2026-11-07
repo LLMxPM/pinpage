@@ -1,11 +1,8 @@
 // 功能：定义管理界面与 Rust IPC 共用的数据契约。
-export type PageSource =
-  | { kind: 'url'; url: string }
-  | { kind: 'local'; entry: string; root: string }
-  | { kind: 'example' };
+export type PageSource = { kind: 'url'; url: string } | { kind: 'bundled'; entry: string };
 
 export type SourceInput =
-  { kind: 'url'; address: string } | { kind: 'local'; ticket: string } | { kind: 'example' };
+  { kind: 'url'; address: string } | { kind: 'import'; ticket: string; entry: string };
 
 export interface PinConfig {
   id: string;
@@ -72,8 +69,21 @@ export interface CreatePin {
   mode?: PinConfig['mode'];
 }
 
-export interface LocalChoice {
+/// 原生选择器扫描后的导入预览，用户确认入口后才真正复制文件。
+export interface ImportPreview {
   ticket: string;
-  entry: string;
-  root: string;
+  mode: 'directory' | 'file' | 'package' | 'example';
+  label: string;
+  candidates: string[];
+  files: number;
+  bytes: number;
+}
+
+/// 导出结果；withData 为 false 表示只打包了站点副本。
+export interface ExportResult {
+  path: string;
+  files: number;
+  withData: boolean;
+  /// 页面数据快照的字节数，未包含数据时为 0。
+  dataBytes: number;
 }

@@ -7,3 +7,16 @@ export function displayPath(path: string): string {
   if (path.startsWith(prefix + 'UNC' + slash)) return slash + slash + path.slice(8);
   return path.startsWith(prefix) ? path.slice(4) : path;
 }
+
+/// 把字节数转换为便于阅读的体积文字，用于导入前的体量提示。
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KiB', 'MiB', 'GiB'];
+  let value = bytes / 1024;
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) {
+    value /= 1024;
+    index += 1;
+  }
+  return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[index]}`;
+}

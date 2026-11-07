@@ -18,6 +18,7 @@ const paths: Record<string, string> = {
   check: 'm5 12 4 4L19 6',
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 8v5m0-9h.01',
   power: 'M12 2v10M6 5a9 9 0 1 0 12 0',
+  download: 'M12 3v12m0 0 4-4m-4 4-4-4M4 20h16',
 };
 </script>
 

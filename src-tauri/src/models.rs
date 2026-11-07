@@ -5,8 +5,22 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum PageSource {
-    Url { url: String },
-    Local { entry: String, root: String },
+    Url {
+        url: String,
+    },
+    /// 导入来源：入口是相对应用数据目录中站点副本的路径，原文件缺失也能加载。
+    Bundled {
+        entry: String,
+    },
+}
+
+/// 导入方式：目录与单文件来自原生选择器，页面包与内置示例由应用直接提供。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ImportMode {
+    Directory,
+    File,
+    Package,
     Example,
 }
 
@@ -78,7 +92,21 @@ pub struct Settings {
     pub restore_session: bool,
     pub manager_shortcut: String,
     pub recover_shortcut: String,
+    /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
+    #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
+}
+
+/// 逐条解析页面记录，跳过来源类型已不再支持的旧条目。
+fn lenient_pins<'de, D>(deserializer: D) -> Result<Vec<PinConfig>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let values = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(values
+        .into_iter()
+        .filter_map(|value| serde_json::from_value(value).ok())
+        .collect())
 }
 
 impl Default for Settings {
@@ -115,9 +143,26 @@ pub struct Snapshot {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SourceInput {
-    Url { address: String },
-    Local { ticket: String },
-    Example,
+    Url {
+        address: String,
+    },
+    /// 导入来源：票据由原生选择器或应用内置来源签发，入口为用户确认的相对路径。
+    Import {
+        ticket: String,
+        entry: String,
+    },
+}
+
+/// 导出完成后返回给管理界面的结果。
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportResult {
+    pub path: String,
+    pub files: u64,
+    /// 页面数据是否成功打包；超时或页面不支持时只导出站点副本。
+    pub with_data: bool,
+    /// 页面数据快照的字节数，未包含数据时为 0。
+    pub data_bytes: u64,
 }
 
 #[derive(Deserialize)]
@@ -131,12 +176,18 @@ pub struct CreatePin {
     pub mode: WindowMode,
 }
 
+/// 原生选择器完成扫描后返回的导入预览，前端确认入口后才真正复制文件。
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LocalChoice {
+pub struct ImportPreview {
     pub ticket: String,
-    pub entry: String,
-    pub root: String,
+    pub mode: ImportMode,
+    /// 展示用的来源描述，目录导入为目录名，单文件导入为文件名。
+    pub label: String,
+    /// 可选的入口相对路径；目录导入可能返回多个根级 HTML。
+    pub candidates: Vec<String>,
+    pub files: u64,
+    pub bytes: u64,
 }
 
 #[derive(Deserialize)]

@@ -87,13 +87,11 @@ fn bounds_local_resources() {
 }
 
 #[test]
-/// HTML 入口必须位于授权根目录内，来源标识在不同窗口间隔离。
-fn validates_entry_and_origins() {
-    let fixture = Fixture::new();
-    let root = fixture.0.join("root");
-    let source = local_source(&root.join("index.html"), &root).unwrap();
-    assert!(local_source(&fixture.0.join("outside.txt"), &root).is_err());
-    assert!(local_source(&root.join("index.html"), &root.join("子目录")).is_err());
+/// 导入入口生成以页面 ID 为主机的地址，兄弟窗口不能互相访问。
+fn validates_bundled_origins() {
+    let source = PageSource::Bundled {
+        entry: "index.html".into(),
+    };
     let url = source_url("p-one", &source).unwrap();
     assert_eq!(url.as_str(), "pinpage://p-one/index.html");
     assert!(navigation_allowed("p-one", &source, &url));
@@ -108,6 +106,13 @@ fn validates_entry_and_origins() {
         &source,
         &Url::parse("https://example.com").unwrap()
     ));
+    // 入口必须是纯相对路径，越界路径在生成地址前就被拒绝。
+    for entry in ["", "../outside.html", "/abs.html", "C:/x.html"] {
+        let invalid = PageSource::Bundled {
+            entry: entry.into(),
+        };
+        assert!(source_url("p-one", &invalid).is_err(), "应拒绝入口 {entry}");
+    }
 }
 
 #[cfg(windows)]

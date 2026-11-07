@@ -8,7 +8,7 @@ pub use settings::update;
 
 use crate::{
     content,
-    models::{PinConfig, PinRuntime},
+    models::{PageSource, PinConfig, PinRuntime},
     state::{self, AppState},
 };
 use std::sync::atomic::Ordering;
@@ -72,6 +72,32 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         return Ok(());
     }
     let url = content::source_url(&pin.id, &pin.source)?;
+    // 导入页内容在应用数据目录，缺失时给出比导航失败更明确的恢复提示。
+    let mut entry = None;
+    if let PageSource::Bundled { entry: relative } = &pin.source {
+        let site = crate::import::site_root(app, &pin.id)?;
+        if !site.join(relative).is_file() {
+            return Err("导入的页面内容已丢失，请删除记录后重新导入".into());
+        }
+        entry = Some(relative.clone());
+    }
+    // 存在随包数据时先加载引导页，回填完成后再跳转到真正的入口。
+    let pending = crate::import::pages_root(app)?
+        .join(&pin.id)
+        .join(crate::import::PENDING_DATA);
+    let url = match entry {
+        Some(entry) if pending.is_file() => {
+            let mut target = url::Url::parse(&format!(
+                "pinpage://{}{}",
+                pin.id,
+                crate::data::RESTORE_PAGE
+            ))
+            .map_err(|error| error.to_string())?;
+            target.query_pairs_mut().append_pair("entry", &entry);
+            target
+        }
+        _ => url,
+    };
     let navigation_id = pin.id.clone();
     let navigation_source = pin.source.clone();
     let navigation_app = app.clone();

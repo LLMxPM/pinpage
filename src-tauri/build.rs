@@ -10,7 +10,9 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "snapshot",
             "create_pin",
-            "pick_source",
+            "import_page",
+            "export_page",
+            "submit_page_data",
             "pin_action",
             "update_pin",
             "update_settings",

@@ -1,7 +1,14 @@
 // 功能：集中封装桌面 IPC，浏览器预览不伪装为已连接的原生应用。
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { CreatePin, LocalChoice, PinSettingsInput, SettingsInput, Snapshot } from '../types';
+import type {
+  CreatePin,
+  ExportResult,
+  ImportPreview,
+  PinSettingsInput,
+  SettingsInput,
+  Snapshot,
+} from '../types';
 
 export const desktopAvailable = isTauri();
 
@@ -10,9 +17,14 @@ export function getSnapshot(): Promise<Snapshot> {
   return invoke('snapshot');
 }
 
-/// 打开原生文件选择器，可选指定资源根目录。
-export function pickSource(customRoot: boolean): Promise<LocalChoice | null> {
-  return invoke('pick_source', { customRoot });
+/// 打开原生选择器导入网页；内置示例不经过选择器，直接返回预览。
+export function importPage(mode: ImportPreview['mode']): Promise<ImportPreview | null> {
+  return invoke('import_page', { mode });
+}
+
+/// 把导入页的站点副本与页面数据导出为页面包，取消保存时返回 null。
+export function exportPage(id: string): Promise<ExportResult | null> {
+  return invoke('export_page', { id });
 }
 
 /// 创建一个独立悬浮窗，本地来源使用选择器授权票据。

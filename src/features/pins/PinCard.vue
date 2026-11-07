@@ -2,17 +2,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AppIcon from '../../components/AppIcon.vue';
-import { displayPath } from '../../services/format';
 import type { PinConfig, PinRuntime } from '../../types';
 
 const props = defineProps<{ pin: PinConfig; runtime?: PinRuntime; busy: boolean }>();
-const emit = defineEmits<{ action: [id: string, operation: string]; settings: [id: string] }>();
+const emit = defineEmits<{
+  action: [id: string, operation: string];
+  settings: [id: string];
+  export: [id: string];
+}>();
 const sourceText = computed(() =>
-  props.pin.source.kind === 'url'
-    ? props.pin.source.url
-    : props.pin.source.kind === 'local'
-      ? displayPath(props.pin.source.entry)
-      : '内置示例 · 按截止时间计时',
+  props.pin.source.kind === 'url' ? props.pin.source.url : `已导入 · ${props.pin.source.entry}`,
 );
 const status = computed(() =>
   props.runtime?.error
@@ -38,16 +37,7 @@ function action(operation: string) {
   <article class="pin-card panel">
     <div class="pin-card-header">
       <div class="source-icon" :class="pin.source.kind">
-        <AppIcon
-          :name="
-            pin.source.kind === 'example'
-              ? 'clock'
-              : pin.source.kind === 'local'
-                ? 'folder'
-                : 'window'
-          "
-          :size="23"
-        />
+        <AppIcon :name="pin.source.kind === 'url' ? 'window' : 'folder'" :size="23" />
       </div>
       <span
         class="status-pill"
@@ -132,6 +122,18 @@ function action(operation: string) {
           @click="action('reload')"
         >
           <AppIcon name="refresh" :size="16" /></button
+        ><button
+          class="icon-button"
+          :disabled="busy || !runtime?.open || pin.source.kind !== 'bundled'"
+          :title="
+            pin.source.kind === 'bundled'
+              ? '导出页面包（含页面数据）'
+              : '网址页面没有可导出的站点文件'
+          "
+          aria-label="导出页面包"
+          @click="emit('export', pin.id)"
+        >
+          <AppIcon name="download" :size="16" /></button
         ><button
           class="icon-button"
           :disabled="busy || !runtime?.open"

@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "page-data",
+  "description": "仅允许导入页在导出会话中回传自身的 Web 存储快照，不授予窗口管理或文件系统权限。",
+  "webviews": ["p-*"],
+  "remote": {
+    "urls": ["http://pinpage.*"]
+  },
+  "permissions": ["allow-submit-page-data"]
+}

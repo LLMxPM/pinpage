@@ -1,7 +1,10 @@
 // 功能：维护应用状态，合并窗口变化并串行持久化配置。
-use crate::models::{PageSource, PinRuntime, Settings, Snapshot};
+use crate::{
+    import::ImportGrant,
+    models::{PinRuntime, Settings, Snapshot},
+};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -14,7 +17,12 @@ pub struct AppState {
     pub operation: Mutex<()>,
     pub settings: Mutex<Settings>,
     pub runtime: Mutex<HashMap<String, PinRuntime>>,
-    pub grants: Mutex<HashMap<String, PageSource>>,
+    /// 原生选择器签发的一次性导入授权，创建成功后不再复用。
+    pub grants: Mutex<HashMap<String, ImportGrant>>,
+    /// 正在导出的页面 ID，只有这些页面可以回传数据。
+    pub export_pending: Mutex<HashSet<String>>,
+    /// 已回传的页面数据，导出命令取走后立即清空。
+    pub export_data: Mutex<HashMap<String, String>>,
     pub notices: Mutex<Vec<String>>,
     pub exiting: AtomicBool,
     revision: AtomicU64,
@@ -53,6 +61,8 @@ impl AppState {
             settings: Mutex::new(settings),
             runtime: Mutex::new(HashMap::new()),
             grants: Mutex::new(HashMap::new()),
+            export_pending: Mutex::new(HashSet::new()),
+            export_data: Mutex::new(HashMap::new()),
             notices: Mutex::new(notices),
             exiting: AtomicBool::new(false),
             revision: AtomicU64::new(0),

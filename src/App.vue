@@ -14,6 +14,7 @@ const {
   busy,
   loading,
   error,
+  toast,
   settingsOpen,
   editingPinId,
   editingPin,
@@ -21,20 +22,12 @@ const {
   openCount,
   topCount,
   create,
+  createExample,
+  exportPin,
   action,
   saveSettings,
   quit,
 } = useWorkspace();
-
-/// 创建内嵌计时样例，用于快速体验和验证模块及 JSON 资源加载。
-function createExample() {
-  void create({
-    name: '专注计时器',
-    source: { kind: 'example' },
-    alwaysOnTop: true,
-    decorations: true,
-  });
-}
 </script>
 
 <template>
@@ -98,6 +91,12 @@ function createExample() {
             <AppIcon name="close" :size="16" />
           </button>
         </div>
+        <div v-if="toast" class="notice success-notice" role="status">
+          <AppIcon name="check" :size="18" /><span>{{ toast }}</span
+          ><button class="icon-button" aria-label="关闭提示" @click="toast = ''">
+            <AppIcon name="close" :size="16" />
+          </button>
+        </div>
         <div
           v-for="notice in snapshot.notices"
           :key="notice"
@@ -132,7 +131,7 @@ function createExample() {
               </div>
             </div>
             <h3>你的第一个悬浮页，从这里开始</h3>
-            <p>在上方添加网址或本地文件，<br />也可以先打开一个专注计时器试试。</p>
+            <p>在上方添加网址或导入网页，<br />也可以先打开一个专注计时器试试。</p>
             <button class="secondary" :disabled="busy" @click="createExample">
               <AppIcon name="clock" :size="16" />试试计时器<AppIcon name="arrow" :size="15" />
             </button>
@@ -146,9 +145,10 @@ function createExample() {
               :busy="busy"
               @action="action"
               @settings="editingPinId = $event"
+              @export="exportPin"
             /><button class="example-card" :disabled="busy" @click="createExample">
               <AppIcon name="plus" :size="23" /><strong>添加专注计时器</strong
-              ><span>一个开箱即用的小示例</span>
+              ><span>一个可导出数据的示例页</span>
             </button>
           </div>
         </section>

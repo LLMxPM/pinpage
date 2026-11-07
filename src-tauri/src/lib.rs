@@ -1,7 +1,11 @@
 // 功能：装配应用状态、本地资源协议、托盘、快捷键及会话恢复。
 mod commands;
 mod content;
+mod data;
+mod examples;
+mod import;
 mod models;
+mod package;
 mod platform;
 mod shortcuts;
 mod state;
@@ -30,7 +34,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::snapshot,
             commands::create_pin,
-            commands::pick_source,
+            commands::import_page,
+            commands::export_page,
+            commands::submit_page_data,
             commands::pin_action,
             commands::update_pin,
             commands::update_settings,

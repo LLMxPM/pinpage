@@ -1,6 +1,7 @@
 // 功能：协调管理界面的加载、原生操作、错误提示与事件订阅。
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import * as desktop from '../../services/desktop';
+import { formatBytes } from '../../services/format';
 import type { CreatePin, PinSettingsInput, SettingsInput, Snapshot } from '../../types';
 
 /// 管理快照与操作状态，避免过期异步请求覆盖最新窗口列表。
@@ -19,12 +20,24 @@ export function useWorkspace() {
   const busy = ref(false);
   const loading = ref(desktop.desktopAvailable);
   const error = ref('');
+  /// 成功类提示单独一条通道，避免和红色错误混在一起。
+  const toast = ref('');
   const settingsOpen = ref(false);
   const editingPinId = ref<string | null>(null);
   let revision = 0;
   let disposed = false;
   let unlisten: (() => void) | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  let toastTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /// 短暂展示导出结果，超时后自动收起。
+  function notify(message: string) {
+    toast.value = message;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.value = '';
+    }, 6000);
+  }
 
   /// 保留最近一次请求的结果，原生窗口事件突发时不渲染旧快照。
   async function refresh() {
@@ -69,6 +82,46 @@ export function useWorkspace() {
     return run(() => desktop.pinAction(id, operation));
   }
 
+  /// 导出导入页的站点副本与页面数据，结果通过提示条反馈。
+  async function exportPin(id: string) {
+    if (busy.value) return;
+    if (!desktop.desktopAvailable) {
+      error.value = '请通过桌面应用使用此功能：pnpm tauri dev';
+      return;
+    }
+    busy.value = true;
+    error.value = '';
+    try {
+      const result = await desktop.exportPage(id);
+      if (result) {
+        notify(
+          result.withData
+            ? `已导出 ${result.files} 个文件，页面数据 ${formatBytes(result.dataBytes)}：${result.path}`
+            : `已导出 ${result.files} 个文件，页面数据未包含在内：${result.path}`,
+        );
+      }
+    } catch (reason) {
+      error.value = String(reason);
+    } finally {
+      busy.value = false;
+      await refresh();
+    }
+  }
+
+  /// 导入内置示例并立即创建页面，示例与用户导入页走同一条路径。
+  async function createExample() {
+    return run(async () => {
+      const preview = await desktop.importPage('example');
+      if (!preview) return;
+      await desktop.createPin({
+        name: preview.label,
+        source: { kind: 'import', ticket: preview.ticket, entry: preview.candidates[0] },
+        alwaysOnTop: true,
+        decorations: true,
+      });
+    });
+  }
+
   /// 保存设置成功后关闭弹层；失败时保留用户的输入。
   function saveSettings(input: SettingsInput) {
     return run(async () => {
@@ -107,6 +160,7 @@ export function useWorkspace() {
     disposed = true;
     unlisten?.();
     clearTimeout(refreshTimer);
+    clearTimeout(toastTimer);
   });
 
   return {
@@ -114,6 +168,7 @@ export function useWorkspace() {
     busy,
     loading,
     error,
+    toast,
     settingsOpen,
     editingPinId,
     editingPin: computed(() =>
@@ -121,6 +176,8 @@ export function useWorkspace() {
     ),
     savePin,
     create,
+    createExample,
+    exportPin,
     action,
     saveSettings,
     quit: () => run(desktop.quitApp),

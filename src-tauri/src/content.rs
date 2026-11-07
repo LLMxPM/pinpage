@@ -35,25 +35,6 @@ pub fn normalize_url(input: &str) -> Result<String, String> {
     Ok(url.to_string())
 }
 
-/// 验证 HTML 入口和选定根目录，保存规范化的绝对路径。
-pub fn local_source(entry: &Path, root: &Path) -> Result<PageSource, String> {
-    let entry = entry
-        .canonicalize()
-        .map_err(|_| "HTML 文件不存在或无法读取")?;
-    let root = root.canonicalize().map_err(|_| "资源根目录不存在")?;
-    let extension = entry.extension().and_then(|v| v.to_str()).unwrap_or("");
-    if !entry.is_file() || !matches!(extension.to_lowercase().as_str(), "html" | "htm") {
-        return Err("请选择 HTML 或 HTM 文件".into());
-    }
-    if !root.is_dir() || !entry.starts_with(&root) {
-        return Err("HTML 入口必须位于资源根目录内".into());
-    }
-    Ok(PageSource::Local {
-        entry: entry.to_string_lossy().into(),
-        root: root.to_string_lossy().into(),
-    })
-}
-
 /// 从编码路径解析资源，拒绝目录穿越、盘符、ADS 和越界链接。
 pub fn resolve_path(root: &Path, encoded: &str) -> Result<PathBuf, String> {
     let decoded = percent_decode_str(encoded)
@@ -80,28 +61,28 @@ pub fn resolve_path(root: &Path, encoded: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// 为每个窗口生成独立主机名，本地页面使用独立来源与持久化存储。
+/// 为每个窗口生成独立主机名，导入页面使用独立来源与持久化存储。
 pub fn source_url(id: &str, source: &PageSource) -> Result<Url, String> {
     match source {
         PageSource::Url { url } => Url::parse(&normalize_url(url)?).map_err(|e| e.to_string()),
-        PageSource::Example => {
-            Url::parse(&format!("pinpage://{id}/index.html")).map_err(|e| e.to_string())
-        }
-        PageSource::Local { entry, root } => {
-            let source = local_source(Path::new(entry), Path::new(root))?;
-            let PageSource::Local { entry, root } = source else {
-                unreachable!()
-            };
-            let relative = Path::new(&entry)
-                .strip_prefix(&root)
-                .map_err(|_| "入口越界")?;
-            let mut url = Url::parse(&format!("pinpage://{id}/")).map_err(|e| e.to_string())?;
-            url.path_segments_mut()
-                .map_err(|_| "无法构建本地地址")?
-                .extend(relative.iter().map(|v| v.to_string_lossy()));
-            Ok(url)
-        }
+        PageSource::Bundled { entry } => entry_url(id, Path::new(entry)),
     }
+}
+
+/// 把入口相对路径拼成以窗口 ID 为主机的本地地址，中文与空格由 URL 层编码。
+fn entry_url(id: &str, relative: &Path) -> Result<Url, String> {
+    if relative.as_os_str().is_empty()
+        || relative
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_) | Component::CurDir))
+    {
+        return Err("入口路径不合法".into());
+    }
+    let mut url = Url::parse(&format!("pinpage://{id}/")).map_err(|e| e.to_string())?;
+    url.path_segments_mut()
+        .map_err(|_| "无法构建本地地址")?
+        .extend(relative.iter().map(|value| value.to_string_lossy()));
+    Ok(url)
 }
 
 /// 只允许外部网络来源，或当前窗口所属的本地协议主机。
@@ -111,7 +92,7 @@ pub fn navigation_allowed(id: &str, source: &PageSource, url: &Url) -> bool {
             matches!(url.scheme(), "http" | "https")
                 && !url.host_str().unwrap_or("").starts_with("pinpage.")
         }
-        _ => {
+        PageSource::Bundled { .. } => {
             (url.scheme() == "pinpage" && url.host_str() == Some(id))
                 || (url.scheme() == "http"
                     && url.host_str() == Some(format!("pinpage.{id}").as_str()))
@@ -136,21 +117,23 @@ pub fn respond(app: &AppHandle, label: &str, request: Request<Vec<u8>>) -> Respo
             .find(|pin| pin.id == label)
             .cloned()
             .ok_or("窗口未授权")?;
-        if matches!(pin.source, PageSource::Url { .. }) || url.host_str() != Some(label) {
+        if !matches!(pin.source, PageSource::Bundled { .. }) || url.host_str() != Some(label) {
             return Err("资源来源未授权".into());
         }
-        match &pin.source {
-            PageSource::Example => example_resource(url.path()),
-            PageSource::Local { root, .. } => {
-                let path = resolve_path(Path::new(root), url.path())?;
-                let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-                let mime = mime_guess::from_path(&path)
-                    .first_or_octet_stream()
-                    .to_string();
-                Ok((mime, bytes))
+        // 引导页与随包数据由应用直接生成，不属于站点副本内的文件。
+        match url.path() {
+            crate::data::RESTORE_PAGE => {
+                return Ok((
+                    "text/html; charset=utf-8".into(),
+                    crate::data::restore_page().as_bytes().to_vec(),
+                ))
             }
-            _ => Err("资源来源未授权".into()),
+            crate::data::RESTORE_DATA => return crate::data::take_pending(app, label),
+            _ => {}
         }
+        // 导入页只读取站点副本，原始目录已不再参与加载。
+        let root = crate::import::site_root(app, label)?;
+        read_static(&root, url.path())
     })();
     match result {
         Ok((mime, bytes)) => Response::builder()
@@ -172,25 +155,14 @@ pub fn respond(app: &AppHandle, label: &str, request: Request<Vec<u8>>) -> Respo
     }
 }
 
-/// 内嵌计时样例不依赖安装目录，按静态资源提供真实模块与 JSON 请求。
-fn example_resource(path: &str) -> Result<(String, Vec<u8>), String> {
-    let (mime, bytes): (&str, &[u8]) = match path {
-        "/index.html" | "/" => (
-            "text/html; charset=utf-8",
-            include_bytes!("../../examples/timer/index.html"),
-        ),
-        "/style.css" => ("text/css", include_bytes!("../../examples/timer/style.css")),
-        "/timer.js" => (
-            "text/javascript",
-            include_bytes!("../../examples/timer/timer.js"),
-        ),
-        "/presets.json" => (
-            "application/json",
-            include_bytes!("../../examples/timer/presets.json"),
-        ),
-        _ => return Err("示例资源不存在".into()),
-    };
-    Ok((mime.into(), bytes.to_vec()))
+/// 在已授权的站点根目录内读取静态资源，路径校验与 MIME 判定只保留一处实现。
+fn read_static(root: &Path, request_path: &str) -> Result<(String, Vec<u8>), String> {
+    let path = resolve_path(root, request_path)?;
+    let bytes = std::fs::read(&path).map_err(|error| error.to_string())?;
+    let mime = mime_guess::from_path(&path)
+        .first_or_octet_stream()
+        .to_string();
+    Ok((mime, bytes))
 }
 
 #[cfg(test)]

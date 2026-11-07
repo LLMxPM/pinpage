@@ -1,6 +1,6 @@
 // 功能：管理页面的开启、关闭、删除与常见原生窗口操作。
 use crate::{
-    models::WindowMode,
+    models::{PageSource, WindowMode},
     state::{self, AppState},
 };
 use tauri::{AppHandle, Manager};
@@ -56,6 +56,12 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
                     .pins
                     .retain(|pin| pin.id != id);
                 state.runtime.lock().unwrap().remove(id);
+                // 删除记录时一并清理导入的站点副本；外部引用来源没有副本可删。
+                if matches!(&previous.source, PageSource::Bundled { .. }) {
+                    if let Err(error) = crate::import::remove_page(app, id) {
+                        state::report(app, error);
+                    }
+                }
             } else if let Some(runtime) = state.runtime.lock().unwrap().get_mut(id) {
                 runtime.open = false;
                 runtime.visible = false;
