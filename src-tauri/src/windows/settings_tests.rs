@@ -1,5 +1,6 @@
 // 功能：验证旧配置兼容、开关持久化及单页设置的几何约束。
 use super::*;
+use crate::models::SourceInput;
 
 /// 模拟缺少新增字段的配置，验证旧页面不会被重置。
 fn old_pin() -> PinConfig {
@@ -41,7 +42,7 @@ fn old_settings_and_closed_state_survive() {
 fn updates_preserve_identity_and_independent_locks() {
     let mut previous = old_pin();
     previous.enabled = false;
-    let next = merge(&previous, input()).unwrap();
+    let next = merge(&previous, &input()).unwrap();
     assert_eq!(next.id, previous.id);
     assert!(!next.enabled);
     assert_eq!(next.name, "桌面时钟");
@@ -51,7 +52,7 @@ fn updates_preserve_identity_and_independent_locks() {
     let mut changed = input();
     changed.position_locked = false;
     changed.size_locked = true;
-    let next = merge(&previous, changed).unwrap();
+    let next = merge(&previous, &changed).unwrap();
     assert!(!next.position_locked && next.size_locked);
 }
 
@@ -61,12 +62,33 @@ fn rejects_invalid_geometry() {
     for width in [f64::NAN, f64::INFINITY, 0., 159., 3841.] {
         let mut value = input();
         value.width = width;
-        assert!(merge(&old_pin(), value).is_err());
+        assert!(merge(&old_pin(), &value).is_err());
     }
     let mut value = input();
     value.height = 99.;
-    assert!(merge(&old_pin(), value).is_err());
+    assert!(merge(&old_pin(), &value).is_err());
     let mut value = input();
     value.name = "  ".into();
-    assert!(merge(&old_pin(), value).is_err());
+    assert!(merge(&old_pin(), &value).is_err());
+}
+
+#[test]
+/// 来源缺失字段按“沿用原来源”解析，外观提交不会改写已有来源。
+fn missing_source_field_keeps_existing_source() {
+    let value = input();
+    assert!(value.source.is_none());
+    let next = merge(&old_pin(), &value).unwrap();
+    assert_eq!(next.source, old_pin().source);
+}
+
+#[test]
+/// 来源兑换属于更新流程，合并阶段只校验外观，不会把输入里的来源写入配置。
+fn merge_never_applies_the_submitted_source() {
+    let mut value = input();
+    value.source = Some(SourceInput::Url {
+        address: "example.com".into(),
+    });
+    let next = merge(&old_pin(), &value).unwrap();
+    assert_eq!(next.source, old_pin().source);
+    assert_eq!(next.name, "桌面时钟");
 }

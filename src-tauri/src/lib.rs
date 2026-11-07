@@ -10,6 +10,7 @@ mod models;
 mod package;
 mod platform;
 mod shortcuts;
+mod source;
 mod state;
 mod tray;
 mod windows;

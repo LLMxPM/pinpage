@@ -34,6 +34,32 @@
   font-size: 13px;
   font-weight: 600;
 }
+/* 来源区块：当前来源、修改提示与改动标记共用一套轻量文字层级。 */
+.source-current {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+  word-break: break-all;
+}
+.source-hint,
+.source-dirty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.source-dirty {
+  color: #b34d32;
+}
+.form-section .import-selection {
+  margin-top: 4px;
+}
 .pin-setting-checks {
   display: flex;
   gap: 12px 20px;

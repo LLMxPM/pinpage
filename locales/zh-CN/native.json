@@ -89,6 +89,8 @@
     "grantExpired": "导入授权已失效，请重新选择",
     "entryMismatch": "入口与所选文件不一致，请重新选择",
     "entryMismatchSource": "入口与导入来源不一致，请重新选择",
+    "sourceReplaceFailed": "无法替换导入副本，页面可能正在占用其中的文件；请先关闭页面再重试",
+    "swapSourceMissing": "新的导入副本尚未准备就绪，已取消替换",
     "pageDataInvalid": "页面数据格式无效",
     "writePageDataFailed": "写入页面数据失败",
     "dataIdentity": "页面身份不匹配",

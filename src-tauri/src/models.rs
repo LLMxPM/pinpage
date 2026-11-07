@@ -25,7 +25,7 @@ pub enum AppLocale {
     EnUs,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum PageSource {
     Url {
@@ -106,6 +106,9 @@ pub struct PinSettingsInput {
     pub height: f64,
     pub x: i32,
     pub y: i32,
+    /// 缺省表示沿用现有来源；只有用户明确改动地址或重新导入时才提交。
+    #[serde(default)]
+    pub source: Option<SourceInput>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -179,7 +182,7 @@ pub struct Snapshot {
     pub resolved_locale: AppLocale,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SourceInput {
     Url {

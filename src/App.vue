@@ -257,6 +257,7 @@ function openSettings() {
       :busy="busy"
       :error="error"
       @close="editingPinId = null"
+      @error="error = $event"
       @save="savePin"
     />
     <AppDialog

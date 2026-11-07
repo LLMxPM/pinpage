@@ -7,7 +7,7 @@ use crate::{
 use tauri::{AppHandle, Manager};
 
 /// 校验几何输入与名称，复制旧配置以兼容已有来源和开启状态。
-pub fn merge(pin: &PinConfig, input: PinSettingsInput) -> Result<PinConfig, AppMessage> {
+pub fn merge(pin: &PinConfig, input: &PinSettingsInput) -> Result<PinConfig, AppMessage> {
     if !input.width.is_finite()
         || !input.height.is_finite()
         || !(160. ..=3840.).contains(&input.width)
@@ -83,6 +83,9 @@ pub(super) fn apply(
 }
 
 /// 串行处理管理界面的设置提交，防止并发开关与原生样式切换相互覆盖。
+///
+/// 提交里带来源时先校验外观，再兑换来源，最后才落盘并让已打开的窗口指向新地址；
+/// 任一步失败都不会写入半套配置，兑换失败时页面继续沿用原来源。
 pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), AppMessage> {
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
@@ -95,8 +98,28 @@ pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), 
         .find(|pin| pin.id == id)
         .cloned()
         .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
-    let next = merge(&previous, input)?;
-    apply(app, &previous, next)
+    let mut next = merge(&previous, &input)?;
+    let refreshed = match &input.source {
+        Some(value) => {
+            next.source = crate::source::prepare(app, id, value)?;
+            true
+        }
+        None => false,
+    };
+    // 先算出新来源的首屏地址：导入内容缺失等问题应在落盘前暴露，且关闭的窗口无需导航。
+    let target = if refreshed && app.get_webview_window(id).is_some() {
+        Some(super::initial_url(app, &next)?)
+    } else {
+        None
+    };
+    apply(app, &previous, next.clone())?;
+    if let Some(url) = target {
+        if let Err(error) = super::navigate(app, id, url) {
+            // 配置已保存，导航失败通常是窗口刚被关闭；重新开启即可加载新来源。
+            state::report(app, error);
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

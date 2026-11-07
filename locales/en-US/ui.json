@@ -105,7 +105,12 @@
     "lockSize": "Lock size",
     "busy": "Applying…",
     "save": "Save and apply",
-    "geometry": "Size and position"
+    "geometry": "Size and position",
+    "source": "Source",
+    "sourceUrl": "Web address",
+    "sourceUrlHint": "Saving a new address reloads the page.",
+    "sourceImportHint": "Picking new files replaces the imported copy and reloads the page.",
+    "sourceDirty": "Source changed — it applies when you save."
   },
   "settings": {
     "title": "Workspace settings",

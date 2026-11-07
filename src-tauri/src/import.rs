@@ -10,6 +10,10 @@ const MAX_BYTES: u64 = 256 * 1024 * 1024;
 
 /// 随包页面数据的暂存文件名，窗口首次创建时读取并立即删除。
 pub const PENDING_DATA: &str = "pending-data.json";
+/// 新来源的暂存目录名，完整落盘后才与站点副本交换。
+const INCOMING_DIR: &str = "incoming";
+/// 被让位的旧站点副本目录名，交换成功后立即删除，中断时下次重新导入前清理。
+const STALE_DIR: &str = "stale";
 
 /// 原生选择器签发的导入暂存，校验通过后才会真正复制文件。
 #[derive(Clone, Debug)]
@@ -40,10 +44,57 @@ fn validate_id(id: &str) -> Result<(), AppMessage> {
     }
 }
 
+/// 页面在导入根目录下的私有目录，站点副本与暂存目录都在其中。
+fn page_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
+    validate_id(id)?;
+    Ok(pages_root(app)?.join(id))
+}
+
 /// 页面的站点副本根目录；资源协议与删除操作都以它为唯一边界。
 pub fn site_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
-    validate_id(id)?;
-    Ok(pages_root(app)?.join(id).join("site"))
+    Ok(page_root(app, id)?.join("site"))
+}
+
+/// 新来源的暂存目录：先完整落盘，再通过 `swap_site` 转正，避免替换中途失败留下空站点。
+pub fn incoming_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
+    Ok(page_root(app, id)?.join(INCOMING_DIR))
+}
+
+/// 用暂存目录替换站点副本。
+///
+/// 旧副本先改名让位再被新副本顶替：改名失败说明文件仍被占用，此时原副本完好无损；
+/// 新副本改名失败则把旧副本还原，任何一条路径都不会让页面指向空目录。
+pub fn swap_site(app: &AppHandle, id: &str) -> Result<(), AppMessage> {
+    let root = page_root(app, id)?;
+    let (site, incoming, stale) = (
+        root.join("site"),
+        root.join(INCOMING_DIR),
+        root.join(STALE_DIR),
+    );
+    if !incoming.is_dir() {
+        return Err(AppMessage::new("errors.swapSourceMissing"));
+    }
+    if stale.exists() {
+        // 上次交换中断留下的旧副本，先清掉才腾得出目录名。
+        std::fs::remove_dir_all(&stale)
+            .map_err(|error| AppMessage::new("errors.cleanupFailed").detail(error))?;
+    }
+    if site.exists() {
+        std::fs::rename(&site, &stale).map_err(|error| {
+            AppMessage::new("errors.sourceReplaceFailed")
+                .detail(format!("{}：{error}", site.display()))
+        })?;
+    }
+    if let Err(error) = std::fs::rename(&incoming, &site) {
+        let _ = std::fs::rename(&stale, &site);
+        return Err(AppMessage::new("errors.sourceReplaceFailed")
+            .detail(format!("{}：{error}", incoming.display())));
+    }
+    // 旧副本只影响磁盘占用，删除失败不改写本次替换结果，下次重新导入前会再清理。
+    if let Err(error) = std::fs::remove_dir_all(&stale) {
+        eprintln!("清理旧站点副本失败：{}：{error}", stale.display());
+    }
+    Ok(())
 }
 
 /// 列出根目录下的 HTML 入口候选，不递归子目录，避免误选深层页面。

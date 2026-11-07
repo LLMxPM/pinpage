@@ -5,8 +5,8 @@ import { useI18n } from 'vue-i18n';
 import AppDialog from '../../components/AppDialog.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import AppIcon from '../../components/AppIcon.vue';
-import { message, text, toUiMessage } from '../../i18n/messages';
-import { desktopAvailable, importPage } from '../../services/desktop';
+import { text } from '../../i18n/messages';
+import { useImportSource } from './useImportSource';
 import type { CreatePin, ImportPreview, UiMessage } from '../../types';
 
 const props = defineProps<{
@@ -20,22 +20,21 @@ const formId = useId();
 const mode = ref(props.initialMode);
 const address = ref('');
 const name = ref('');
-const preview = ref<ImportPreview | null>(null);
-const entry = ref('');
-const choosing = ref(false);
 const nameAuto = ref(true);
 const top = ref(true);
 const borderless = ref(false);
 const windowMode = ref<'floating' | 'desktop'>('floating');
+// 选择器的预览、入口候选与错误收敛由共用组合式函数负责，本组件只管名称与窗口偏好。
+const { preview, entry, choosing, entryOptions, choose } = useImportSource({
+  onError: (reason) => emit('error', reason),
+  onPicked: adoptName,
+});
 const modeOptions = computed(
   () =>
     [
       { value: 'floating', label: t('ui.form.modeFloating') },
       { value: 'desktop', label: t('ui.form.modeDesktop') },
     ] as const,
-);
-const entryOptions = computed(
-  () => preview.value?.candidates.map((value) => ({ value, label: value })) ?? [],
 );
 const displayTop = computed({
   get: () => windowMode.value === 'floating' && top.value,
@@ -50,30 +49,12 @@ const displayBorderless = computed({
   },
 });
 
-/// 原生选择器取消时保留上次结果，用户主动命名后不再覆盖名称。
-async function choose(importMode: 'directory' | 'file' | 'package') {
-  if (!desktopAvailable) {
-    emit('error', message('ui.form.needDesktop'));
-    return;
-  }
-  choosing.value = true;
-  try {
-    const selected = await importPage(importMode);
-    if (!selected) return;
-    preview.value = selected;
-    entry.value = selected.candidates[0] ?? '';
-    if (nameAuto.value || !name.value) {
-      name.value =
-        selected.mode === 'directory'
-          ? selected.label
-          : selected.label.replace(/\.(html|htm)$/i, '');
-      nameAuto.value = true;
-    }
-  } catch (reason) {
-    emit('error', toUiMessage(reason));
-  } finally {
-    choosing.value = false;
-  }
+/// 来源确定后按来源推导名称；用户已手动命名时保留其输入。
+function adoptName(selected: ImportPreview) {
+  if (!nameAuto.value && name.value) return;
+  name.value =
+    selected.mode === 'directory' ? selected.label : selected.label.replace(/\.(html|htm)$/i, '');
+  nameAuto.value = true;
 }
 
 /// 仅提交来源票据和外观偏好，路径、网址与窗口权限由原生层最终校验。

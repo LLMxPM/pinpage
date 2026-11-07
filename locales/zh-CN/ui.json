@@ -105,7 +105,12 @@
     "lockSize": "锁定大小",
     "busy": "正在应用…",
     "save": "保存并应用",
-    "geometry": "尺寸与位置"
+    "geometry": "尺寸与位置",
+    "source": "来源",
+    "sourceUrl": "网页地址",
+    "sourceUrlHint": "修改地址后保存会重新加载页面",
+    "sourceImportHint": "重新选择后会用新文件替换已导入的副本，并重新加载页面",
+    "sourceDirty": "来源已改动，保存后生效"
   },
   "settings": {
     "title": "工作台设置",

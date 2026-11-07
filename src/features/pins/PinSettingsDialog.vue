@@ -1,17 +1,35 @@
-<!-- 功能：使用统一弹窗编辑页面显示模式、窗口几何和独立锁定，失败时保留输入。 -->
+<!-- 功能：编辑页面来源、显示模式、窗口几何与独立锁定，失败时保留输入。 -->
 <script setup lang="ts">
-import { computed, useId } from 'vue';
+import { computed, reactive, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from '../../components/AppDialog.vue';
+import AppSelect from '../../components/AppSelect.vue';
+import AppIcon from '../../components/AppIcon.vue';
 import { text } from '../../i18n/messages';
 import { usePinSettingsForm } from './usePinSettingsForm';
+import { usePinSourceDraft } from './usePinSourceDraft';
 import type { PinConfig, PinSettingsInput, UiMessage } from '../../types';
 
 const props = defineProps<{ pin: PinConfig; busy: boolean; error: UiMessage | null }>();
-const emit = defineEmits<{ close: []; save: [input: PinSettingsInput] }>();
+const emit = defineEmits<{
+  close: [];
+  save: [input: PinSettingsInput];
+  error: [message: UiMessage];
+}>();
 const { t } = useI18n();
 const formId = useId();
 const input = usePinSettingsForm(() => props.pin);
+// 包成响应式对象后，模板可以直接读写草稿里的各个响应式字段，无需逐个 .value。
+const draft = reactive(
+  usePinSourceDraft(() => props.pin, { onError: (reason) => emit('error', reason) }),
+);
+const isUrlSource = computed(() => props.pin.source.kind === 'url');
+/// 当前来源的展示文本单独取值，避免模板里再做联合类型收窄。
+const currentUrl = computed(() => (props.pin.source.kind === 'url' ? props.pin.source.url : ''));
+const currentEntry = computed(() =>
+  props.pin.source.kind === 'bundled' ? props.pin.source.entry : '',
+);
+const working = computed(() => props.busy || draft.choosing);
 const borderless = computed(() => input.mode === 'desktop' || !input.decorations);
 const showBorder = computed({
   get: () => input.mode === 'floating' && input.decorations,
@@ -26,9 +44,10 @@ const showOnTop = computed({
   },
 });
 
-/// 提交完整字段，原生层再次校验范围并执行带回滚的窗口设置。
+/// 提交完整字段；来源未改动时不带 source，后端因此不会重新加载页面或复制副本。
 function save() {
-  emit('save', { ...input });
+  const changed = draft.input;
+  emit('save', changed ? { ...input, source: changed } : { ...input });
 }
 </script>
 
@@ -36,17 +55,68 @@ function save() {
   <AppDialog
     :title="t('ui.pinSettings.title')"
     :description="pin.name"
-    :busy="busy"
+    :busy="working"
     wide
     @close="emit('close')"
   >
     <form :id="formId" @submit.prevent="save">
       <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
-      <fieldset class="form-fields" :disabled="busy">
+      <fieldset class="form-fields" :disabled="working">
         <label class="field-label"
           >{{ t('ui.pinSettings.name')
           }}<input v-model="input.name" required maxlength="80" autofocus
         /></label>
+        <div class="form-section">
+          <h3>{{ t('ui.pinSettings.source') }}</h3>
+          <label v-if="isUrlSource" class="field-label"
+            >{{ t('ui.pinSettings.sourceUrl')
+            }}<input
+              v-model="draft.address"
+              :placeholder="t('ui.form.urlPlaceholder')"
+              :title="currentUrl"
+              autocomplete="url"
+              spellcheck="false"
+          /></label>
+          <div v-else class="import-selection">
+            <p class="source-current">
+              <AppIcon name="window" :size="16" />{{
+                t('ui.card.importedSource', { entry: currentEntry })
+              }}
+            </p>
+            <div class="import-actions">
+              <button type="button" class="file-picker" @click="draft.choose('directory')">
+                <AppIcon name="folder" /><strong>{{ t('ui.form.pickFolder') }}</strong>
+              </button>
+              <button type="button" class="file-picker" @click="draft.choose('file')">
+                <AppIcon name="window" /><strong>{{ t('ui.form.pickFile') }}</strong>
+              </button>
+              <button type="button" class="file-picker" @click="draft.choose('package')">
+                <AppIcon name="download" /><strong>{{ t('ui.form.pickPackage') }}</strong>
+              </button>
+            </div>
+            <p v-if="draft.choosing" class="import-progress" role="status">
+              {{ t('ui.common.working') }}
+            </p>
+            <div v-if="draft.preview" class="import-summary">
+              <p><AppIcon name="check" :size="16" />{{ draft.preview.label }}</p>
+              <AppSelect
+                v-if="draft.preview.candidates.length > 1"
+                v-model="draft.entry"
+                :label="t('ui.form.entry')"
+                :options="draft.entryOptions"
+                :disabled="working"
+              />
+            </div>
+          </div>
+          <p class="source-hint">
+            {{
+              t(isUrlSource ? 'ui.pinSettings.sourceUrlHint' : 'ui.pinSettings.sourceImportHint')
+            }}
+          </p>
+          <p v-if="draft.dirty" class="source-dirty">
+            <AppIcon name="refresh" :size="15" />{{ t('ui.pinSettings.sourceDirty') }}
+          </p>
+        </div>
         <fieldset class="mode-picker">
           <legend>{{ t('ui.pinSettings.modeLegend') }}</legend>
           <label :class="{ active: input.mode === 'floating' }"
@@ -113,10 +183,10 @@ function save() {
       </fieldset>
     </form>
     <template #footer>
-      <button type="button" class="secondary" :disabled="busy" @click="emit('close')">
+      <button type="button" class="secondary" :disabled="working" @click="emit('close')">
         {{ t('ui.common.cancel') }}</button
-      ><button class="primary" :disabled="busy" type="submit" :form="formId">
-        {{ busy ? t('ui.pinSettings.busy') : t('ui.pinSettings.save') }}
+      ><button class="primary" :disabled="working" type="submit" :form="formId">
+        {{ working ? t('ui.pinSettings.busy') : t('ui.pinSettings.save') }}
       </button>
     </template>
   </AppDialog>

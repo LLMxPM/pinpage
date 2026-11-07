@@ -3,11 +3,9 @@ pub mod session;
 pub mod settings;
 
 use crate::{
-    content,
     errors::AppMessage,
-    examples, i18n, import,
-    models::{CreatePin, PageSource, PinConfig, Snapshot, SourceInput},
-    package,
+    i18n,
+    models::{CreatePin, PageSource, PinConfig, Snapshot},
     state::{self, AppState},
     tray, windows,
 };
@@ -31,75 +29,7 @@ pub async fn create_pin(
     let state = app.state::<AppState>();
     // 站点副本以页面 ID 命名，先分配 ID 再复制，避免复制完成后还要改名。
     let id = format!("p-{}", uuid::Uuid::new_v4().simple());
-    let source = match input.source {
-        SourceInput::Url { address } => PageSource::Url {
-            url: content::normalize_url(&address)?,
-        },
-        SourceInput::Import { ticket, entry } => {
-            let grant = state
-                .grants
-                .lock()
-                .unwrap()
-                .get(&ticket)
-                .cloned()
-                .ok_or_else(|| AppMessage::new("errors.grantExpired"))?;
-            match grant.mode {
-                crate::models::ImportMode::Directory => {
-                    import::verify_entry(&grant.path, &entry, &grant.candidates)?
-                }
-                crate::models::ImportMode::File => {
-                    let selected = grant.path.file_name().and_then(|value| value.to_str());
-                    if selected != Some(entry.as_str()) || !grant.path.is_file() {
-                        return Err(AppMessage::new("errors.entryMismatch"));
-                    }
-                }
-                crate::models::ImportMode::Package | crate::models::ImportMode::Example => {
-                    if !grant.candidates.iter().any(|candidate| candidate == &entry) {
-                        return Err(AppMessage::new("errors.entryMismatchSource"));
-                    }
-                }
-            }
-            let site = import::pages_root(&app)?.join(&id).join("site");
-            let prepared = match grant.mode {
-                crate::models::ImportMode::Directory => {
-                    import::copy_site(&grant.path, &site).map(|_| (entry.clone(), None))
-                }
-                crate::models::ImportMode::File => {
-                    import::copy_entry(&grant.path, &site).map(|entry| (entry, None))
-                }
-                crate::models::ImportMode::Package => package::extract(&grant.path, &site)
-                    .map(|extracted| (extracted.entry, extracted.storage)),
-                crate::models::ImportMode::Example => {
-                    examples::write_site(&site, grant.example).map(|entry| (entry, None))
-                }
-            };
-            match prepared {
-                Ok((entry, storage)) => {
-                    // 随包数据只用于首次打开：包装入口后交给引导页，读取即删除。
-                    if let Some(storage) = storage {
-                        let payload: serde_json::Value =
-                            serde_json::from_str(&storage).map_err(|error| {
-                                AppMessage::new("errors.pageDataInvalid").detail(error)
-                            })?;
-                        let document = serde_json::json!({ "entry": &entry, "payload": payload });
-                        let pending = import::pages_root(&app)?
-                            .join(&id)
-                            .join(import::PENDING_DATA);
-                        if let Err(error) = std::fs::write(&pending, document.to_string()) {
-                            let _ = import::remove_page(&app, &id);
-                            return Err(AppMessage::new("errors.writePageDataFailed").detail(error));
-                        }
-                    }
-                    PageSource::Bundled { entry }
-                }
-                Err(error) => {
-                    // 复制或解包中途失败时清理半成品，避免留下无法识别的目录。
-                    let _ = import::remove_page(&app, &id);
-                    return Err(error);
-                }
-            }
-        }
-    };
+    let source = crate::source::prepare(&app, &id, &input.source)?;
     let name = match &source {
         PageSource::Url { url } => user_name(&input.name, || {
             url::Url::parse(url)

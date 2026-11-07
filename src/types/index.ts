@@ -47,6 +47,8 @@ export interface PinSettingsInput {
   height: number;
   x: number;
   y: number;
+  /// 省略表示沿用现有来源；只有用户改动地址或重新导入时才提交。
+  source?: SourceInput;
 }
 
 export interface PinRuntime {

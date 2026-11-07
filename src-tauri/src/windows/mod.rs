@@ -96,6 +96,62 @@ pub fn show_manager(app: &AppHandle) {
     });
 }
 
+/// 按当前配置校验导航目标；来源可以随时被修改，因此不能沿用建窗时的快照。
+/// 页面记录已不存在时一律拒绝，宁可不加载也不给已删除的窗口留白名单。
+fn navigation_allowed_now(app: &AppHandle, id: &str, url: &url::Url) -> bool {
+    app.state::<AppState>()
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .find(|pin| pin.id == id)
+        .is_some_and(|pin| content::navigation_allowed(id, &pin.source, url))
+}
+
+/// 计算内容窗口的首屏地址，导入页与随包数据的规则在此只保留一处实现。
+/// 更新来源后重新调用，可复用同一入口而不必销毁重建窗口。
+pub fn initial_url(app: &AppHandle, pin: &PinConfig) -> Result<url::Url, AppMessage> {
+    let url = content::source_url(&pin.id, &pin.source)?;
+    let PageSource::Bundled { entry } = &pin.source else {
+        return Ok(url);
+    };
+    // 导入页内容在应用数据目录，缺失时给出比导航失败更明确的恢复提示。
+    if !crate::import::site_root(app, &pin.id)?
+        .join(entry)
+        .is_file()
+    {
+        return Err(AppMessage::new("errors.importContentLost"));
+    }
+    // 存在随包数据时先加载引导页，回填完成后再跳转到真正的入口。
+    let pending = crate::import::pages_root(app)?
+        .join(&pin.id)
+        .join(crate::import::PENDING_DATA);
+    if !pending.is_file() {
+        return Ok(url);
+    }
+    let mut target = url::Url::parse(&format!(
+        "pinpage://{}{}",
+        pin.id,
+        crate::data::RESTORE_PAGE
+    ))
+    .map_err(|error| AppMessage::new("errors.localUrlInvalid").detail(error))?;
+    target.query_pairs_mut().append_pair("entry", entry);
+    Ok(target)
+}
+
+/// 把已打开窗口指向新的首屏地址，避免销毁重建带来的窗口抖动与几何丢失。
+pub fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<(), AppMessage> {
+    let window = app
+        .get_webview_window(id)
+        .ok_or_else(|| AppMessage::new("errors.pageClosed"))?;
+    window
+        .navigate(url)
+        .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
+    events::watch_load(app, id);
+    Ok(())
+}
+
 /// 创建一个内容 WebView，来源校验与资源授权在窗口创建前完成。
 pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     if let Some(window) = app.get_webview_window(&pin.id) {
@@ -109,35 +165,8 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         }
         return Ok(());
     }
-    let url = content::source_url(&pin.id, &pin.source)?;
-    // 导入页内容在应用数据目录，缺失时给出比导航失败更明确的恢复提示。
-    let mut entry = None;
-    if let PageSource::Bundled { entry: relative } = &pin.source {
-        let site = crate::import::site_root(app, &pin.id)?;
-        if !site.join(relative).is_file() {
-            return Err(AppMessage::new("errors.importContentLost"));
-        }
-        entry = Some(relative.clone());
-    }
-    // 存在随包数据时先加载引导页，回填完成后再跳转到真正的入口。
-    let pending = crate::import::pages_root(app)?
-        .join(&pin.id)
-        .join(crate::import::PENDING_DATA);
-    let url = match entry {
-        Some(entry) if pending.is_file() => {
-            let mut target = url::Url::parse(&format!(
-                "pinpage://{}{}",
-                pin.id,
-                crate::data::RESTORE_PAGE
-            ))
-            .map_err(|error| AppMessage::new("errors.localUrlInvalid").detail(error))?;
-            target.query_pairs_mut().append_pair("entry", &entry);
-            target
-        }
-        _ => url,
-    };
+    let url = initial_url(app, pin)?;
     let navigation_id = pin.id.clone();
-    let navigation_source = pin.source.clone();
     let navigation_app = app.clone();
     let popup_app = app.clone();
     let state = app.state::<AppState>();
@@ -163,7 +192,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         .shadow(pin.effective_decorations())
         .disable_drag_drop_handler()
         .on_navigation(move |url| {
-            let allowed = content::navigation_allowed(&navigation_id, &navigation_source, url);
+            let allowed = navigation_allowed_now(&navigation_app, &navigation_id, url);
             if !allowed {
                 events::set_error(
                     &navigation_app,

@@ -89,6 +89,8 @@
     "grantExpired": "The import grant expired. Please choose again",
     "entryMismatch": "The entry does not match the selected file. Please choose again",
     "entryMismatchSource": "The entry does not match the import source. Please choose again",
+    "sourceReplaceFailed": "The imported copy could not be replaced because its files may still be in use. Close the page and try again",
+    "swapSourceMissing": "The new imported copy was not ready, so the replacement was canceled",
     "pageDataInvalid": "The page data format is invalid",
     "writePageDataFailed": "Writing the page data failed",
     "dataIdentity": "The page identity does not match",
