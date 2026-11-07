@@ -107,7 +107,12 @@ fn validates_bundled_origins() {
         &Url::parse("https://example.com").unwrap()
     ));
     // 入口必须是纯相对路径，越界路径在生成地址前就被拒绝。
-    for entry in ["", "../outside.html", "/abs.html", "C:/x.html"] {
+    // `C:/x.html` 只在 Windows 上是绝对路径，Unix 上属于合法相对路径。
+    let mut invalid_entries = vec!["", "../outside.html", "/abs.html"];
+    if cfg!(windows) {
+        invalid_entries.push("C:/x.html");
+    }
+    for entry in invalid_entries {
         let invalid = PageSource::Bundled {
             entry: entry.into(),
         };

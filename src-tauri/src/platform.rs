@@ -24,13 +24,26 @@ pub fn apply(
     window_policy::apply(window, pin)
 }
 
-/// 其他平台暂不提供桌面嵌入和原生锁定。
+/// 其他平台仅支持浮动模式，用 Tauri 跨平台接口应用边框、置顶与尺寸锁；
+/// 桌面嵌入、圆角与位置锁依赖 Win32，暂不提供。
 #[cfg(not(windows))]
 pub fn apply(
-    _window: &tauri::WebviewWindow,
-    _pin: &crate::models::PinConfig,
+    window: &tauri::WebviewWindow,
+    pin: &crate::models::PinConfig,
 ) -> Result<(), AppMessage> {
-    Err(AppMessage::new("errors.platformUnsupported"))
+    use crate::models::WindowMode;
+    if pin.mode == WindowMode::Desktop {
+        return Err(AppMessage::new("errors.platformUnsupported"));
+    }
+    let decorated = pin.effective_decorations();
+    window
+        .set_decorations(decorated)
+        .and_then(|_| window.set_shadow(decorated))
+        .and_then(|_| window.set_resizable(!pin.size_locked))
+        .and_then(|_| window.set_maximizable(!pin.size_locked && !pin.position_locked))
+        .and_then(|_| window.set_always_on_top(pin.always_on_top))
+        .and_then(|_| window.set_size(tauri::LogicalSize::new(pin.width, pin.height)))
+        .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))
 }
 
 /// 原生读取屏幕物理坐标，避免桌面子窗口被保存成父窗口局部坐标。

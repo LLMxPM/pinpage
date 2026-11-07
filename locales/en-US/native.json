@@ -124,7 +124,7 @@
     "shortcutTaken": "Registering the shortcut failed; another app may already use it",
     "trayRefreshFailed": "The tray menu could not be updated",
     "settingsSavedTrayFailed": "Settings were saved, but the tray menu could not be updated. The next window action retries it",
-    "platformUnsupported": "Window mode settings are only supported on Windows in this build",
+    "platformUnsupported": "Desktop mode is only supported on Windows in this build",
     "readPosition": "The window position could not be read",
     "taskInterrupted": "The window configuration task was interrupted",
     "desktopUnavailable": "The desktop is not available right now. Try desktop mode again later",

@@ -124,7 +124,7 @@
     "shortcutTaken": "快捷键注册失败，可能已被其他应用占用",
     "trayRefreshFailed": "托盘菜单更新失败",
     "settingsSavedTrayFailed": "设置已保存，但托盘菜单更新失败，下一次窗口操作会重试",
-    "platformUnsupported": "此版本的窗口模式设置仅支持 Windows",
+    "platformUnsupported": "此版本的桌面模式仅支持 Windows",
     "readPosition": "无法读取窗口位置",
     "taskInterrupted": "窗口配置任务已中断",
     "desktopUnavailable": "当前桌面暂不可用，请稍后重试桌面模式",
