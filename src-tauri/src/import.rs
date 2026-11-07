@@ -1,5 +1,5 @@
 // 功能：把用户选择的网页复制到应用数据目录，形成不依赖原始路径的导入页。
-use crate::models::ImportMode;
+use crate::{errors::AppMessage, models::ImportMode};
 use std::path::{Component, Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
@@ -22,36 +22,39 @@ pub struct ImportGrant {
 }
 
 /// 应用数据目录下的导入页根目录，每个页面一个以 ID 命名的子目录。
-pub fn pages_root(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn pages_root(app: &AppHandle) -> Result<PathBuf, AppMessage> {
     app.path()
         .app_data_dir()
         .map(|dir| dir.join("pages"))
-        .map_err(|error| format!("无法定位应用数据目录：{error}"))
+        .map_err(|error| AppMessage::new("errors.appDataDir").detail(error))
 }
 
 /// 页面 ID 必须是单级普通目录名，防止配置文件被改写后越出 pages 根目录。
-fn validate_id(id: &str) -> Result<(), String> {
+fn validate_id(id: &str) -> Result<(), AppMessage> {
     let mut parts = Path::new(id).components();
     match (parts.next(), parts.next()) {
         (Some(Component::Normal(_)), None) => Ok(()),
-        _ => Err("页面 ID 不合法".into()),
+        _ => Err(AppMessage::new("errors.pinIdInvalid")),
     }
 }
 
 /// 页面的站点副本根目录；资源协议与删除操作都以它为唯一边界。
-pub fn site_root(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
+pub fn site_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
     validate_id(id)?;
     Ok(pages_root(app)?.join(id).join("site"))
 }
 
 /// 列出根目录下的 HTML 入口候选，不递归子目录，避免误选深层页面。
-pub fn entry_candidates(root: &Path) -> Result<Vec<String>, String> {
+pub fn entry_candidates(root: &Path) -> Result<Vec<String>, AppMessage> {
     let mut found = Vec::new();
-    for item in std::fs::read_dir(root).map_err(|error| format!("无法读取所选目录：{error}"))?
+    for item in std::fs::read_dir(root)
+        .map_err(|error| AppMessage::new("errors.readDirFailed").detail(error))?
     {
-        let item = item.map_err(|error| error.to_string())?;
+        let item = item.map_err(|error| AppMessage::new("errors.readDirFailed").detail(error))?;
         // 链接可能指向受保护目录或形成环，入口扫描一律跳过。
-        let file_type = item.file_type().map_err(|error| error.to_string())?;
+        let file_type = item
+            .file_type()
+            .map_err(|error| AppMessage::new("errors.readDirFailed").detail(error))?;
         if !file_type.is_file() {
             continue;
         }
@@ -68,7 +71,7 @@ pub fn entry_candidates(root: &Path) -> Result<Vec<String>, String> {
 }
 
 /// 预览阶段统计文件数量与体积，超限时提前拒绝，不产生任何复制。
-pub fn measure(root: &Path) -> Result<(u64, u64), String> {
+pub fn measure(root: &Path) -> Result<(u64, u64), AppMessage> {
     let mut files = 0;
     let mut bytes = 0;
     walk(root, &mut |_, _, size| {
@@ -80,8 +83,9 @@ pub fn measure(root: &Path) -> Result<(u64, u64), String> {
 }
 
 /// 把整个目录复制为站点副本，保留相对结构以便样式、脚本和 JSON 请求继续解析。
-pub fn copy_site(source: &Path, target: &Path) -> Result<(), String> {
-    std::fs::create_dir_all(target).map_err(|error| format!("无法创建导入目录：{error}"))?;
+pub fn copy_site(source: &Path, target: &Path) -> Result<(), AppMessage> {
+    std::fs::create_dir_all(target)
+        .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
     let mut files = 0;
     let mut bytes = 0;
     walk(source, &mut |path, relative, size| {
@@ -91,62 +95,68 @@ pub fn copy_site(source: &Path, target: &Path) -> Result<(), String> {
         check_budget(files, bytes)?;
         let destination = target.join(relative);
         if let Some(parent) = destination.parent() {
-            std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+            std::fs::create_dir_all(parent)
+                .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
         }
-        std::fs::copy(path, &destination)
-            .map(|_| ())
-            .map_err(|error| format!("复制 {} 失败：{error}", path.display()))
+        std::fs::copy(path, &destination).map_err(|error| {
+            AppMessage::new("errors.copyFileFailed").detail(format!("{}：{error}", path.display()))
+        })?;
+        Ok(())
     })
 }
 
 /// 单文件导入只复制入口本身，返回站点副本内的相对入口。
-pub fn copy_entry(source: &Path, target: &Path) -> Result<String, String> {
+pub fn copy_entry(source: &Path, target: &Path) -> Result<String, AppMessage> {
     let name = source
         .file_name()
         .and_then(|value| value.to_str())
-        .ok_or("所选文件名无效")?;
+        .ok_or_else(|| AppMessage::new("errors.fileNameInvalid"))?;
     let size = std::fs::metadata(source)
-        .map_err(|_| "无法读取所选文件")?
+        .map_err(|_| AppMessage::new("errors.readFileFailed"))?
         .len();
     check_budget(1, size)?;
-    std::fs::create_dir_all(target).map_err(|error| format!("无法创建导入目录：{error}"))?;
+    std::fs::create_dir_all(target)
+        .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
     std::fs::copy(source, target.join(name))
-        .map_err(|error| format!("复制入口文件失败：{error}"))?;
+        .map_err(|error| AppMessage::new("errors.copyEntryFailed").detail(error))?;
     Ok(name.to_string())
 }
 
 /// 创建时确认入口确实是候选之一且位于所选目录内，防止前端伪造路径。
-pub fn verify_entry(root: &Path, entry: &str, candidates: &[String]) -> Result<(), String> {
+pub fn verify_entry(root: &Path, entry: &str, candidates: &[String]) -> Result<(), AppMessage> {
     if !candidates.iter().any(|candidate| candidate == entry) {
-        return Err("入口不在导入清单中，请重新选择".into());
+        return Err(AppMessage::new("errors.entryNotListed"));
     }
     let relative = Path::new(entry);
     if relative
         .components()
         .any(|part| !matches!(part, Component::Normal(_) | Component::CurDir))
     {
-        return Err("入口路径不合法".into());
+        return Err(AppMessage::new("errors.entryInvalid"));
     }
-    let root = root.canonicalize().map_err(|_| "所选目录已失效")?;
+    let root = root
+        .canonicalize()
+        .map_err(|_| AppMessage::new("errors.rootMissing"))?;
     let path = root
         .join(relative)
         .canonicalize()
-        .map_err(|_| "入口文件不存在")?;
+        .map_err(|_| AppMessage::new("errors.entryMissing"))?;
     if !path.starts_with(&root) || !path.is_file() || !is_html(&path) {
-        return Err("入口必须是所选目录内的 HTML 文件".into());
+        return Err(AppMessage::new("errors.entryNotHtml"));
     }
     Ok(())
 }
 
 /// 删除页面时清理站点副本，只处理 pages 根目录下与页面 ID 同名的一级目录。
-pub fn remove_page(app: &AppHandle, id: &str) -> Result<(), String> {
+pub fn remove_page(app: &AppHandle, id: &str) -> Result<(), AppMessage> {
     validate_id(id)?;
     let pages = pages_root(app)?;
     let target = pages.join(id);
     if target.parent() != Some(pages.as_path()) || !target.exists() {
         return Ok(());
     }
-    std::fs::remove_dir_all(&target).map_err(|error| format!("清理导入内容失败：{error}"))
+    std::fs::remove_dir_all(&target)
+        .map_err(|error| AppMessage::new("errors.cleanupFailed").detail(error))
 }
 
 /// 只接受 html 与 htm 扩展名，大小写不敏感。
@@ -157,15 +167,12 @@ fn is_html(path: &Path) -> bool {
 }
 
 /// 超限时给出可直接执行的提示，不返回难以理解的内部错误。
-fn check_budget(files: u64, bytes: u64) -> Result<(), String> {
+fn check_budget(files: u64, bytes: u64) -> Result<(), AppMessage> {
     if files > MAX_FILES {
-        return Err(format!("导入文件超过 {MAX_FILES} 个，请先精简目录再导入"));
+        return Err(AppMessage::new("errors.tooManyFiles").arg("max", MAX_FILES));
     }
     if bytes > MAX_BYTES {
-        return Err(format!(
-            "导入体积超过 {} MiB，请先精简目录再导入",
-            MAX_BYTES / 1024 / 1024
-        ));
+        return Err(AppMessage::new("errors.tooLarge").arg("max", MAX_BYTES / 1024 / 1024));
     }
     Ok(())
 }
@@ -173,16 +180,21 @@ fn check_budget(files: u64, bytes: u64) -> Result<(), String> {
 /// 深度优先遍历真实目录和普通文件，符号链接与目录联接一律跳过。
 pub(crate) fn walk(
     root: &Path,
-    visit: &mut impl FnMut(&Path, &Path, u64) -> Result<(), String>,
-) -> Result<(), String> {
+    visit: &mut impl FnMut(&Path, &Path, u64) -> Result<(), AppMessage>,
+) -> Result<(), AppMessage> {
     let mut stack = vec![root.to_path_buf()];
     while let Some(directory) = stack.pop() {
-        let items = std::fs::read_dir(&directory)
-            .map_err(|error| format!("无法读取 {}：{error}", directory.display()))?;
+        let items = std::fs::read_dir(&directory).map_err(|error| {
+            AppMessage::new("errors.readDirFailed")
+                .detail(format!("{}：{error}", directory.display()))
+        })?;
         for item in items {
-            let item = item.map_err(|error| error.to_string())?;
+            let item =
+                item.map_err(|error| AppMessage::new("errors.readDirFailed").detail(error))?;
             // file_type 不跟随链接，链接因此既不会被复制也不会被递归。
-            let file_type = item.file_type().map_err(|error| error.to_string())?;
+            let file_type = item
+                .file_type()
+                .map_err(|error| AppMessage::new("errors.readDirFailed").detail(error))?;
             if file_type.is_symlink() {
                 continue;
             }
@@ -190,7 +202,9 @@ pub(crate) fn walk(
             if file_type.is_dir() {
                 stack.push(path);
             } else if file_type.is_file() {
-                let relative = path.strip_prefix(root).map_err(|_| "导入路径越界")?;
+                let relative = path
+                    .strip_prefix(root)
+                    .map_err(|_| AppMessage::new("errors.pathEscaped"))?;
                 let size = item.metadata().map(|meta| meta.len()).unwrap_or(0);
                 visit(&path, relative, size)?;
             }

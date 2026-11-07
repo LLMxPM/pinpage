@@ -1,6 +1,29 @@
 // 功能：定义持久化配置、页面来源和前后端交换的数据结构。
+use crate::errors::AppMessage;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+/// 用户语言偏好，随配置持久化；`system` 表示由平台解析。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LocalePreference {
+    #[serde(rename = "zh-CN")]
+    #[default]
+    ZhCn,
+    #[serde(rename = "en-US")]
+    EnUs,
+    #[serde(rename = "system")]
+    System,
+}
+
+/// 已解析的有效语言，即当前实际使用的翻译资源。
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AppLocale {
+    #[serde(rename = "zh-CN")]
+    #[default]
+    ZhCn,
+    #[serde(rename = "en-US")]
+    EnUs,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -89,6 +112,9 @@ pub struct PinSettingsInput {
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
     pub schema_version: u32,
+    /// 语言偏好未知或类型不符时只回退该字段，不影响页面与快捷键。
+    #[serde(deserialize_with = "lenient_locale")]
+    pub locale: LocalePreference,
     pub restore_session: bool,
     pub manager_shortcut: String,
     pub recover_shortcut: String,
@@ -109,11 +135,21 @@ where
         .collect())
 }
 
+/// 语言字段容错：任何无法识别的取值都只回退中文，不让整份配置解析失败。
+fn lenient_locale<'de, D>(deserializer: D) -> Result<LocalePreference, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_default())
+}
+
 impl Default for Settings {
     /// 提供首版配置与默认快捷键，允许旧配置缺失新增字段。
     fn default() -> Self {
         Self {
             schema_version: 1,
+            locale: LocalePreference::default(),
             restore_session: true,
             manager_shortcut: "Ctrl+Alt+P".into(),
             recover_shortcut: "Ctrl+Alt+B".into(),
@@ -129,7 +165,8 @@ pub struct PinRuntime {
     pub visible: bool,
     pub loading: bool,
     pub current_url: String,
-    pub error: Option<String>,
+    /// 只保存消息码与参数，切换语言后可以重新渲染。
+    pub error: Option<AppMessage>,
 }
 
 #[derive(Serialize)]
@@ -137,7 +174,9 @@ pub struct PinRuntime {
 pub struct Snapshot {
     pub settings: Settings,
     pub runtime: HashMap<String, PinRuntime>,
-    pub notices: Vec<String>,
+    pub notices: Vec<AppMessage>,
+    /// Rust 已解析的有效语言，前端不再自行猜测系统语言。
+    pub resolved_locale: AppLocale,
 }
 
 #[derive(Deserialize)]
@@ -193,7 +232,46 @@ pub struct ImportPreview {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingsInput {
+    /// 严格校验：只接受三个约定值字符串，非法输入由命令层返回明确错误。
+    pub locale: String,
     pub restore_session: bool,
     pub manager_shortcut: String,
     pub recover_shortcut: String,
+}
+
+/// 全局设置的可编辑部分，语言只影响应用界面。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceSettings {
+    pub locale: LocalePreference,
+    pub restore_session: bool,
+    pub manager_shortcut: String,
+    pub recover_shortcut: String,
+}
+
+impl WorkspaceSettings {
+    /// 从 IPC 输入构造候选设置，语言取值必须落在约定集合内。
+    pub fn from_input(input: &SettingsInput) -> Result<Self, AppMessage> {
+        let locale = match input.locale.as_str() {
+            "zh-CN" => LocalePreference::ZhCn,
+            "en-US" => LocalePreference::EnUs,
+            "system" => LocalePreference::System,
+            _ => return Err(AppMessage::new("errors.localeInvalid")),
+        };
+        Ok(Self {
+            locale,
+            restore_session: input.restore_session,
+            manager_shortcut: input.manager_shortcut.clone(),
+            recover_shortcut: input.recover_shortcut.clone(),
+        })
+    }
+
+    /// 从当前配置读出可编辑字段，用于失败回滚前的快照。
+    pub fn from_settings(settings: &Settings) -> Self {
+        Self {
+            locale: settings.locale,
+            restore_session: settings.restore_session,
+            manager_shortcut: settings.manager_shortcut.clone(),
+            recover_shortcut: settings.recover_shortcut.clone(),
+        }
+    }
 }

@@ -1,4 +1,5 @@
 // 功能：定位 Windows 桌面图标宿主，将网页窗口嵌入或移出桌面层。
+use crate::errors::AppMessage;
 use std::ptr::null_mut;
 use windows_sys::Win32::Graphics::Gdi::MapWindowPoints;
 use windows_sys::{
@@ -10,13 +11,13 @@ use windows_sys::{
 };
 
 /// 只检查 Explorer 桌面宿主，覆盖图标层位于 Progman 或 WorkerW 的布局。
-pub fn host() -> Result<HWND, String> {
+pub fn host() -> Result<HWND, AppMessage> {
     let mut result: HWND = null_mut();
     unsafe {
         EnumWindows(Some(find_host), &mut result as *mut HWND as LPARAM);
     }
     if result.is_null() {
-        Err("当前桌面暂不可用，请稍后重试桌面模式".into())
+        Err(AppMessage::new("errors.desktopUnavailable"))
     } else {
         Ok(result)
     }
@@ -53,7 +54,7 @@ unsafe extern "system" fn find_icon_view(window: HWND, data: LPARAM) -> i32 {
 }
 
 /// 改变父窗口与必要样式；失败时恢复原样式并返回系统错误。
-pub fn set_parent(window: HWND, parent: HWND) -> Result<(), String> {
+pub fn set_parent(window: HWND, parent: HWND) -> Result<(), AppMessage> {
     unsafe {
         let old_parent = GetParent(window);
         let old_style = GetWindowLongPtrW(window, GWL_STYLE);
@@ -74,7 +75,7 @@ pub fn set_parent(window: HWND, parent: HWND) -> Result<(), String> {
         if previous.is_null() && GetLastError() != 0 {
             let error = std::io::Error::last_os_error();
             SetWindowLongPtrW(window, GWL_STYLE, old_style);
-            return Err(format!("无法切换桌面模式：{error}"));
+            return Err(AppMessage::new("errors.desktopModeFailed").detail(error));
         }
         if parent.is_null() {
             SetWindowLongPtrW(window, GWL_STYLE, next_style);
@@ -84,7 +85,7 @@ pub fn set_parent(window: HWND, parent: HWND) -> Result<(), String> {
 }
 
 /// 将屏幕物理坐标转换为当前父窗口的客户区坐标，再更新位置和层级。
-pub fn place(window: HWND, x: i32, y: i32) -> Result<(), String> {
+pub fn place(window: HWND, x: i32, y: i32) -> Result<(), AppMessage> {
     unsafe {
         let parent = GetParent(window);
         let mut point = POINT { x, y };
@@ -101,7 +102,8 @@ pub fn place(window: HWND, x: i32, y: i32) -> Result<(), String> {
             | SWP_FRAMECHANGED
             | if parent.is_null() { SWP_NOZORDER } else { 0 };
         if SetWindowPos(window, after, point.x, point.y, 0, 0, flags) == 0 {
-            return Err(std::io::Error::last_os_error().to_string());
+            return Err(AppMessage::new("errors.setWindowPosFailed")
+                .detail(std::io::Error::last_os_error()));
         }
     }
     Ok(())

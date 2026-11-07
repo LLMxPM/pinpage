@@ -1,7 +1,9 @@
 // 功能：维护应用状态，合并窗口变化并串行持久化配置。
 use crate::{
+    errors::AppMessage,
+    i18n,
     import::ImportGrant,
-    models::{PinRuntime, Settings, Snapshot},
+    models::{AppLocale, PinRuntime, Settings, Snapshot},
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -23,7 +25,9 @@ pub struct AppState {
     pub export_pending: Mutex<HashSet<String>>,
     /// 已回传的页面数据，导出命令取走后立即清空。
     pub export_data: Mutex<HashMap<String, String>>,
-    pub notices: Mutex<Vec<String>>,
+    pub notices: Mutex<Vec<AppMessage>>,
+    /// Rust 解析后的有效语言，是原生界面与快照的唯一来源。
+    pub locale: Mutex<AppLocale>,
     pub exiting: AtomicBool,
     revision: AtomicU64,
     saving: AtomicBool,
@@ -42,20 +46,24 @@ impl AppState {
                     let backup =
                         path.with_extension(format!("backup-{}.json", uuid::Uuid::new_v4()));
                     match std::fs::rename(&path, &backup) {
-                        Ok(_) => {
-                            notices.push(format!("配置无法读取，已备份至 {}", backup.display()))
+                        Ok(_) => notices.push(
+                            AppMessage::new("errors.configBackedUp")
+                                .arg("path", backup.display().to_string()),
+                        ),
+                        Err(error) => {
+                            notices.push(AppMessage::new("errors.configBackupFailed").detail(error))
                         }
-                        Err(error) => notices.push(format!("配置无法读取，备份失败：{error}")),
                     }
                     Settings::default()
                 }
             },
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Settings::default(),
             Err(error) => {
-                notices.push(format!("读取配置失败：{error}"));
+                notices.push(AppMessage::new("errors.readConfigFailed").detail(error));
                 Settings::default()
             }
         };
+        let locale = i18n::resolve(settings.locale);
         Self {
             operation: Mutex::new(()),
             settings: Mutex::new(settings),
@@ -64,6 +72,7 @@ impl AppState {
             export_pending: Mutex::new(HashSet::new()),
             export_data: Mutex::new(HashMap::new()),
             notices: Mutex::new(notices),
+            locale: Mutex::new(locale),
             exiting: AtomicBool::new(false),
             revision: AtomicU64::new(0),
             saving: AtomicBool::new(false),
@@ -78,25 +87,33 @@ impl AppState {
             settings: self.settings.lock().unwrap().clone(),
             runtime: self.runtime.lock().unwrap().clone(),
             notices: self.notices.lock().unwrap().clone(),
+            resolved_locale: *self.locale.lock().unwrap(),
         }
     }
 
     /// 在同目录写入临时文件后原子替换，避免半写入的配置被加载。
-    pub fn save(&self) -> Result<(), String> {
+    pub fn save(&self) -> Result<(), AppMessage> {
         let _writer = self.writer.lock().unwrap();
         let config = self.settings.lock().unwrap().clone();
-        let parent = self.path.parent().ok_or("配置目录无效")?;
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        let bytes = serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?;
+        let parent = self
+            .path
+            .parent()
+            .ok_or_else(|| AppMessage::new("errors.configDirInvalid"))?;
+        std::fs::create_dir_all(parent)
+            .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
+        let bytes = serde_json::to_vec_pretty(&config)
+            .map_err(|error| AppMessage::new("errors.saveConfigFailed").detail(error))?;
         let temporary = self.path.with_extension("tmp");
         {
             use std::io::Write;
-            let mut file = std::fs::File::create(&temporary).map_err(|e| e.to_string())?;
+            let mut file = std::fs::File::create(&temporary)
+                .map_err(|error| AppMessage::new("errors.saveConfigFailed").detail(error))?;
             file.write_all(&bytes)
                 .and_then(|_| file.sync_all())
-                .map_err(|e| e.to_string())?;
+                .map_err(|error| AppMessage::new("errors.saveConfigFailed").detail(error))?;
         }
-        replace_file(&temporary, &self.path).map_err(|e| format!("保存配置失败：{e}"))
+        replace_file(&temporary, &self.path)
+            .map_err(|error| AppMessage::new("errors.saveConfigFailed").detail(error))
     }
 }
 
@@ -162,11 +179,15 @@ pub fn schedule_save(app: &AppHandle) {
 }
 
 /// 记录可见错误，并通知管理界面；限制通知数量避免长期增长。
-pub fn report(app: &AppHandle, message: String) {
-    eprintln!("{message}");
+pub fn report(app: &AppHandle, message: AppMessage) {
+    eprintln!("{}", i18n::log_text(&message));
     let state = app.state::<AppState>();
     let mut notices = state.notices.lock().unwrap();
-    if notices.last() != Some(&message) {
+    // 去重只看消息码与参数，诊断详情不同不应产生成排的同类通知。
+    let duplicated = notices
+        .last()
+        .is_some_and(|last| last.code == message.code && last.args == message.args);
+    if !duplicated {
         notices.push(message);
     }
     if notices.len() > 10 {
@@ -174,4 +195,18 @@ pub fn report(app: &AppHandle, message: String) {
     }
     drop(notices);
     notify(app);
+}
+
+#[cfg(test)]
+#[path = "state_tests.rs"]
+mod tests;
+
+/// 读取当前有效语言，供托盘、窗口标题等原生界面渲染。
+pub fn locale(app: &AppHandle) -> AppLocale {
+    *app.state::<AppState>().locale.lock().unwrap()
+}
+
+/// 写入新的有效语言；调用方负责随后的原生界面刷新。
+pub fn set_locale(app: &AppHandle, next: AppLocale) {
+    *app.state::<AppState>().locale.lock().unwrap() = next;
 }

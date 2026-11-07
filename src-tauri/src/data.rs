@@ -1,4 +1,5 @@
 // 功能：导出时采集页面 Web 存储，导入时通过应用内引导页回填，避开页面脚本竞争。
+use crate::{errors::AppMessage, i18n, models::AppLocale};
 use tauri::AppHandle;
 
 /// 引导页与随包数据的固定路径，只对所属页面的 WebView 开放。
@@ -201,47 +202,59 @@ pub fn collect_script(id: &str) -> String {
 }
 
 /// 读取并删除随包数据，保证同一次导入只恢复一次。
-pub fn take_pending(app: &AppHandle, id: &str) -> Result<(String, Vec<u8>), String> {
+pub fn take_pending(app: &AppHandle, id: &str) -> Result<(String, Vec<u8>), AppMessage> {
     let path = crate::import::pages_root(app)?
         .join(id)
         .join(crate::import::PENDING_DATA);
-    let bytes = std::fs::read(&path).map_err(|_| "没有待恢复的页面数据")?;
+    let bytes = std::fs::read(&path)
+        .map_err(|error| AppMessage::new("errors.noPendingData").detail(error))?;
     let _ = std::fs::remove_file(&path);
     Ok(("application/json".into(), bytes))
 }
 
 /// 引导页：在没有页面脚本竞争的同源空白页里完成回填，再跳转到真正入口。
-pub fn restore_page() -> &'static str {
-    r#"<!doctype html>
-<html lang="zh-CN">
+///
+/// 页面语言在创建时确定，之后切换应用语言不会重写已经打开的引导页。
+/// 文案来自 native 资源，检查脚本已禁止尖括号，因此可以直接嵌入 HTML。
+pub fn restore_page(locale: AppLocale) -> String {
+    let title = i18n::text(locale, "restore.title", &Default::default());
+    let hint = i18n::text(locale, "restore.hint", &Default::default());
+    let lang = if locale == AppLocale::EnUs {
+        "en-US"
+    } else {
+        "zh-CN"
+    };
+    format!(
+        r#"<!doctype html>
+<html lang="{lang}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>正在恢复页面数据</title>
+    <title>{title}</title>
     <style>
-      html, body { height: 100%; margin: 0; }
-      body {
+      html, body {{ height: 100%; margin: 0; }}
+      body {{
         display: grid; place-items: center; background: #fbfbfc; color: #8b96a4;
         font: 13px/1.6 system-ui, "Microsoft YaHei", sans-serif;
-      }
-      .hint { text-align: center; }
-      .bar { width: 96px; height: 2px; margin: 10px auto 0; background: #e6eaef; border-radius: 2px; overflow: hidden; }
-      .bar::after { content: ""; display: block; width: 40%; height: 100%; background: #d89578; animation: slide 1s ease-in-out infinite; }
-      @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+      }}
+      .hint {{ text-align: center; }}
+      .bar {{ width: 96px; height: 2px; margin: 10px auto 0; background: #e6eaef; border-radius: 2px; overflow: hidden; }}
+      .bar::after {{ content: ""; display: block; width: 40%; height: 100%; background: #d89578; animation: slide 1s ease-in-out infinite; }}
+      @keyframes slide {{ from {{ transform: translateX(-100%); }} to {{ transform: translateX(250%); }} }}
     </style>
   </head>
   <body>
-    <div class="hint">正在恢复页面数据…<div class="bar"></div></div>
+    <div class="hint">{hint}<div class="bar"></div></div>
     <script>
-      (async () => {
+      (async () => {{
         const target = '/' + (new URLSearchParams(location.search).get('entry') || 'index.html');
-        const toBuffer = (text) => {
+        const toBuffer = (text) => {{
           const binary = atob(text);
           const bytes = new Uint8Array(binary.length);
           for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
           return bytes.buffer;
-        };
-        const decode = (value) => {
+        }};
+        const decode = (value) => {{
           if (value === null || typeof value !== 'object') return value;
           if (Array.isArray(value)) return value.map(decode);
           const tag = value.$t;
@@ -251,90 +264,91 @@ pub fn restore_page() -> &'static str {
           if (tag === 'undefined') return undefined;
           if (tag === 'buffer') return toBuffer(value.v);
           if (tag === 'typed') return new (window[value.c] || Uint8Array)(toBuffer(value.v));
-          if (tag === 'blob') return new Blob([toBuffer(value.v)], { type: value.m || '' });
+          if (tag === 'blob') return new Blob([toBuffer(value.v)], {{ type: value.m || '' }});
           if (tag === 'regexp') return new RegExp(value.v, value.f);
           if (tag === 'unsupported') return undefined;
-          if (tag === 'obj') {
-            const result = {};
-            for (const key of Object.keys(value.v || {})) result[key] = decode(value.v[key]);
+          if (tag === 'obj') {{
+            const result = {{}};
+            for (const key of Object.keys(value.v || {{}})) result[key] = decode(value.v[key]);
             return result;
-          }
-          const result = {};
+          }}
+          const result = {{}};
           for (const key of Object.keys(value)) result[key] = decode(value[key]);
           return result;
-        };
-        const restoreDatabase = async (info) => {
+        }};
+        const restoreDatabase = async (info) => {{
           if (!info || !info.name || !info.version) return;
-          const db = await new Promise((resolve, reject) => {
+          const db = await new Promise((resolve, reject) => {{
             const request = indexedDB.open(info.name, info.version);
-            request.onupgradeneeded = () => {
+            request.onupgradeneeded = () => {{
               const handle = request.result;
-              for (const store of info.stores || []) {
-                const target = handle.objectStoreNames.contains(store.name)
+              for (const store of info.stores || []) {{
+                const storeTarget = handle.objectStoreNames.contains(store.name)
                   ? request.transaction.objectStore(store.name)
-                  : handle.createObjectStore(store.name, {
+                  : handle.createObjectStore(store.name, {{
                       keyPath: store.keyPath === undefined ? null : store.keyPath,
                       autoIncrement: Boolean(store.autoIncrement)
-                    });
-                for (const index of store.indexes || []) {
-                  if (target.indexNames.contains(index.name)) continue;
-                  try {
-                    target.createIndex(index.name, index.keyPath, {
+                    }});
+                for (const index of store.indexes || []) {{
+                  if (storeTarget.indexNames.contains(index.name)) continue;
+                  try {{
+                    storeTarget.createIndex(index.name, index.keyPath, {{
                       unique: Boolean(index.unique),
                       multiEntry: Boolean(index.multiEntry)
-                    });
-                  } catch (error) {}
-                }
-              }
-            };
+                    }});
+                  }} catch (error) {{}}
+                }}
+              }}
+            }};
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
             request.onblocked = () => reject(new Error('blocked'));
-          });
-          for (const store of info.stores || []) {
+          }});
+          for (const store of info.stores || []) {{
             if (!store.records || !store.records.length) continue;
             const transaction = db.transaction(store.name, 'readwrite');
             const handle = transaction.objectStore(store.name);
-            for (const record of store.records) {
-              if (store.keyPath === null || store.keyPath === undefined) {
+            for (const record of store.records) {{
+              if (store.keyPath === null || store.keyPath === undefined) {{
                 handle.put(decode(record.value), decode(record.key));
-              } else {
+              }} else {{
                 handle.put(decode(record.value));
-              }
-            }
-            await new Promise((resolve, reject) => {
+              }}
+            }}
+            await new Promise((resolve, reject) => {{
               transaction.oncomplete = () => resolve();
               transaction.onerror = () => reject(transaction.error);
               transaction.onabort = () => reject(transaction.error);
-            });
-          }
+            }});
+          }}
           db.close();
-        };
-        try {
-          const response = await fetch('/__pinpage__/data.json', { cache: 'no-store' });
-          if (response.ok) {
+        }};
+        try {{
+          const response = await fetch('/__pinpage__/data.json', {{ cache: 'no-store' }});
+          if (response.ok) {{
             const info = await response.json();
-            const payload = info.payload || {};
-            for (const [key, value] of Object.entries(payload.localStorage || {})) {
+            const payload = info.payload || {{}};
+            for (const [key, value] of Object.entries(payload.localStorage || {{}})) {{
               if (typeof value === 'string') localStorage.setItem(key, value);
-            }
-            for (const [key, value] of Object.entries(payload.sessionStorage || {})) {
+            }}
+            for (const [key, value] of Object.entries(payload.sessionStorage || {{}})) {{
               if (typeof value === 'string') sessionStorage.setItem(key, value);
-            }
-            for (const database of payload.indexedDB || []) {
-              try {
+            }}
+            for (const database of payload.indexedDB || []) {{
+              try {{
                 await restoreDatabase(database);
-              } catch (error) {}
-            }
-          }
-        } catch (error) {
-        } finally {
+              }} catch (error) {{}}
+            }}
+          }}
+        }} catch (error) {{
+        }} finally {{
           location.replace(target);
-        }
-      })();
+        }}
+      }})();
     </script>
   </body>
 </html>"#
+    )
 }
 
 #[cfg(test)]

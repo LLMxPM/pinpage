@@ -1,9 +1,11 @@
 // 功能：为 Windows 无边框网页窗口提供 Alt + 左键原生拖动。
+use crate::errors::AppMessage;
 use tauri::AppHandle;
 #[cfg(windows)]
 mod corners;
 #[cfg(windows)]
 mod desktop;
+pub mod locale;
 #[cfg(windows)]
 mod recovery;
 #[cfg(windows)]
@@ -13,7 +15,10 @@ mod window_policy;
 
 /// 应用单个页面的原生模式、圆角与锁定策略。
 #[cfg(windows)]
-pub fn apply(window: &tauri::WebviewWindow, pin: &crate::models::PinConfig) -> Result<(), String> {
+pub fn apply(
+    window: &tauri::WebviewWindow,
+    pin: &crate::models::PinConfig,
+) -> Result<(), AppMessage> {
     window_policy::apply(window, pin)
 }
 
@@ -22,26 +27,31 @@ pub fn apply(window: &tauri::WebviewWindow, pin: &crate::models::PinConfig) -> R
 pub fn apply(
     _window: &tauri::WebviewWindow,
     _pin: &crate::models::PinConfig,
-) -> Result<(), String> {
-    Err("此版本的窗口模式设置仅支持 Windows".into())
+) -> Result<(), AppMessage> {
+    Err(AppMessage::new("errors.platformUnsupported"))
 }
 
 /// 原生读取屏幕物理坐标，避免桌面子窗口被保存成父窗口局部坐标。
 #[cfg(windows)]
-pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition<i32>, String> {
+pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition<i32>, AppMessage> {
     use windows_sys::Win32::{Foundation::RECT, UI::WindowsAndMessaging::GetWindowRect};
-    let handle = window.hwnd().map_err(|e| e.to_string())?.0;
+    let handle = window
+        .hwnd()
+        .map_err(|error| AppMessage::new("errors.readPosition").detail(error))?
+        .0;
     let mut rect = RECT::default();
     if unsafe { GetWindowRect(handle, &mut rect) } == 0 {
-        return Err("无法读取窗口位置".into());
+        return Err(AppMessage::new("errors.readPosition"));
     }
     Ok(tauri::PhysicalPosition::new(rect.left, rect.top))
 }
 
 /// 非 Windows 平台使用 Tauri 提供的位置查询。
 #[cfg(not(windows))]
-pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition<i32>, String> {
-    window.outer_position().map_err(|e| e.to_string())
+pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition<i32>, AppMessage> {
+    window
+        .outer_position()
+        .map_err(|error| AppMessage::new("errors.readPosition").detail(error))
 }
 
 /// 只在组合键按下沿检查本应用前台窗口，无需向网页注入管理脚本。

@@ -4,7 +4,7 @@
 
 ## 已实现
 
-- Tauri 2、Vue 3、TypeScript、Vite 脚手架与中文管理工作台。
+- Tauri 2、Vue 3、TypeScript、Vite 脚手架与管理工作台，界面支持简体中文、英文和跟随系统。
 - 多窗口、HTTP/HTTPS 地址补全、本地网页导入（整目录 / 单文件）、页面包导入导出及按页面隔离的站点副本。
 - 单窗置顶、边框切换、显示隐藏、刷新、关闭与重新打开。
 - 悬浮页创建时隐藏任务栏图标，管理窗口保留任务栏入口；任务栏可见性仍需在桌面实测确认。
@@ -17,13 +17,14 @@
 
 | 检查 | 当前结果 |
 | --- | --- |
-| `pnpm build` | 通过：Vue/TypeScript 检查与 Vite 生产构建 |
-| `pnpm format:check` | 通过：前端、配置与样例文件格式检查 |
+| `pnpm check:i18n` | 通过：ui 143 键、native 135 键，中英文键与参数一致，无违规原生语法；代码中引用的消息键全部落库 |
+| `pnpm build` | 通过：Vue/TypeScript 检查与 Vite 生产构建，产物不含消息编译器且无 `new Function` |
+| `pnpm format:check` | 通过：前端、语言资源、检查脚本、配置与样例文件格式检查 |
 | `cargo check --manifest-path src-tauri/Cargo.toml` | 通过 |
-| `pnpm test:rust` | 20 项单元测试及 3 项原生窗口集成测试通过，范围见下方本次更新记录 |
+| `pnpm test:rust` | 37 项通过（34 项单元测试及 3 项原生窗口集成测试），范围见下方多语言记录 |
 | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all` | 通过 |
 | `cargo fmt --manifest-path src-tauri/Cargo.toml --check` | 通过 |
-| `pnpm tauri build` | 通过：生成 Release 可执行文件与 NSIS 安装包 |
+| `pnpm tauri build` | 通过：生成 Release 可执行文件与中英文 NSIS 安装包 |
 
 ## 桌面验证
 
@@ -145,6 +146,58 @@ Windows 无边框模式关闭原生阴影，以使用完整的原生边缘命中
 
 桌面端尚未完成「导出 → 删除 → 导入还原 → 数据回填」的完整流程实测，也未验证内容页能否在导出会话中成功调用回传命令。若回传不可用，导出会降级为只打包站点副本，界面会明确提示。两项均列入待验收。
 
+## 多语言（简体中文 / 英文）
+
+按 [多语言实施规划](i18n-plan.md) 落地 M1 → M3，并生成 M4 的中英文安装包。界面语言偏好为 `zh-CN` / `en-US` / `system`，默认简体中文。
+
+### 实现行为
+
+- 语言偏好持久化在 `settings.locale`，Rust 在创建托盘和管理窗口之前解析出有效语言，快照以 `resolvedLocale` 返回；前端不再自行猜测系统语言。
+- `system` 通过 `GetUserPreferredUILanguages` 读取 Windows 用户首选界面语言，按列表顺序取第一个可匹配语言（`en*` → 英文，`zh*` → 简体），无匹配或读取失败回退中文。非 Windows 构建回退中文。
+- 旧配置缺少 `locale`、语言取值未知或不是字符串时，只把该字段回退中文，页面记录、快捷键和 `enabled` 状态保持不变，不触发整份配置备份重置。IPC 输入则严格校验，非法语言直接返回「语言设置无效」。
+- 保存设置时按「校验语言 → 注册快捷键 → 写入配置 → 持久化」顺序进行，持久化失败回滚本次全部改动（含快捷键）；成功之后才发布新语言并重建托盘菜单、更新 tooltip 和管理窗口标题。托盘刷新失败单独提示「设置已保存，但托盘菜单更新失败」，不谎报整次保存失败。
+- 错误与通知改为 `{ code, args, detail }` 结构：`code` 直接是 native 资源键，Rust 与前端读取同一份 `locales/{语言}/native.json`，切换语言后可见通知和卡片错误重新渲染，不保存已翻译句子。系统及第三方错误的原文放在 `detail`，允许保留系统语言。
+- 资源协议向不受信任的内容页只返回当前语言的简短说明和 `X-PinPage-Error` 消息码，不再回显本地路径；诊断细节写入日志。管理界面的 CSP 与内容 WebView 权限未放宽。
+- 翻译资源在构建期预编译，产物不含消息编译器；`pnpm check:i18n` 负责中英键一致、参数一致、native 资源禁复数/链接/标记语言，以及代码中消息键是否落库。
+- 语言切换只更新 Vue I18n、`document.documentElement.lang` 和文档标题，不刷新、销毁或重建内容 WebView；已保存的页面名称、页面数据和 `enabled` 状态不受影响。语言下拉中的「简体中文」和「English」固定使用自称。
+- 内置计时器仍作为独立工具页，其 HTML 内容保持原有中文；导入后生成的名称按当前应用语言取「专注计时器 / Focus Timer」，已有副本不自动改写。
+
+### 本次验证
+
+| 验证项 | 结果 |
+| --- | --- |
+| 配置容错（缺字段、未知语言、非字符串语言） | 单元测试通过：仅语言回退，页面数量与快捷键不变 |
+| 消息序列化契约 | 单元测试通过：空参数与缺失详情不进入 JSON，详情为空被丢弃 |
+| 损坏配置备份通知 | 单元测试通过：产生 `errors.configBackedUp` 及 `path` 参数，原文件保留为一份备份 |
+| 语言解析规则 | 单元测试通过：显式选择不被系统覆盖，`de-DE, en-GB` 取英文，仅 `de-DE` 时回退中文，繁体重标签使用简体资源 |
+| native 翻译与回退 | 单元测试通过：中英均可按键取词，缺键回退中文，未知键原样返回键名 |
+| 参数按文本插值 | 单元测试通过：用户名称中的 `{id}` 形态不被当作模板再次解析 |
+| 引导页双语 | 单元测试通过：`lang` 属性与提示文字随传入语言变化 |
+| Windows 首选语言读取 | 单元测试通过：多段缓冲区正确切分，实际读取不 panic；非 Windows 走空列表回退 |
+| i18n 检查脚本 | 通过：143 个 ui 键、135 个 native 键，中英一致 |
+| 前端中文与英文渲染 | 已在浏览器实测两种语言的完整工作台文本、无障碍标签和设置弹层语言下拉，无翻译键外泄、无控制台缺键告警 |
+| 原生标题本地化 | 独立标识 `com.pinpage.verification` 的 Release 实例实测：偏好 `en-US` 时系统标题为 `PinPage · floating web workspace`；偏好 `system` 且本机界面语言为 `zh-CN` 时标题为 `PinPage · 网页悬浮工作台` |
+| Release 构建 | 通过：产物经生产构建，安装包内 NSIS 脚本同时写入 `SimpChinese` 与 `English` 语言宏并启用语言选择对话框 |
+
+验证实例使用独立标识 `com.pinpage.verification`（配置见 `src-tauri/tauri.verification.conf.json`）与独立配置目录，验证后已删除该目录，未修改当前正常应用的会话。验证实例单独输出到 `src-tauri/target/i18n-verify/`，正式构建使用默认的 `src-tauri/target/release/`。
+
+复现验证实例：
+
+```powershell
+pnpm build
+$env:CARGO_TARGET_DIR = "target/i18n-verify"
+pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
+```
+
+### 尚未验证
+
+- 通过真实设置弹层保存语言后的托盘菜单、tooltip 与通知重渲染（本轮只验证了标题的原生本地化，界面输入受 `GetCursorPos` 拒绝访问限制）。
+- 管理窗口销毁重建、应用重启与 `--tray` 启动下语言一致性的桌面观察。
+- 切换语言时内容 WebView 不重载的实际确认（含计时器继续走时、登录态保留）。
+- 英文在 760 × 620 最小窗口和 100% / 150% / 200% DPI 下的排版、键盘导航与屏幕阅读器朗读。
+- 中英文安装与卸载界面文案的实机复读，以及安装器语言选择不影响应用内 `locale` 的确认。
+- 文件选择器中的系统按钮仍由 Windows 决定，可能与应用语言不同；第三方与系统错误的 `detail` 允许保留系统语言。
+
 ## 性能采样
 
 采样命令如下，先在界面中确认实际打开的悬浮页数量：
@@ -179,12 +232,16 @@ Windows 无边框模式关闭原生阴影，以使用完整的原生边缘命中
 
 ### 构建产物
 
-- Release 程序：`src-tauri/target/release/pinpage.exe`，10,726,912 字节。
-- NSIS 安装包：`src-tauri/target/release/bundle/nsis/PinPage_0.1.0_x64-setup.exe`，2,310,967 字节，约 2.20 MiB。
+多语言改造后的当前默认构建（单个安装包同时含中英文安装界面）：
+
+- Release 程序：`src-tauri/target/release/pinpage.exe`，13,364,736 字节。
+- NSIS 安装包：`src-tauri/target/release/bundle/nsis/PinPage_0.1.0_x64-setup.exe`，2,964,867 字节，约 2.83 MiB。
+- 体积较改造前（程序 10,726,912、安装包 2,310,967 字节）增长，来自 Vue I18n 运行时、两份本地化资源和 NSIS 双语言界面，不代表运行内存变化；性能基线仍以上方首轮 Release 采样为准，尚未按多语言版本重新采样。
 - 已直接运行 Release 程序并验证打包前端界面，干净环境安装与卸载尚未验收。
 
 ## 待目标环境验收
 
+- 多语言：设置弹层保存语言后的托盘与通知重渲染、管理页重建 / 重启 / `--tray` 语言一致性、切换不重载内容页、英文最小窗口与 DPI 排版、中英文安装与卸载界面文案。明细见上方多语言章节。
 - 100%、150%、200% DPI 以及不同 DPI 的多显示器布局变化。
 - 全部边和角的连续缩放、Alt 拖动及常见窗口布局操作；已验证的顶边和右下角行为见上表。
 - 真实看板的登录、网络断开重连、长时间运行和睡眠恢复。

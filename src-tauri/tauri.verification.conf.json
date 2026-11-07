@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.pinpage.verification",
+  "build": {
+    "beforeDevCommand": "",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist"
+  }
+}

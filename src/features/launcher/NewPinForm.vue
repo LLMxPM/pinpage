@@ -1,13 +1,16 @@
 <!-- 功能：收集网页地址或导入式本地网页，创建具有独立窗口设置的悬浮页。 -->
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import AppIcon from '../../components/AppIcon.vue';
+import { message, toUiMessage } from '../../i18n/messages';
 import { desktopAvailable, importPage } from '../../services/desktop';
 import { formatBytes } from '../../services/format';
-import type { CreatePin, ImportPreview } from '../../types';
+import type { CreatePin, ImportPreview, UiMessage } from '../../types';
 
 defineProps<{ busy: boolean }>();
-const emit = defineEmits<{ create: [input: CreatePin]; error: [message: string] }>();
+const emit = defineEmits<{ create: [input: CreatePin]; error: [message: UiMessage] }>();
+const { t } = useI18n();
 const mode = ref<'url' | 'import'>('url');
 const address = ref('');
 const name = ref('');
@@ -23,7 +26,7 @@ const windowMode = ref<'floating' | 'desktop'>('floating');
 /// 打开原生选择器扫描来源；内置示例直接返回预览，取消时保留上次结果。
 async function choose(importMode: ImportPreview['mode']) {
   if (!desktopAvailable) {
-    emit('error', '请选择桌面应用中的导入入口。');
+    emit('error', message('ui.form.needDesktop'));
     return;
   }
   choosing.value = true;
@@ -41,7 +44,7 @@ async function choose(importMode: ImportPreview['mode']) {
       nameAuto.value = true;
     }
   } catch (error) {
-    emit('error', String(error));
+    emit('error', toUiMessage(error));
   } finally {
     choosing.value = false;
   }
@@ -50,7 +53,7 @@ async function choose(importMode: ImportPreview['mode']) {
 /// 只提交网址或导入票据，原生层完成最终校验与文件复制。
 function submit() {
   if (mode.value === 'import' && !preview.value) {
-    emit('error', '请先导入一个目录或 HTML 文件。');
+    emit('error', message('ui.form.needImport'));
     return;
   }
   emit('create', {
@@ -71,24 +74,24 @@ function submit() {
     <div class="section-heading">
       <div class="heading-icon"><AppIcon name="plus" /></div>
       <div>
-        <h2 id="new-title">固定一个新页面</h2>
-        <p>一个网址，或导入一个本地网页。</p>
+        <h2 id="new-title">{{ t('ui.form.title') }}</h2>
+        <p>{{ t('ui.form.subtitle') }}</p>
       </div>
     </div>
     <form @submit.prevent="submit">
-      <div class="source-tabs" role="group" aria-label="页面来源">
+      <div class="source-tabs" role="group" :aria-label="t('ui.form.sourceGroup')">
         <button type="button" :class="{ active: mode === 'url' }" @click="mode = 'url'">
-          <AppIcon name="link" :size="16" />网页地址
+          <AppIcon name="link" :size="16" />{{ t('ui.form.tabUrl') }}
         </button>
         <button type="button" :class="{ active: mode === 'import' }" @click="mode = 'import'">
-          <AppIcon name="folder" :size="16" />导入页面
+          <AppIcon name="folder" :size="16" />{{ t('ui.form.tabImport') }}
         </button>
       </div>
       <div v-if="mode === 'url'" class="input-wrap">
         <AppIcon name="link" :size="18" /><input
           v-model="address"
-          aria-label="网页地址"
-          placeholder="https:// 或 localhost:3000"
+          :aria-label="t('ui.form.urlAria')"
+          :placeholder="t('ui.form.urlPlaceholder')"
           required
           autocomplete="url"
           spellcheck="false"
@@ -102,7 +105,8 @@ function submit() {
             :disabled="choosing || busy"
             @click="choose('directory')"
           >
-            <AppIcon name="folder" /><span>导入目录</span><small>整个目录</small>
+            <AppIcon name="folder" /><span>{{ t('ui.form.pickFolder') }}</span
+            ><small>{{ t('ui.form.pickFolderHint') }}</small>
           </button>
           <button
             type="button"
@@ -110,7 +114,8 @@ function submit() {
             :disabled="choosing || busy"
             @click="choose('file')"
           >
-            <AppIcon name="window" /><span>导入单文件</span><small>仅入口</small>
+            <AppIcon name="window" /><span>{{ t('ui.form.pickFile') }}</span
+            ><small>{{ t('ui.form.pickFileHint') }}</small>
           </button>
           <button
             type="button"
@@ -118,7 +123,8 @@ function submit() {
             :disabled="choosing || busy"
             @click="choose('package')"
           >
-            <AppIcon name="download" /><span>导入页面包</span><small>.pinpage</small>
+            <AppIcon name="download" /><span>{{ t('ui.form.pickPackage') }}</span
+            ><small>{{ t('ui.form.pickPackageHint') }}</small>
           </button>
           <button
             type="button"
@@ -126,54 +132,59 @@ function submit() {
             :disabled="choosing || busy"
             @click="choose('example')"
           >
-            <AppIcon name="clock" /><span>导入示例</span><small>带数据</small>
+            <AppIcon name="clock" /><span>{{ t('ui.form.pickExample') }}</span
+            ><small>{{ t('ui.form.pickExampleHint') }}</small>
           </button>
         </div>
         <template v-if="preview">
           <p class="import-summary">
-            {{ preview.label }} · {{ preview.files }} 个文件 · {{ formatBytes(preview.bytes) }}
+            {{
+              t('ui.form.importedSummary', {
+                label: preview.label,
+                count: preview.files,
+                bytes: formatBytes(preview.bytes),
+              })
+            }}
           </p>
           <label v-if="preview.candidates.length > 1" class="check-row import-entry">
-            入口
-            <select v-model="entry" aria-label="导入入口">
+            {{ t('ui.form.entry') }}
+            <select v-model="entry" :aria-label="t('ui.form.entryAria')">
               <option v-for="item in preview.candidates" :key="item" :value="item">
                 {{ item }}
               </option>
             </select>
           </label>
-          <p v-else class="root-hint">入口：{{ entry }}</p>
+          <p v-else class="root-hint">{{ t('ui.form.entryValue', { entry }) }}</p>
         </template>
-        <p v-else class="root-hint">
-          导入目录会复制整个目录，单文件只复制入口；页面包可直接恢复站点与页面数据。
-        </p>
+        <p v-else class="root-hint">{{ t('ui.form.importHint') }}</p>
       </div>
       <div class="creation-row">
         <input
           v-model="name"
           class="name-input"
-          aria-label="页面名称"
+          :aria-label="t('ui.form.nameAria')"
           maxlength="80"
-          placeholder="给页面起个名字（可选）"
+          :placeholder="t('ui.form.namePlaceholder')"
           @input="nameAuto = false"
         /><button class="primary" :disabled="busy || choosing" type="submit">
-          <AppIcon name="pin" :size="16" />{{ busy ? '正在处理…' : '创建悬浮窗' }}
+          <AppIcon name="pin" :size="16" />{{ busy ? t('ui.form.busy') : t('ui.form.submit') }}
         </button>
       </div>
       <div class="creation-options">
         <label class="check-row"
-          >模式<select v-model="windowMode" aria-label="新页面显示模式">
-            <option value="floating">浮动窗口</option>
-            <option value="desktop">固定在桌面</option>
+          >{{ t('ui.form.mode')
+          }}<select v-model="windowMode" :aria-label="t('ui.form.modeAria')">
+            <option value="floating">{{ t('ui.form.modeFloating') }}</option>
+            <option value="desktop">{{ t('ui.form.modeDesktop') }}</option>
           </select></label
         >
         <label class="check-row"
-          ><input
-            v-model="top"
-            type="checkbox"
-            :disabled="windowMode === 'desktop'"
-          />始终置顶</label
-        ><label class="check-row"><input v-model="borderless" type="checkbox" />无边框模式</label
-        ><span>每个页面独立运行</span>
+          ><input v-model="top" type="checkbox" :disabled="windowMode === 'desktop'" />{{
+            t('ui.form.top')
+          }}</label
+        ><label class="check-row"
+          ><input v-model="borderless" type="checkbox" />{{ t('ui.form.borderless') }}</label
+        ><span>{{ t('ui.form.footnote') }}</span>
       </div>
     </form>
   </section>

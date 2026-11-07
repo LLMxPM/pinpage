@@ -2,7 +2,9 @@
 mod commands;
 mod content;
 mod data;
+mod errors;
 mod examples;
+mod i18n;
 mod import;
 mod models;
 mod package;
@@ -34,17 +36,18 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::snapshot,
             commands::create_pin,
-            commands::import_page,
-            commands::export_page,
-            commands::submit_page_data,
+            commands::session::import_page,
+            commands::session::export_page,
+            commands::session::submit_page_data,
             commands::pin_action,
             commands::update_pin,
-            commands::update_settings,
+            commands::settings::update_settings,
             commands::quit_app
         ])
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(AppState::load(path));
+            // 托盘在管理界面之前创建，必须先具备正确的原生翻译。
             tray::create(app.handle())?;
             let settings = app.state::<AppState>().settings.lock().unwrap().clone();
             if let Err(error) = shortcuts::configure(
@@ -64,10 +67,17 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     for pin in settings.pins.into_iter().filter(|pin| pin.enabled) {
                         if let Err(error) = windows::open_pin(&app, &pin) {
-                            state::report(&app, format!("恢复 {} 失败：{error}", pin.name));
+                            // 原因按当前语言渲染为参数，页面名称始终保留用户原值。
+                            let reason = i18n::render(state::locale(&app), &error);
+                            state::report(
+                                &app,
+                                errors::AppMessage::new("errors.restoreFailed")
+                                    .arg("name", &pin.name)
+                                    .arg("reason", reason),
+                            );
                         }
                     }
-                    tray::refresh(&app);
+                    tray::refresh_or_report(&app);
                 });
             }
             Ok(())

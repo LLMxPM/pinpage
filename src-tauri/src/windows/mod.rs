@@ -8,22 +8,49 @@ pub use settings::update;
 
 use crate::{
     content,
+    errors::AppMessage,
+    i18n,
     models::{PageSource, PinConfig, PinRuntime},
     state::{self, AppState},
 };
-use std::sync::atomic::Ordering;
+use std::{collections::BTreeMap, sync::atomic::Ordering};
 use tauri::{
     webview::NewWindowResponse, AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
 
 /// 只接受受信任管理窗口；同时验证当前来源，避免仅凭标签放行。
-pub fn ensure_manager(window: &WebviewWindow) -> Result<(), String> {
-    let url = window.url().map_err(|e| e.to_string())?;
+pub fn ensure_manager(window: &WebviewWindow) -> Result<(), AppMessage> {
+    let url = window
+        .url()
+        .map_err(|error| AppMessage::new("errors.windowNotAuthorized").detail(error))?;
     if window.label() != "main" || !manager_navigation(&url) {
-        return Err("此页面无权管理应用".into());
+        return Err(AppMessage::new("errors.notManager"));
     }
     Ok(())
+}
+
+/// 内容窗口与管理窗口的系统标题：用户名称或应用标题按当前语言加后缀。
+pub fn window_title(app: &AppHandle, title: &str) -> String {
+    let args = BTreeMap::from([("title".to_string(), title.to_string())]);
+    i18n::text(state::locale(app), "window.titleSuffix", &args)
+}
+
+/// 管理窗口的系统标题。
+fn manager_title(app: &AppHandle) -> String {
+    i18n::text(
+        state::locale(app),
+        "window.managerTitle",
+        &Default::default(),
+    )
+}
+
+/// 语言切换后更新已存在管理窗口的系统标题。
+pub fn refresh_manager_title(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let title = manager_title(app);
+        let _ = window.set_title(&title);
+    }
 }
 
 /// 限制管理窗口为打包应用来源，开发时额外放行本项目开发服务器。
@@ -46,8 +73,9 @@ pub fn show_manager(app: &AppHandle) {
     }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
+        let title = manager_title(&app);
         let result = WebviewWindowBuilder::new(&app, "main", WebviewUrl::App("index.html".into()))
-            .title("PinPage · 网页悬浮工作台")
+            .title(&title)
             .inner_size(1080., 800.)
             .min_inner_size(760., 620.)
             .center()
@@ -56,18 +84,25 @@ pub fn show_manager(app: &AppHandle) {
             .build();
         if let Err(error) = result {
             if app.get_webview_window("main").is_none() {
-                state::report(&app, format!("无法打开管理界面：{error}"));
+                state::report(
+                    &app,
+                    AppMessage::new("errors.openManagerFailed").detail(error),
+                );
             }
         }
     });
 }
 
 /// 创建一个内容 WebView，来源校验与资源授权在窗口创建前完成。
-pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
+pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     if let Some(window) = app.get_webview_window(&pin.id) {
-        window.show().map_err(|e| e.to_string())?;
+        window
+            .show()
+            .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
         if pin.mode == crate::models::WindowMode::Floating {
-            window.set_focus().map_err(|e| e.to_string())?;
+            window
+                .set_focus()
+                .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
         }
         return Ok(());
     }
@@ -77,7 +112,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
     if let PageSource::Bundled { entry: relative } = &pin.source {
         let site = crate::import::site_root(app, &pin.id)?;
         if !site.join(relative).is_file() {
-            return Err("导入的页面内容已丢失，请删除记录后重新导入".into());
+            return Err(AppMessage::new("errors.importContentLost"));
         }
         entry = Some(relative.clone());
     }
@@ -92,7 +127,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
                 pin.id,
                 crate::data::RESTORE_PAGE
             ))
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| AppMessage::new("errors.localUrlInvalid").detail(error))?;
             target.query_pairs_mut().append_pair("entry", &entry);
             target
         }
@@ -114,7 +149,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         },
     );
     let builder = WebviewWindowBuilder::new(app, &pin.id, WebviewUrl::External(url))
-        .title(&pin.name)
+        .title(window_title(app, &pin.name))
         .inner_size(pin.width.clamp(160., 3840.), pin.height.clamp(100., 2160.))
         .min_inner_size(160., 100.)
         .resizable(!pin.size_locked)
@@ -130,7 +165,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
                 events::set_error(
                     &navigation_app,
                     &navigation_id,
-                    "已阻止不支持的导航协议或本地来源".into(),
+                    AppMessage::new("errors.navigationBlocked"),
                 );
             }
             allowed
@@ -140,7 +175,10 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
                 && !url.host_str().unwrap_or("").starts_with("pinpage.")
             {
                 if let Err(error) = popup_app.opener().open_url(url.as_str(), None::<&str>) {
-                    state::report(&popup_app, format!("无法打开外部链接：{error}"));
+                    state::report(
+                        &popup_app,
+                        AppMessage::new("errors.openExternalFailed").detail(error),
+                    );
                 }
             }
             NewWindowResponse::Deny
@@ -148,19 +186,19 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), String> {
         .on_page_load(events::page_load)
         .on_document_title_changed(move |window, title| {
             // 网页标题只影响系统标题栏，用户设置的名称保持稳定。
-            let _ = window.set_title(&format!(
-                "{} · PinPage",
-                title.chars().take(100).collect::<String>()
-            ));
+            let text: String = title.chars().take(100).collect();
+            let title = window_title(window.app_handle(), &text);
+            let _ = window.set_title(&title);
         });
     let window = match builder.build() {
         Ok(window) => window,
         Err(error) => {
-            events::set_error(app, &pin.id, format!("创建窗口失败：{error}"));
+            let message = AppMessage::new("errors.createWindowFailed").detail(error);
+            events::set_error(app, &pin.id, message.clone());
             if let Some(runtime) = state.runtime.lock().unwrap().get_mut(&pin.id) {
                 runtime.open = false;
             }
-            return Err(error.to_string());
+            return Err(message);
         }
     };
     geometry::restore(&window, pin)?;

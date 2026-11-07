@@ -1,4 +1,5 @@
 // 功能：把内置示例网页写入站点副本，使示例与用户导入页走同一条加载路径。
+use crate::errors::AppMessage;
 use std::path::Path;
 
 /// 内置示例的静态文件清单，编译进二进制，不依赖安装目录。
@@ -21,8 +22,8 @@ const FILES: &[(&str, &[u8])] = &[
 /// 示例入口固定为根目录的 index.html。
 pub const ENTRY: &str = "index.html";
 
-/// 示例在导入预览中展示的名称。
-pub const LABEL: &str = "专注计时器";
+/// 示例名称的消息键，展示时按当前语言渲染。
+pub const LABEL_KEY: &str = "names.example";
 
 /// 导入前预览用的文件数与体积，口径与目录导出一致。
 pub fn measure() -> (u64, u64) {
@@ -31,11 +32,13 @@ pub fn measure() -> (u64, u64) {
 }
 
 /// 把示例写成站点副本，返回相对入口；示例目录与用户导入页完全同构。
-pub fn write_site(target: &Path) -> Result<String, String> {
-    std::fs::create_dir_all(target).map_err(|error| format!("无法创建示例目录：{error}"))?;
+pub fn write_site(target: &Path) -> Result<String, AppMessage> {
+    std::fs::create_dir_all(target)
+        .map_err(|error| AppMessage::new("errors.createExampleFailed").detail(error))?;
     for (name, data) in FILES {
-        std::fs::write(target.join(name), data)
-            .map_err(|error| format!("写入示例文件 {name} 失败：{error}"))?;
+        std::fs::write(target.join(name), data).map_err(|error| {
+            AppMessage::new("errors.writeExampleFailed").detail(format!("{name}：{error}"))
+        })?;
     }
     Ok(ENTRY.to_string())
 }

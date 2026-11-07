@@ -1,7 +1,9 @@
 <!-- 功能：呈现单个悬浮窗的来源、状态和原生操作入口。 -->
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import AppIcon from '../../components/AppIcon.vue';
+import { fromAppMessage, text } from '../../i18n/messages';
 import type { PinConfig, PinRuntime } from '../../types';
 
 const props = defineProps<{ pin: PinConfig; runtime?: PinRuntime; busy: boolean }>();
@@ -10,21 +12,28 @@ const emit = defineEmits<{
   settings: [id: string];
   export: [id: string];
 }>();
+const { t } = useI18n();
 const sourceText = computed(() =>
-  props.pin.source.kind === 'url' ? props.pin.source.url : `已导入 · ${props.pin.source.entry}`,
+  props.pin.source.kind === 'url'
+    ? props.pin.source.url
+    : t('ui.card.importedSource', { entry: props.pin.source.entry }),
+);
+/// 运行错误只携带消息码，渲染时按当前语言翻译。
+const runtimeError = computed(() =>
+  props.runtime?.error ? text(fromAppMessage(props.runtime.error)) : '',
 );
 const status = computed(() =>
   props.runtime?.error
-    ? '需要关注'
+    ? t('ui.card.statusAttention')
     : !props.runtime?.open
       ? props.pin.enabled
-        ? '尚未打开'
-        : '已关闭'
+        ? t('ui.card.statusNotOpen')
+        : t('ui.card.statusClosed')
       : props.runtime.loading
-        ? '加载中'
+        ? t('ui.card.statusLoading')
         : props.runtime.visible
-          ? '运行中'
-          : '已隐藏',
+          ? t('ui.card.statusRunning')
+          : t('ui.card.statusHidden'),
 );
 
 /// 向工作台提交窗口 ID 与操作，前端不自行修改原生状态。
@@ -46,8 +55,8 @@ function action(operation: string) {
       ><button
         class="icon-button close-pin"
         :disabled="busy"
-        :aria-label="`删除页面 ${pin.name}`"
-        title="删除页面记录"
+        :aria-label="t('ui.card.deleteAria', { name: pin.name })"
+        :title="t('ui.card.deleteTitle')"
         @click="action('delete')"
       >
         <AppIcon name="close" :size="17" />
@@ -55,35 +64,44 @@ function action(operation: string) {
     </div>
     <h3>{{ pin.name }}</h3>
     <p class="source-address" :title="sourceText">{{ sourceText }}</p>
-    <p v-if="runtime?.error" class="pin-error" role="status">{{ runtime.error }}</p>
+    <p v-if="runtimeError" class="pin-error" role="status">{{ runtimeError }}</p>
     <div class="pin-meta">
       <span>{{ Math.round(pin.width) }} × {{ Math.round(pin.height) }}</span
       ><span>{{
-        pin.mode === 'desktop' ? '桌面模式' : pin.decorations ? '标准边框' : '无边框'
+        pin.mode === 'desktop'
+          ? t('ui.card.metaDesktopMode')
+          : pin.decorations
+            ? t('ui.card.metaBordered')
+            : t('ui.card.metaBorderless')
       }}</span
       ><span v-if="pin.mode === 'floating' && pin.alwaysOnTop" class="top-label"
-        ><AppIcon name="pin" :size="12" />已置顶</span
+        ><AppIcon name="pin" :size="12" />{{ t('ui.card.metaPinned') }}</span
       >
-      <span v-if="pin.positionLocked">位置已锁定</span><span v-if="pin.sizeLocked">大小已锁定</span>
-      <span v-if="(pin.mode === 'desktop' || !pin.decorations) && pin.rounded">圆角</span>
+      <span v-if="pin.positionLocked">{{ t('ui.card.metaPositionLocked') }}</span
+      ><span v-if="pin.sizeLocked">{{ t('ui.card.metaSizeLocked') }}</span>
+      <span v-if="(pin.mode === 'desktop' || !pin.decorations) && pin.rounded">
+        {{ t('ui.card.metaRounded') }}
+      </span>
     </div>
     <div class="pin-actions">
       <label class="pin-enable"
         ><input
           type="checkbox"
           role="switch"
-          :aria-label="`${runtime?.open ? '关闭' : '开启'}悬浮页 ${pin.name}`"
+          :aria-label="
+            t(runtime?.open ? 'ui.card.switchOnAria' : 'ui.card.switchOffAria', { name: pin.name })
+          "
           :checked="!!runtime?.open"
           :disabled="busy"
           @change="action(runtime?.open ? 'close' : 'open')"
-        /><span>{{ runtime?.open ? '已开启' : '开启页面' }}</span></label
+        /><span>{{ runtime?.open ? t('ui.card.switchOn') : t('ui.card.switchOff') }}</span></label
       >
       <div class="action-group">
         <button
           class="icon-button"
           :disabled="busy"
-          title="页面设置"
-          aria-label="页面设置"
+          :title="t('ui.card.actionSettings')"
+          :aria-label="t('ui.card.actionSettings')"
           @click="emit('settings', pin.id)"
         >
           <AppIcon name="settings" :size="16" />
@@ -91,8 +109,8 @@ function action(operation: string) {
         <button
           class="icon-button"
           :disabled="busy || !runtime?.open"
-          title="显示页面"
-          aria-label="显示页面"
+          :title="t('ui.card.actionFocus')"
+          :aria-label="t('ui.card.actionFocus')"
           @click="action('focus')"
         >
           <AppIcon name="expand" :size="16" />
@@ -101,24 +119,24 @@ function action(operation: string) {
           class="icon-button"
           :class="{ selected: pin.mode === 'floating' && pin.alwaysOnTop }"
           :disabled="busy || !runtime?.open || pin.mode === 'desktop'"
-          :title="pin.alwaysOnTop ? '取消置顶' : '设为置顶'"
-          :aria-label="pin.alwaysOnTop ? '取消置顶' : '设为置顶'"
+          :title="pin.alwaysOnTop ? t('ui.card.actionUntop') : t('ui.card.actionTop')"
+          :aria-label="pin.alwaysOnTop ? t('ui.card.actionUntop') : t('ui.card.actionTop')"
           @click="action('top')"
         >
           <AppIcon name="pin" :size="16" /></button
         ><button
           class="icon-button"
           :disabled="busy || !runtime?.open"
-          title="切换边框"
-          aria-label="切换边框"
+          :title="t('ui.card.actionBorder')"
+          :aria-label="t('ui.card.actionBorder')"
           @click="action('border')"
         >
           <AppIcon name="window" :size="16" /></button
         ><button
           class="icon-button"
           :disabled="busy || !runtime?.open"
-          title="刷新页面"
-          aria-label="刷新页面"
+          :title="t('ui.card.actionReload')"
+          :aria-label="t('ui.card.actionReload')"
           @click="action('reload')"
         >
           <AppIcon name="refresh" :size="16" /></button
@@ -127,18 +145,18 @@ function action(operation: string) {
           :disabled="busy || !runtime?.open || pin.source.kind !== 'bundled'"
           :title="
             pin.source.kind === 'bundled'
-              ? '导出页面包（含页面数据）'
-              : '网址页面没有可导出的站点文件'
+              ? t('ui.card.actionExportTitle')
+              : t('ui.card.actionExportDisabled')
           "
-          aria-label="导出页面包"
+          :aria-label="t('ui.card.actionExport')"
           @click="emit('export', pin.id)"
         >
           <AppIcon name="download" :size="16" /></button
         ><button
           class="icon-button"
           :disabled="busy || !runtime?.open"
-          title="显示 / 隐藏"
-          aria-label="显示或隐藏窗口"
+          :title="t('ui.card.actionVisibility')"
+          :aria-label="t('ui.card.actionVisibilityAria')"
           @click="action('visibility')"
         >
           <AppIcon name="eye" :size="16" />

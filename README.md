@@ -8,6 +8,8 @@ PinPage 是使用 Tauri 2 实现的桌面网页悬浮工具，用于把计时器
 
 首个开发版本已实现管理界面、多悬浮窗、URL 加载、本地网页导入、页面包导入导出、置顶和边框切换、托盘、全局快捷键及会话保存恢复。完整验收进度见 [验证记录](docs/verification.md)。
 
+界面支持简体中文与英文，可在「工作台设置 → 语言」选择，也可跟随 Windows 用户首选界面语言；默认仍是简体中文。方案与验收进度见[多语言实施规划](docs/i18n-plan.md)和[验证记录](docs/verification.md)。托盘菜单、原生窗口标题、应用错误和导入引导页随语言同步更新，切换语言不会重新加载已打开的网页。
+
 ## 首版目标
 
 - 输入 HTTP/HTTPS 地址，在独立的原生 WebView 窗口中打开网页。
@@ -31,6 +33,7 @@ PinPage 是使用 Tauri 2 实现的桌面网页悬浮工具，用于把计时器
 5. 未锁定位置的无边框窗口使用 `Alt + 左键` 拖动；`Ctrl+Alt+B` 将已打开的页面切回浮动、恢复边框、解除位置锁并居中。
 6. 从工作台或托盘显式退出，下次启动时根据设置恢复仍开启的页面。
 7. 卡片上的导出按钮把导入页与页面数据打包为 `.pinpage`；新建页面时用「导入页面包」可在任意位置恢复。
+8. 在「偏好设置 → 语言」切换简体中文、英文或跟随系统；保存后立即生效，不需要重启应用。
 
 关闭单个页面或点击窗口关闭按钮会释放该 WebView，保留卡片、来源和窗口设置，下次启动也保持关闭；重新开启会再次加载页面。卡片右上角“删除页面记录”才会移除记录。隐藏窗口保留页面运行状态。关闭管理界面会销毁管理 WebView，已开启页面继续运行。
 
@@ -77,12 +80,15 @@ pnpm tauri dev
 ## 检查与打包
 
 ```powershell
+pnpm check:i18n
 pnpm build
 pnpm format:check
 pnpm test:rust
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 pnpm tauri build
 ```
+
+`pnpm check:i18n` 校验中英文资源的键、参数和原生资源语法约束，并检查代码中引用的消息键是否落库，已并入 `pnpm build`。`pnpm build` 同时执行 TypeScript 检查和 Vite 生产构建。
 
 Release 可执行文件位于 `src-tauri/target/release/pinpage.exe`，NSIS 安装包位于 `src-tauri/target/release/bundle/nsis/`。构建产物不会提交 Git。
 
@@ -104,6 +110,7 @@ Release 可执行文件位于 `src-tauri/target/release/pinpage.exe`，NSIS 安�
 ## 文档
 
 - [首版项目规划](docs/plan.md)：功能范围、架构决策、实施阶段和验收标准。
+- [多语言实施规划](docs/i18n-plan.md)：中英文范围、语言设置、前后端消息契约、实施批次和验收矩阵。
 - [协作规范](AGENTS.md)：代码、文档、工具和验证要求。
 - [验证记录](docs/verification.md)：已验证项目、性能数据及待验收场景。
 

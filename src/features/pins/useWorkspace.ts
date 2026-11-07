@@ -1,14 +1,17 @@
-// 功能：协调管理界面的加载、原生操作、错误提示与事件订阅。
+// 功能：协调管理界面的语言应用、原生操作、消息提示与事件订阅。
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { applyLocale } from '../../i18n';
+import { fromAppMessage, message, toUiMessage } from '../../i18n/messages';
 import * as desktop from '../../services/desktop';
 import { formatBytes } from '../../services/format';
-import type { CreatePin, PinSettingsInput, SettingsInput, Snapshot } from '../../types';
+import type { CreatePin, PinSettingsInput, SettingsInput, Snapshot, UiMessage } from '../../types';
 
-/// 管理快照与操作状态，避免过期异步请求覆盖最新窗口列表。
-export function useWorkspace() {
-  const snapshot = ref<Snapshot>({
+/// 空快照与 Rust 默认配置保持一致，浏览器预览按中文呈现。
+function emptySnapshot(): Snapshot {
+  return {
     settings: {
       schemaVersion: 1,
+      locale: 'zh-CN',
       restoreSession: true,
       managerShortcut: 'Ctrl+Alt+P',
       recoverShortcut: 'Ctrl+Alt+B',
@@ -16,12 +19,20 @@ export function useWorkspace() {
     },
     runtime: {},
     notices: [],
-  });
+    resolvedLocale: 'zh-CN',
+  };
+}
+
+/// 管理快照与操作状态，避免过期异步请求覆盖最新窗口列表。
+export function useWorkspace() {
+  const snapshot = ref<Snapshot>(emptySnapshot());
   const busy = ref(false);
   const loading = ref(desktop.desktopAvailable);
-  const error = ref('');
+  /// 首个快照应用有效语言之前不渲染业务界面，减少英文用户看到中文闪烁。
+  const ready = ref(!desktop.desktopAvailable);
+  const error = ref<UiMessage | null>(null);
   /// 成功类提示单独一条通道，避免和红色错误混在一起。
-  const toast = ref('');
+  const toast = ref<UiMessage | null>(null);
   const settingsOpen = ref(false);
   const editingPinId = ref<string | null>(null);
   let revision = 0;
@@ -30,12 +41,12 @@ export function useWorkspace() {
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /// 短暂展示导出结果，超时后自动收起。
-  function notify(message: string) {
-    toast.value = message;
+  /// 短暂展示导出结果，超时后自动收起。提示保存消息键和参数，不提前固化文字。
+  function notify(entry: UiMessage) {
+    toast.value = entry;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
-      toast.value = '';
+      toast.value = null;
     }, 6000);
   }
 
@@ -45,9 +56,11 @@ export function useWorkspace() {
     const current = ++revision;
     try {
       const next = await desktop.getSnapshot();
-      if (!disposed && current === revision) snapshot.value = next;
+      if (disposed || current !== revision) return;
+      snapshot.value = next;
+      applyLocale(next.resolvedLocale);
     } catch (reason) {
-      error.value = String(reason);
+      error.value = toUiMessage(reason);
     } finally {
       loading.value = false;
     }
@@ -57,15 +70,15 @@ export function useWorkspace() {
   async function run(operation: () => Promise<void>) {
     if (busy.value) return;
     if (!desktop.desktopAvailable) {
-      error.value = '请通过桌面应用使用此功能：pnpm tauri dev';
+      error.value = message('ui.desktop.desktopRequired', { command: 'pnpm tauri dev' });
       return;
     }
     busy.value = true;
-    error.value = '';
+    error.value = null;
     try {
       await operation();
     } catch (reason) {
-      error.value = String(reason);
+      error.value = toUiMessage(reason);
     } finally {
       busy.value = false;
       await refresh();
@@ -86,22 +99,29 @@ export function useWorkspace() {
   async function exportPin(id: string) {
     if (busy.value) return;
     if (!desktop.desktopAvailable) {
-      error.value = '请通过桌面应用使用此功能：pnpm tauri dev';
+      error.value = message('ui.desktop.desktopRequired', { command: 'pnpm tauri dev' });
       return;
     }
     busy.value = true;
-    error.value = '';
+    error.value = null;
     try {
       const result = await desktop.exportPage(id);
       if (result) {
         notify(
           result.withData
-            ? `已导出 ${result.files} 个文件，页面数据 ${formatBytes(result.dataBytes)}：${result.path}`
-            : `已导出 ${result.files} 个文件，页面数据未包含在内：${result.path}`,
+            ? message('ui.toast.exportedWithData', {
+                count: result.files,
+                size: formatBytes(result.dataBytes),
+                path: result.path,
+              })
+            : message('ui.toast.exportedWithoutData', {
+                count: result.files,
+                path: result.path,
+              }),
         );
       }
     } catch (reason) {
-      error.value = String(reason);
+      error.value = toUiMessage(reason);
     } finally {
       busy.value = false;
       await refresh();
@@ -122,7 +142,7 @@ export function useWorkspace() {
     });
   }
 
-  /// 保存设置成功后关闭弹层；失败时保留用户的输入。
+  /// 保存设置成功后关闭弹层；失败时保留用户的输入和当前语言。
   function saveSettings(input: SettingsInput) {
     return run(async () => {
       await desktop.updateSettings(input);
@@ -141,20 +161,20 @@ export function useWorkspace() {
   }
 
   onMounted(async () => {
-    if (desktop.desktopAvailable) {
-      try {
-        unlisten = await desktop.onPinsChanged(() => {
-          clearTimeout(refreshTimer);
-          refreshTimer = setTimeout(() => {
-            void refresh();
-          }, 80);
-        });
-        if (disposed) unlisten();
-      } catch (reason) {
-        error.value = String(reason);
-      }
-      await refresh();
+    if (!desktop.desktopAvailable) return;
+    try {
+      unlisten = await desktop.onPinsChanged(() => {
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+          void refresh();
+        }, 80);
+      });
+      if (disposed) unlisten();
+    } catch (reason) {
+      error.value = toUiMessage(reason);
     }
+    await refresh();
+    if (!disposed) ready.value = true;
   });
   onUnmounted(() => {
     disposed = true;
@@ -167,8 +187,10 @@ export function useWorkspace() {
     snapshot,
     busy,
     loading,
+    ready,
     error,
     toast,
+    notices: computed<UiMessage[]>(() => snapshot.value.notices.map(fromAppMessage)),
     settingsOpen,
     editingPinId,
     editingPin: computed(() =>

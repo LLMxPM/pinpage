@@ -29,9 +29,20 @@ fn collects_browser_storages() {
 #[test]
 /// 引导页先取随包数据再跳转，即使取数失败也会落到入口。
 fn restores_then_redirects() {
-    let page = restore_page();
+    let page = restore_page(crate::models::AppLocale::ZhCn);
     assert!(page.contains("/__pinpage__/data.json"));
     assert!(page.contains("location.replace(target)"));
     assert!(page.contains("indexedDB.open"));
     assert!(page.contains("onupgradeneeded"));
+}
+
+#[test]
+/// 引导页的语言属性和提示文字随传入语言变化。
+fn renders_requested_locale() {
+    let english = restore_page(crate::models::AppLocale::EnUs);
+    assert!(english.contains(r#"<html lang="en-US">"#));
+    assert!(english.contains("Restoring page data"));
+    let chinese = restore_page(crate::models::AppLocale::ZhCn);
+    assert!(chinese.contains(r#"<html lang="zh-CN">"#));
+    assert!(chinese.contains("正在恢复页面数据"));
 }

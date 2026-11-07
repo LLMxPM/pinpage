@@ -1,4 +1,14 @@
 // 功能：定义管理界面与 Rust IPC 共用的数据契约。
+import type { AppMessage } from './messages';
+
+export type { AppMessage, UiMessage } from './messages';
+
+/// 用户语言偏好，与 Rust `LocalePreference` 一致。
+export type LocalePreference = 'zh-CN' | 'en-US' | 'system';
+
+/// Rust 已解析的有效语言。
+export type AppLocale = 'zh-CN' | 'en-US';
+
 export type PageSource = { kind: 'url'; url: string } | { kind: 'bundled'; entry: string };
 
 export type SourceInput =
@@ -41,10 +51,12 @@ export interface PinRuntime {
   visible: boolean;
   loading: boolean;
   currentUrl: string;
-  error: string | null;
+  /// 只携带消息码与参数，切换语言后按当前语言重新渲染。
+  error: AppMessage | null;
 }
 
 export interface SettingsInput {
+  locale: LocalePreference;
   restoreSession: boolean;
   managerShortcut: string;
   recoverShortcut: string;
@@ -58,7 +70,9 @@ export interface Settings extends SettingsInput {
 export interface Snapshot {
   settings: Settings;
   runtime: Record<string, PinRuntime>;
-  notices: string[];
+  notices: AppMessage[];
+  /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
+  resolvedLocale: AppLocale;
 }
 
 export interface CreatePin {

@@ -211,6 +211,17 @@
   gap: 5px;
   align-items: center;
 }
+/* 首个快照应用有效语言之前的无文字加载壳，避免英文用户先看到中文界面。 */
+.boot-shell {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #a8b0bc;
+  font-size: 13px;
+  letter-spacing: -0.3px;
+}
 @media (max-width: 900px) {
   .sidebar {
     width: 170px;

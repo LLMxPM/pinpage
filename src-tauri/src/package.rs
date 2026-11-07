@@ -1,5 +1,6 @@
 // 功能：把导入页的站点副本与页面数据打包成 .pinpage，并支持解包回站点副本。
 use crate::{
+    errors::AppMessage,
     import,
     models::{PageSource, PinConfig},
 };
@@ -45,13 +46,13 @@ pub fn write(
     pin: &PinConfig,
     storage: Option<&str>,
     target: &Path,
-) -> Result<u64, String> {
+) -> Result<u64, AppMessage> {
     let PageSource::Bundled { entry } = &pin.source else {
-        return Err("只有导入页面可以导出".into());
+        return Err(AppMessage::new("errors.exportNeedsImport"));
     };
     let site = import::site_root(app, &pin.id)?;
     if !site.is_dir() {
-        return Err("导入内容已丢失，无法导出".into());
+        return Err(AppMessage::new("errors.importContentLost"));
     }
     write_dir(&site, &pin.name, entry, storage, target)
 }
@@ -63,7 +64,7 @@ pub fn write_dir(
     entry: &str,
     storage: Option<&str>,
     target: &Path,
-) -> Result<u64, String> {
+) -> Result<u64, AppMessage> {
     let (files, _) = import::measure(site)?;
     let manifest = Manifest {
         schema_version: PACKAGE_VERSION,
@@ -75,84 +76,96 @@ pub fn write_dir(
             .unwrap_or_default(),
         files,
     };
-    let file =
-        std::fs::File::create(target).map_err(|error| format!("无法创建导出文件：{error}"))?;
+    let file = std::fs::File::create(target)
+        .map_err(|error| AppMessage::new("errors.createExportFailed").detail(error))?;
     let mut zip = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
     zip.start_file(MANIFEST, options)
-        .map_err(|error| error.to_string())?;
-    let manifest = serde_json::to_string_pretty(&manifest).map_err(|error| error.to_string())?;
+        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
+    let manifest = serde_json::to_string_pretty(&manifest)
+        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
     zip.write_all(manifest.as_bytes())
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
     import::walk(site, &mut |path, relative, _| {
         // 包内统一使用正斜杠，跨平台解包时不必再处理分隔符差异。
         let name = format!("site/{}", relative.to_string_lossy().replace('\\', "/"));
         zip.start_file(name, options)
-            .map_err(|error| error.to_string())?;
-        let mut source = std::fs::File::open(path).map_err(|error| error.to_string())?;
-        std::io::copy(&mut source, &mut zip).map_err(|error| error.to_string())?;
+            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
+        let mut source = std::fs::File::open(path)
+            .map_err(|error| AppMessage::new("errors.copyFileFailed").detail(error))?;
+        std::io::copy(&mut source, &mut zip)
+            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
         Ok(())
     })?;
     if let Some(payload) = storage {
         zip.start_file(STORAGE, options)
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
         zip.write_all(payload.as_bytes())
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
     }
     zip.finish()
-        .map_err(|error| format!("写入页面包失败：{error}"))?;
+        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
     Ok(files)
 }
 
 /// 只读取清单，用于导入前的预览与校验。
-pub fn read_manifest(path: &Path) -> Result<Manifest, String> {
-    let file = std::fs::File::open(path).map_err(|error| format!("无法读取页面包：{error}"))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|_| "页面包格式无效")?;
+pub fn read_manifest(path: &Path) -> Result<Manifest, AppMessage> {
+    let file = std::fs::File::open(path)
+        .map_err(|error| AppMessage::new("errors.readPackageFailed").detail(error))?;
+    let mut archive = zip::ZipArchive::new(file)
+        .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
     let mut entry = archive
         .by_name(MANIFEST)
-        .map_err(|_| "页面包缺少清单文件")?;
+        .map_err(|_| AppMessage::new("errors.packageNoManifest"))?;
     let mut text = String::new();
     entry
         .read_to_string(&mut text)
-        .map_err(|error| error.to_string())?;
-    let manifest: Manifest = serde_json::from_str(&text).map_err(|_| "页面包清单无法解析")?;
+        .map_err(|error| AppMessage::new("errors.packageManifestInvalid").detail(error))?;
+    let manifest: Manifest = serde_json::from_str(&text)
+        .map_err(|error| AppMessage::new("errors.packageManifestInvalid").detail(error))?;
     if manifest.schema_version != PACKAGE_VERSION {
-        return Err("页面包版本不受支持".into());
+        return Err(AppMessage::new("errors.packageVersion"));
     }
     if !valid_entry(&manifest.entry) {
-        return Err("页面包入口不是 HTML 文件".into());
+        return Err(AppMessage::new("errors.packageEntryInvalid"));
     }
     Ok(manifest)
 }
 
 /// 解包到站点副本，拒绝越界路径、超量文件和非 HTML 入口。
-pub fn extract(source: &Path, target: &Path) -> Result<Extracted, String> {
+pub fn extract(source: &Path, target: &Path) -> Result<Extracted, AppMessage> {
     let manifest = read_manifest(source)?;
-    let file = std::fs::File::open(source).map_err(|error| format!("无法读取页面包：{error}"))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|_| "页面包格式无效")?;
-    std::fs::create_dir_all(target).map_err(|error| format!("无法创建导入目录：{error}"))?;
+    let file = std::fs::File::open(source)
+        .map_err(|error| AppMessage::new("errors.readPackageFailed").detail(error))?;
+    let mut archive = zip::ZipArchive::new(file)
+        .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+    std::fs::create_dir_all(target)
+        .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
     let mut files = 0;
     let mut bytes = 0;
     let mut storage = None;
     for index in 0..archive.len() {
-        let mut item = archive.by_index(index).map_err(|error| error.to_string())?;
+        let mut item = archive
+            .by_index(index)
+            .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
         if !item.is_file() {
             continue;
         }
         // enclosed_name 拒绝绝对路径、盘符与 .. 段，是解包的主要防线。
         let Some(name) = item.enclosed_name() else {
-            return Err("页面包包含不合法路径".into());
+            return Err(AppMessage::new("errors.packageUnsafePath"));
         };
         if name == Path::new(STORAGE) {
             if item.size() > MAX_STORAGE {
-                return Err("页面包数据过大".into());
+                return Err(AppMessage::new("errors.packageDataTooLarge"));
             }
             let mut text = String::new();
             item.read_to_string(&mut text)
-                .map_err(|error| error.to_string())?;
+                .map_err(|error| AppMessage::new("errors.packageDataInvalid").detail(error))?;
             // 提前校验为合法 JSON，恢复脚本会再次解析后再嵌入页面。
-            serde_json::from_str::<serde_json::Value>(&text).map_err(|_| "页面包数据格式无效")?;
+            serde_json::from_str::<serde_json::Value>(&text)
+                .map_err(|error| AppMessage::new("errors.packageDataInvalid").detail(error))?;
             storage = Some(text);
             continue;
         }
@@ -165,20 +178,23 @@ pub fn extract(source: &Path, target: &Path) -> Result<Extracted, String> {
         files += 1;
         bytes += item.size();
         if files > MAX_FILES || bytes > MAX_BYTES {
-            return Err("页面包超出体积上限".into());
+            return Err(AppMessage::new("errors.packageTooLarge"));
         }
         let destination = target.join(relative);
         if let Some(parent) = destination.parent() {
-            std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+            std::fs::create_dir_all(parent)
+                .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
         }
         let mut buffer = Vec::new();
         item.read_to_end(&mut buffer)
-            .map_err(|error| error.to_string())?;
-        std::fs::write(&destination, &buffer)
-            .map_err(|error| format!("写入 {} 失败：{error}", destination.display()))?;
+            .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+        std::fs::write(&destination, &buffer).map_err(|error| {
+            AppMessage::new("errors.writeFileFailed")
+                .detail(format!("{}：{error}", destination.display()))
+        })?;
     }
     if !target.join(&manifest.entry).is_file() {
-        return Err("页面包缺少入口文件".into());
+        return Err(AppMessage::new("errors.packageNoEntry"));
     }
     Ok(Extracted {
         entry: manifest.entry,

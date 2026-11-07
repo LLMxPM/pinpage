@@ -1,12 +1,18 @@
 // 功能：管理页面的开启、关闭、删除与常见原生窗口操作。
 use crate::{
+    errors::AppMessage,
     models::{PageSource, WindowMode},
     state::{self, AppState},
 };
 use tauri::{AppHandle, Manager};
 
+/// Tauri 窗口 API 的失败统一归入窗口设置说明，原始诊断保留在详情。
+fn window_failed(error: impl std::fmt::Display) -> AppMessage {
+    AppMessage::new("errors.windowApplyFailed").detail(error)
+}
+
 /// 统一串行化生命周期与外观操作；关闭保留配置，删除才移除记录。
-pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
+pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage> {
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
     let previous = state
@@ -17,7 +23,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
         .iter()
         .find(|pin| pin.id == id)
         .cloned()
-        .ok_or("页面记录不存在")?;
+        .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
     match action {
         "open" | "reopen" => {
             super::open_pin(app, &previous)?;
@@ -45,7 +51,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
                     {
                         pin.enabled = previous.enabled;
                     }
-                    return Err(error.to_string());
+                    return Err(AppMessage::new("errors.windowApplyFailed").detail(error));
                 }
             }
             if action == "delete" {
@@ -74,7 +80,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
             match action {
                 "top" => {
                     if next.mode == WindowMode::Desktop {
-                        return Err("桌面模式不使用置顶，请先切换为浮动模式".into());
+                        return Err(AppMessage::new("errors.desktopTopMode"));
                     }
                     next.always_on_top = !next.always_on_top;
                 }
@@ -104,31 +110,33 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
             }
         }
         _ => {
-            let window = app.get_webview_window(id).ok_or("页面已关闭，请先开启")?;
+            let window = app
+                .get_webview_window(id)
+                .ok_or_else(|| AppMessage::new("errors.pageClosed"))?;
             match action {
                 "focus" => {
                     window
                         .unminimize()
                         .and_then(|_| window.show())
-                        .map_err(|e| e.to_string())?;
+                        .map_err(window_failed)?;
                     if previous.mode == WindowMode::Floating {
-                        window.set_focus().map_err(|e| e.to_string())?;
+                        window.set_focus().map_err(window_failed)?;
                     }
                 }
                 "visibility" => {
-                    if window.is_visible().map_err(|e| e.to_string())? {
+                    if window.is_visible().map_err(window_failed)? {
                         window.hide()
                     } else {
                         window.show()
                     }
-                    .map_err(|e| e.to_string())?;
+                    .map_err(window_failed)?;
                 }
-                "minimize" => window.minimize().map_err(|e| e.to_string())?,
+                "minimize" => window.minimize().map_err(window_failed)?,
                 "reload" => {
-                    window.reload().map_err(|e| e.to_string())?;
+                    window.reload().map_err(window_failed)?;
                     super::events::watch_load(app, id);
                 }
-                _ => return Err("不支持的窗口操作".into()),
+                _ => return Err(AppMessage::new("errors.unknownAction")),
             }
             if let Some(runtime) = state.runtime.lock().unwrap().get_mut(id) {
                 runtime.visible = window.is_visible().unwrap_or(true);
@@ -137,6 +145,6 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), String> {
     }
     state::schedule_save(app);
     state::notify(app);
-    crate::tray::refresh(app);
+    crate::tray::refresh_or_report(app);
     Ok(())
 }

@@ -1,4 +1,5 @@
 // 功能：为无边框窗口应用真实原生圆角裁剪，兼容桌面子窗口和常规窗口。
+use crate::errors::AppMessage;
 use windows_sys::Win32::{
     Foundation::{HWND, RECT},
     Graphics::{
@@ -9,7 +10,7 @@ use windows_sys::Win32::{
 };
 
 /// 系统边框使用系统外观，无边框按配置启用 12 逻辑像素圆角或完全直角。
-pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result<(), String> {
+pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result<(), AppMessage> {
     unsafe {
         let preference: i32 = if decorated {
             0
@@ -27,12 +28,12 @@ pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result
         );
         if decorated || !rounded {
             if SetWindowRgn(window, std::ptr::null_mut(), 1) == 0 {
-                return Err("无法清除窗口圆角区域".into());
+                return Err(AppMessage::new("errors.cornerClearFailed"));
             }
         } else {
             let mut rect = RECT::default();
             if GetWindowRect(window, &mut rect) == 0 {
-                return Err("无法读取圆角窗口尺寸".into());
+                return Err(AppMessage::new("errors.cornerRectFailed"));
             }
             let diameter = (24. * scale).round() as i32;
             let region = CreateRoundRectRgn(
@@ -44,11 +45,11 @@ pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result
                 diameter,
             );
             if region.is_null() {
-                return Err("无法创建圆角窗口区域".into());
+                return Err(AppMessage::new("errors.cornerCreateFailed"));
             }
             if SetWindowRgn(window, region, 1) == 0 {
                 DeleteObject(region);
-                return Err("无法应用圆角窗口区域".into());
+                return Err(AppMessage::new("errors.cornerApplyFailed"));
             }
         }
     }

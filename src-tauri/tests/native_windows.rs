@@ -1,9 +1,13 @@
 // 功能：用本进程创建的隐藏窗口验证原生几何锁、圆角裁剪和桌面挂载，不操作用户窗口。
 #![cfg(windows)]
+// 被测的平台模块只依赖消息契约，单独引入以便复用同一份错误定义。
 #[path = "../src/platform/corners.rs"]
 mod corners;
 #[path = "../src/platform/desktop.rs"]
 mod desktop;
+#[allow(dead_code)]
+#[path = "../src/errors.rs"]
+mod errors;
 #[path = "../src/platform/rules.rs"]
 mod rules;
 use std::ptr::null_mut;
