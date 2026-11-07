@@ -1,141 +1,50 @@
 # PinPage
 
-PinPage 是使用 Tauri 2 实现的桌面网页悬浮工具，用于把计时器、看板和本地工具页固定在其他普通窗口上方。
+PinPage turns any web page into an always-visible desktop widget: online pages can float above other windows or be pinned to the desktop, while local HTML files can be imported and run directly—no browser tab, no app packaging.
 
-首版优先支持 Windows，围绕同时使用 1～5 个轻量页面设计。
+PinPage is made for content you want at a glance: timers, dashboards, notes, monitoring pages, and local HTML tools generated with an LLM.
 
-## 当前状态
+English | [简体中文](README.zh-CN.md)
 
-首个开发版本已实现管理界面、多悬浮窗、URL 加载、本地网页导入、页面包导入导出、置顶和边框切换、托盘、全局快捷键及会话保存恢复。完整验收进度见 [验证记录](docs/verification.md)。
+## Screenshots
 
-界面支持简体中文与英文，可在「工作台设置 → 语言」选择，也可跟随 Windows 用户首选界面语言；默认仍是简体中文。方案与验收进度见[多语言实施规划](docs/i18n-plan.md)和[验证记录](docs/verification.md)。托盘菜单、原生窗口标题、应用错误和导入引导页随语言同步更新，切换语言不会重新加载已打开的网页。
+![Floating pages over the desktop](docs/screenshots/desktop.jpg)
+*Pages pinned above the desktop, always in view.*
 
-管理界面的语言、显示模式和导入入口使用统一的自定义下拉，支持鼠标、方向键、Home / End、Enter、Esc 和前缀输入定位。界面只保留名称、状态、必要反馈与操作，内置文案不以句号收尾，操作说明集中在本文档。
+![Workspace](docs/screenshots/workspace.png)
+*The on-demand workspace: page cards, status, and quick actions.*
 
-页面设置打开后，窗口移动和缩放会同步到未编辑的字段；正在修改的字段保留草稿。弹窗只滚动中间表单，标题和操作按钮保持固定。
+![Page settings](docs/screenshots/pin-settings.png)
+*Source, window appearance, and size.*
 
-## 首版目标
+## Highlights
 
-- 输入 HTTP/HTTPS 地址，在独立的原生 WebView 窗口中打开网页。
-- 以导入方式添加本地网页：整目录导入或单文件导入，复制到应用数据目录后加载，原始文件可移动或删除。
-- 把导入页连同页面数据导出为 `.pinpage` 包，可在其他窗口或机器上重新导入。
-- 支持窗口置顶、普通边框与无边框切换、移动和自由调整大小。
-- 支持浮动窗口与固定在桌面两种模式，桌面页位于普通应用窗口下方。
-- 管理界面可独立开启或关闭每个页面，关闭后保留页面配置。
-- 单页设置支持无边框圆角、宽高、屏幕位置，以及独立的位置锁和大小锁。
-- 单页设置可以修改页面来源：网页页改地址，导入页重新选择目录、单文件或页面包；只在来源确实改动时重新加载页面。
-- 悬浮页不显示任务栏图标，管理界面保留任务栏入口；悬浮页可通过托盘和快捷键找回。
-- 通过托盘和快捷键完成刷新、显示、隐藏、恢复边框和关闭等操作。
-- 保存页面来源、窗口位置、大小和显示设置，并支持重启恢复。
-- 支持多个悬浮窗，默认共享 WebView2 环境和应用数据目录。
+- **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and borderless rounded corners per page.
+- **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
+- **Portable page packages** — export an imported page with its localStorage, sessionStorage, and IndexedDB as a `.pinpage` package and restore it elsewhere.
+- **Precise window control** — logical size and physical position, independent position and size locks, `Alt + left-drag` for borderless windows, and DPI/monitor correction when restoring windows.
+- **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; tray and global shortcuts keep windows recoverable.
+- **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
+- **Bilingual UI** — Simplified Chinese and English, or follow the Windows UI language; switching does not reload open pages.
+- **Four offline tools built in** — focus timer, quick notes, daily checklist, and digital clock, each added as an independent imported page.
+- **Measured footprint** — first-round Release sampling measured about 205 / 291 / 377 MiB of private commit memory for 1 / 3 / 5 idle timers across the whole process group. Details are in the [architecture notes](docs/architecture.md).
 
-## 使用方式
+## Quick start
 
-1. 点击顶栏「添加页面」，输入网页地址，或导入网页目录 / 单个 HTML 文件 / 页面包；也可以在示例库直接添加工具。
-2. 按需展开「窗口选项」，选择浮动窗口或固定在桌面，创建并开启页面。
-3. 卡片主按钮根据状态提供开启、定位、显示或重新加载；「设置」调整来源、圆角、宽高、坐标和两种锁定，「更多」提供刷新、隐藏、关闭、导出和删除等操作。
-4. 关闭管理界面，继续使用页面；通过托盘或 `Ctrl+Alt+P` 重新打开管理界面。
-5. 未锁定位置的无边框窗口使用 `Alt + 左键` 拖动；`Ctrl+Alt+B` 将已打开的页面切回浮动、恢复边框、解除位置锁并居中。
-6. 在顶栏「偏好设置」底部点击「退出 PinPage」，或从托盘退出，关闭所有页面并结束应用。启用「启动时恢复上次开启的页面」后，下次启动会重新打开退出前仍开启的页面，并恢复窗口配置；网页运行进度取决于页面自身的保存能力。
-7. 卡片「更多 → 导出页面包」把已开启的导入页与页面数据打包为 `.pinpage`；新建页面时用「导入页面包」可在任意位置恢复。
-8. 在「偏好设置 → 语言」切换简体中文、英文或跟随系统；保存后立即生效，不需要重启应用。
+1. Download the Windows installer from [GitHub Releases](../../releases/latest) and install it.
+2. Click "Add page" and enter a web address, import a local page, or add a sample.
+3. Choose Floating window or Pinned to desktop under "Window options", then create the page.
+4. Reopen the workspace with `Ctrl+Alt+P`, recover all windows with `Ctrl+Alt+B`, and drag borderless windows with `Alt + left-drag`.
 
-关闭单个页面或点击窗口关闭按钮会释放该 WebView，保留卡片、来源和窗口设置，下次启动也保持关闭；重新开启会再次加载页面。工作台的「更多 → 删除页面」经过确认后从列表移除页面，并删除页面设置及导入文件。隐藏窗口保留页面运行状态。关闭管理界面会销毁管理 WebView，已开启页面继续运行。
+Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
-桌面模式将页面嵌入 Explorer 桌面图标宿主，使用无边框外观，普通窗口可以覆盖它；切回浮动模式会沿用此前选择的边框与置顶偏好。圆角只作用于无边框窗口，有系统边框时使用系统外观。位置锁和大小锁独立生效，锁定后仍可在管理界面明确输入新数值。
+## Documentation
 
-工作台示例库提供四个离线工具，每次添加都创建独立的导入页，沿用页面包导出机制：
+- [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray and shortcuts, data migration, FAQ.
+- [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
+- [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances.
+- [Verification log](docs/verification.md) (Chinese) — implemented and verified items, performance data, pending acceptance scenarios.
 
-| 示例 | 功能 | 独立预览入口 |
-| --- | --- | --- |
-| 专注计时器 | 预设时长、暂停和基于截止时间的计时；localStorage 保存状态，IndexedDB 记录完成轮次 | [计时器](examples/timer/index.html) |
-| 随手便签 | 标题与正文随输入自动保存到 localStorage | [便签](examples/widgets/notes.html) |
-| 今日待办 | 添加、勾选和删除任务，最多 100 项，localStorage 保存清单 | [待办](examples/widgets/checklist.html) |
-| 数字时钟 | 当前本地日期、星期与时间，记忆显示秒数的偏好 | [时钟](examples/widgets/clock.html) |
+## License
 
-示例页内容使用中文，不随管理界面语言切换。便签和待办可直接打开；计时器含模块和 JSON 请求，建议通过开发服务或导入后预览。新版工作台与示例的验证边界见[验证记录](docs/verification.md)。
-
-本地前端项目可以通过开发服务器地址打开；静态构建产物可以整目录导入后运行。
-
-## 技术方案
-
-| 层次 | 采用技术 | 职责 |
-| --- | --- | --- |
-| 桌面框架 | Tauri 2、Rust | 窗口管理、托盘、快捷键、资源加载和配置保存 |
-| 管理界面 | Vue 3、TypeScript、Vite | 地址输入、网页导入、悬浮窗列表和设置 |
-| Windows 渲染 | WebView2 | 渲染远程网页和本地页面 |
-| 前端包管理 | pnpm | 安装依赖和执行前端脚本 |
-| 配置存储 | 带版本号的 JSON | 保存应用设置和悬浮窗状态 |
-| 页面包 | ZIP | 站点副本、页面数据与清单一起迁移 |
-
-目标网页与管理界面使用独立 WebView，系统权限仅授予受信任的管理界面。首版采用托盘和快捷键控制悬浮窗，窗内自定义工具栏在完成多 WebView 技术验证后评估。
-
-## 性能原则
-
-多个 WebView 可以共享浏览器基础设施，但网页仍有各自的运行开销，进程数量也由引擎和站点隔离策略决定。
-
-管理界面按需创建、关闭后销毁，每个悬浮窗只承载一个内容 WebView。项目提供 [性能采样脚本](scripts/measure-memory.ps1)，测量整个应用进程组，结果与统计口径见 [验证记录](docs/verification.md)。
-
-首轮 Release 短时采样中，1、3、5 个静置计时器的整组私有提交内存约为 205、291、377 MiB。这不是物理驻留内存，也不代表复杂看板或长时间运行的资源占用。
-
-## 开发准备
-
-开发环境需要 Node.js、pnpm、Rust MSVC 工具链、带桌面 C++ 工作负载的 Visual Studio Build Tools，以及 WebView2 Runtime。当前验证环境为 Node.js 22.23.4、pnpm 10.30.3、Rust 1.98.1。
-
-```powershell
-pnpm install
-pnpm tauri dev
-```
-
-开发地址固定为 `http://127.0.0.1:1420`。`pnpm tauri dev` 会启动前端服务；已有本项目服务时应先确认当前进程，避免重复启动。
-
-仅预览管理界面可运行 `pnpm dev`，浏览器中不能创建原生悬浮窗。
-
-## 检查与打包
-
-```powershell
-pnpm check:i18n
-pnpm build
-pnpm format:check
-pnpm test:ui
-pnpm test:rust
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-pnpm tauri build
-```
-
-`pnpm check:i18n` 校验中英文资源的键、参数和原生资源语法约束，并检查代码中引用的消息键是否落库，已并入 `pnpm build`。`pnpm build` 同时执行 TypeScript 检查和 Vite 生产构建。
-
-`pnpm test:ui` 使用 Node 内置测试运行器验证设置表单的回传合并、编辑保留与提交行为，不连接真实配置，也不创建窗口。
-
-Release 可执行文件位于 `src-tauri/target/release/pinpage.exe`，NSIS 安装包位于 `src-tauri/target/release/bundle/nsis/`。构建产物不会提交 Git。
-
-直接运行可执行文件时可追加 `--tray`，只创建托盘并按设置恢复悬浮窗，管理界面按需打开。
-
-## 本地文件与配置
-
-- 导入页面复制到 `%APPDATA%\com.pinpage.desktop\pages\{页面 ID}\site`，加载不再依赖原始路径，原文件可移动、改名或删除。
-- 目录导入以所选目录为站点根，入口取根目录下的 HTML；单文件导入只复制入口本身，适合不依赖同级资源的页面。
-- 导入跳过符号链接与目录联接，单次上限为 4000 个文件或 256 MiB，超限时先精简目录。
-- 删除页面会同时清理对应的导入副本。
-- 重新选择导入来源时，新内容先复制到 `pages\{页面 ID}\incoming`，再与现有 `site` 目录交换；交换中途失败会还原旧副本，页面不会指向空目录。文件仍被窗口占用时提示先关闭页面再重试。
-- 更换导入来源沿用同一个页面 ID，`pinpage://{页面 ID}` 来源下的 localStorage、sessionStorage 与 IndexedDB 继续保留；改为新的网页地址后使用该地址自己的存储。
-- 导航白名单按当前配置判定，修改来源后不会沿用建窗时的旧来源，也不需要销毁重建窗口。
-- 导出包为 ZIP 结构，含 `manifest.json`、`site/` 与 `data/storage.json`；页面数据覆盖 localStorage、sessionStorage 与 IndexedDB，不含 Cookie 与 HTTP 缓存。
-- 导出要求页面处于开启状态；页面未开启或数据读取超时，则只打包站点副本。
-- 文件路径支持中文和空格；目录穿越、越界目录联接和非法协议会被拒绝。
-- 配置保存在 `%APPDATA%\com.pinpage.desktop\settings.json`；网页登录数据由应用的 WebView2 用户数据目录管理。
-- 网页运行态由页面自身决定，刷新、关闭或重启后不会自动恢复完整 JS 内存状态。
-- 新窗口链接交给默认浏览器，依赖应用内弹窗的登录流程需要按站点验证。
-
-## 文档
-
-- [首版项目规划](docs/plan.md)：功能范围、架构决策、实施阶段和验收标准。
-- [多语言实施规划](docs/i18n-plan.md)：中英文范围、语言设置、前后端消息契约、实施批次和验收矩阵。
-- [协作规范](AGENTS.md)：代码、文档、工具和验证要求。
-- [验证记录](docs/verification.md)：已验证项目、性能数据及待验收场景。
-
-## 官方参考
-
-- [Tauri Windows 开发环境要求](https://v2.tauri.app/start/prerequisites/)
-- [Tauri 窗口配置](https://v2.tauri.app/reference/config/)
-- [WebView2 进程模型](https://learn.microsoft.com/microsoft-edge/webview2/concepts/process-model)
+PinPage is released under the [MIT License](LICENSE).
