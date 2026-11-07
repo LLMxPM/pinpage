@@ -80,6 +80,21 @@ pnpm tauri build
 
 直接运行可执行文件时可追加 `--tray`，只创建托盘并按设置恢复悬浮窗，工作台按需打开。
 
+## 持续集成与发布
+
+`.github/workflows/ci.yml` 在推送到 `main` 和合并请求时运行：
+
+- 前端（Ubuntu）：Prettier、文案检查、类型检查、UI 测试与生产构建。
+- Rust（Windows）：Rustfmt、Clippy、单元测试与原生窗口集成测试。
+
+`.github/workflows/release.yml` 在推送 `v*.*.*` 标签时构造 Windows 安装包并创建 GitHub Release：
+
+1. 将 `package.json`、`src-tauri/tauri.conf.json` 和 `src-tauri/Cargo.toml` 的版本同步为待发布版本。
+2. 提交并推送 `main`，再创建并推送标签，例如 `git tag v0.1.0 && git push origin v0.1.0`。
+3. 工作流会校验标签与三处版本号一致，执行 `pnpm tauri build`，上传 NSIS 安装包及同名 `.sha256` 校验文件。
+
+也可在 Actions 页面手动运行 Release 并输入已存在的标签。当前安装包未进行代码签名，Windows SmartScreen 可能提示未知发布者。
+
 ## 独立验证实例
 
 需要在不影响当前应用会话的情况下验证时，使用单独的标识与输出目录：

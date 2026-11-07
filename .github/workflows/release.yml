@@ -1,0 +1,124 @@
+# 功能：校验版本标签并构建 Windows NSIS 安装包，创建或更新 GitHub Release。
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要发布的标签，例如 v0.1.0（需已存在）
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: 构建并发布
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装 Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 缓存 Rust 构建
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: 校验标签与项目版本
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$RELEASE_TAG"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "标签格式无效：$tag（应为 v<主>.<次>.<修订>，可带预发布后缀）" >&2
+            exit 1
+          fi
+          version="${tag#v}"
+          config_version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          package_version="$(node -p "require('./package.json').version")"
+          cargo_version="$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)"
+          if [[ "$version" != "$config_version" || "$version" != "$package_version" || "$version" != "$cargo_version" ]]; then
+            echo "标签版本 $version 与项目版本不一致：" >&2
+            echo "  tauri.conf.json: $config_version" >&2
+            echo "  package.json:    $package_version" >&2
+            echo "  Cargo.toml:      $cargo_version" >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建安装包
+        run: pnpm tauri build
+
+      - name: 生成校验文件
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="src-tauri/target/release/bundle/nsis"
+          installer="$(find "$bundle_dir" -maxdepth 1 -name '*-setup.exe' -print -quit)"
+          if [[ -z "$installer" ]]; then
+            echo "未在 $bundle_dir 找到 NSIS 安装包" >&2
+            exit 1
+          fi
+          (
+            cd "$(dirname "$installer")"
+            sha256sum "$(basename "$installer")" > "$(basename "$installer").sha256"
+          )
+          echo "INSTALLER=$installer" >> "$GITHUB_ENV"
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinpage-${{ env.VERSION }}-windows-x64
+          path: |
+            ${{ env.INSTALLER }}
+            ${{ env.INSTALLER }}.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: 创建或更新 Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_TAG" in
+            *-*) prerelease=(--prerelease) ;;
+            *) prerelease=() ;;
+          esac
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$INSTALLER" "$INSTALLER.sha256" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$INSTALLER" "$INSTALLER.sha256" \
+              --title "PinPage $RELEASE_TAG" \
+              --generate-notes \
+              "${prerelease[@]}"
+          fi
