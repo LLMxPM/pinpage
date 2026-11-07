@@ -6,8 +6,7 @@
     "ariaLabel": "Connecting to PinPage"
   },
   "sidebar": {
-    "settings": "Preferences",
-    "quit": "Quit and save session"
+    "settings": "Preferences"
   },
   "topbar": {
     "minimize": "Minimize",
@@ -58,7 +57,7 @@
   },
   "card": {
     "importedSource": "Imported · {entry}",
-    "deleteTitle": "Delete the page record",
+    "deleteTitle": "Delete page",
     "statusAttention": "Needs attention",
     "statusNotOpen": "Not open",
     "statusClosed": "Closed",
@@ -86,8 +85,8 @@
     "recover": "Recover window",
     "exportNeedsOpen": "Open the page before exporting its package",
     "deleteConfirm": "Delete “{name}”?",
-    "deleteImportedHint": "The page record and imported files will be permanently deleted",
-    "deleteHint": "The page record will be permanently deleted"
+    "deleteImportedHint": "Page settings and imported files will be permanently deleted",
+    "deleteHint": "Page settings will be permanently deleted"
   },
   "pinSettings": {
     "title": "Page settings",
@@ -110,7 +109,9 @@
   },
   "settings": {
     "title": "Workspace settings",
-    "restoreSession": "Restore last session",
+    "restoreSession": "Reopen active pages on startup",
+    "quit": "Quit PinPage",
+    "quitHint": "Close all pages and quit the app",
     "language": "Language",
     "languageZh": "简体中文",
     "languageEn": "English",

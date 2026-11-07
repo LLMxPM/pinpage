@@ -235,7 +235,7 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 
 ### 构建产物
 
-多语言改造后的当前默认构建（单个安装包同时含中英文安装界面）：
+多语言改造后的早期构建（单个安装包同时含中英文安装界面；最新构建见下方验证记录）：
 
 - Release 程序：`src-tauri/target/release/pinpage.exe`，13,364,736 字节。
 - NSIS 安装包：`src-tauri/target/release/bundle/nsis/PinPage_0.1.0_x64-setup.exe`，2,964,867 字节，约 2.83 MiB。
@@ -270,6 +270,13 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 - 在 125% DPI 的真实 Windows 桌面启动独立标识的验证实例：设置弹窗打开时连续移动便签，X / Y 实时更新；顶边缩放后高度由 360 变为 300；最大化与还原后宽高正确回填。此为独立测试页面，未修改用户的真实页面配置。
 - 同时编辑名称并调整窗口后，名称草稿保持不变，尺寸和坐标持续同步；保存后卡片显示新名称及 420 × 300，持久化位置与保存前一致，未跳回旧位置。
 - `pnpm tauri build --debug --no-bundle` 用于独立桌面验证，随后 `pnpm tauri build --no-bundle` 已重建默认 Release 可执行文件；本次未重建 NSIS 安装包。
+
+### 退出入口与页面操作文案
+
+- 退出入口从示例库下方移到「偏好设置」的独立区域，改为「退出 PinPage」，并提示关闭所有页面并退出应用；启动恢复选项改为「启动时恢复上次开启的页面」。
+- 工作台、托盘和相关错误提示统一使用「页面」，删除操作改为「删除页面」，确认框分别说明页面设置及导入文件的永久删除后果；中英文同步调整。
+- `pnpm tauri build` 已通过，包含本地化资源校验、TypeScript 检查、前端生产构建、Rust Release 构建和 NSIS 安装包生成；修改的前端和资源文件通过 Prettier 检查。
+- 已在现有开发服务的中文浏览器预览中查看设置弹窗，新入口、说明与底部保存操作显示正常；未执行真实退出或删除，桌面行为由用户检查，本次未扩大 DPI 与多显示器验收范围。
 
 ## 待目标环境验收
 

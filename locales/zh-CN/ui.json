@@ -6,8 +6,7 @@
     "ariaLabel": "正在连接 PinPage"
   },
   "sidebar": {
-    "settings": "偏好设置",
-    "quit": "退出并保存会话"
+    "settings": "偏好设置"
   },
   "topbar": {
     "minimize": "最小化",
@@ -58,7 +57,7 @@
   },
   "card": {
     "importedSource": "已导入 · {entry}",
-    "deleteTitle": "删除页面记录",
+    "deleteTitle": "删除页面",
     "statusAttention": "需要关注",
     "statusNotOpen": "尚未打开",
     "statusClosed": "已关闭",
@@ -86,8 +85,8 @@
     "recover": "找回窗口",
     "exportNeedsOpen": "请先开启页面，再导出页面包",
     "deleteConfirm": "确定删除“{name}”吗？",
-    "deleteImportedHint": "页面记录和导入副本将永久删除",
-    "deleteHint": "页面记录将永久删除"
+    "deleteImportedHint": "页面设置和导入文件将永久删除",
+    "deleteHint": "页面设置将永久删除"
   },
   "pinSettings": {
     "title": "页面设置",
@@ -110,7 +109,9 @@
   },
   "settings": {
     "title": "工作台设置",
-    "restoreSession": "恢复上次会话",
+    "restoreSession": "启动时恢复上次开启的页面",
+    "quit": "退出 PinPage",
+    "quitHint": "关闭所有页面并退出应用",
     "language": "语言",
     "languageZh": "简体中文",
     "languageEn": "English",

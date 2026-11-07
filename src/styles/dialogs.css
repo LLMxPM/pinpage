@@ -107,6 +107,22 @@
   font-size: 14px;
   font-weight: 600;
 }
+.settings-quit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.settings-quit p {
+  flex: 1 1 180px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
 .dialog-footer {
   flex-shrink: 0;
   display: flex;

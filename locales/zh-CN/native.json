@@ -13,7 +13,7 @@
     "desktop": "切换桌面 / 浮动模式",
     "reload": "刷新",
     "recover": "找回窗口（浮动、边框、解锁位置）",
-    "delete": "删除页面记录"
+    "delete": "删除页面"
   },
   "window": {
     "managerTitle": "PinPage · 网页悬浮工作台",
@@ -81,7 +81,7 @@
     "filePathInvalid": "无法读取所选文件路径",
     "noRootHtml": "所选目录根目录下没有 HTML 文件，请改用导入单文件",
     "measureFailed": "导入统计失败，也可以改用导入单文件",
-    "pinNotFound": "页面记录不存在",
+    "pinNotFound": "页面不存在",
     "exportNeedsImport": "只有导入页面可以导出为页面包",
     "exportNeedsOpen": "请先开启页面再导出",
     "collectDataFailed": "无法读取页面数据",
@@ -101,7 +101,7 @@
     "configBackedUp": "配置无法读取，已备份至 {path}",
     "configBackupFailed": "配置无法读取，备份失败",
     "openManagerFailed": "无法打开管理界面",
-    "importContentLost": "导入的页面内容已丢失，请删除记录后重新导入",
+    "importContentLost": "导入的页面内容已丢失，请删除页面后重新导入",
     "navigationBlocked": "已阻止不支持的导航协议或本地来源",
     "openExternalFailed": "无法打开外部链接",
     "createWindowFailed": "创建窗口失败",

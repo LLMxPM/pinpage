@@ -13,7 +13,7 @@
     "desktop": "Switch desktop / floating mode",
     "reload": "Reload",
     "recover": "Recover window (floating, frame, unlock position)",
-    "delete": "Delete page record"
+    "delete": "Delete page"
   },
   "window": {
     "managerTitle": "PinPage · floating web workspace",
@@ -81,7 +81,7 @@
     "filePathInvalid": "The selected file path could not be read",
     "noRootHtml": "No HTML file sits in the root of the selected folder. Import a single file instead",
     "measureFailed": "Measuring the import failed. You can import a single file instead",
-    "pinNotFound": "The page record does not exist",
+    "pinNotFound": "The page does not exist",
     "exportNeedsImport": "Only imported pages can be exported as a package",
     "exportNeedsOpen": "Open the page before exporting it",
     "collectDataFailed": "The page data could not be read",
@@ -101,7 +101,7 @@
     "configBackedUp": "The configuration could not be read and was backed up to {path}",
     "configBackupFailed": "The configuration could not be read and the backup failed",
     "openManagerFailed": "The manager window could not be opened",
-    "importContentLost": "The imported page content is missing. Delete the record and import again",
+    "importContentLost": "The imported page content is missing. Delete the page and import again",
     "navigationBlocked": "An unsupported navigation protocol or local source was blocked",
     "openExternalFailed": "The external link could not be opened",
     "createWindowFailed": "Creating the window failed",

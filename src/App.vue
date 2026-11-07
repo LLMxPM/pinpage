@@ -224,11 +224,6 @@ function openSettings() {
           </div>
         </section>
         <ExampleGallery :busy="busy" :pending="pending" @create="createExample" />
-        <footer class="workspace-footer">
-          <button class="text-button" :disabled="busy || !desktopAvailable" @click="quit">
-            <AppIcon name="power" :size="14" />{{ t('ui.sidebar.quit') }}
-          </button>
-        </footer>
       </div>
     </main>
     <div v-if="toast" class="toast notice success-notice" role="status">
@@ -253,6 +248,7 @@ function openSettings() {
       :error="error"
       @close="settingsOpen = false"
       @save="saveSettings"
+      @quit="quit"
     />
     <PinSettingsDialog
       v-if="editingPin"

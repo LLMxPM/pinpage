@@ -1,14 +1,16 @@
-<!-- 功能：使用统一弹窗编辑语言、会话恢复与快捷键，并在表单内展示保存错误。 -->
+<!-- 功能：编辑启动恢复、语言与快捷键，在独立区域提供退出应用入口并展示操作错误。 -->
 <script setup lang="ts">
 import { computed, reactive, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from './AppDialog.vue';
+import AppIcon from './AppIcon.vue';
 import AppSelect from './AppSelect.vue';
 import { text } from '../i18n/messages';
+import { desktopAvailable } from '../services/desktop';
 import type { SettingsInput, UiMessage } from '../types';
 
 const props = defineProps<{ settings: SettingsInput; busy: boolean; error: UiMessage | null }>();
-const emit = defineEmits<{ close: []; save: [input: SettingsInput] }>();
+const emit = defineEmits<{ close: []; save: [input: SettingsInput]; quit: [] }>();
 const { t } = useI18n();
 const input = reactive<SettingsInput>({ ...props.settings });
 const formId = useId();
@@ -68,6 +70,17 @@ function save() {
         </div>
       </fieldset>
     </form>
+    <div class="settings-quit">
+      <p>{{ t('ui.settings.quitHint') }}</p>
+      <button
+        type="button"
+        class="secondary"
+        :disabled="busy || !desktopAvailable"
+        @click="emit('quit')"
+      >
+        <AppIcon name="power" :size="16" />{{ t('ui.settings.quit') }}
+      </button>
+    </div>
     <template #footer>
       <button type="button" class="secondary" :disabled="busy" @click="emit('close')">
         {{ t('ui.common.cancel') }}</button
