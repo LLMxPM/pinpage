@@ -8,6 +8,8 @@ mod corners;
 #[cfg(windows)]
 mod desktop;
 pub mod locale;
+#[cfg(target_os = "macos")]
+mod macos_drag;
 #[cfg(windows)]
 mod recovery;
 #[cfg(windows)]
@@ -147,6 +149,12 @@ pub fn start(app: &AppHandle) {
     });
 }
 
+/// macOS 使用 Option + 左键拖动无边框窗口。
+#[cfg(target_os = "macos")]
+pub fn start(app: &AppHandle) {
+    macos_drag::start(app);
+}
+
 /// 其他平台保留标准边框移动和托盘恢复入口。
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn start(_app: &AppHandle) {}

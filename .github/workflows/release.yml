@@ -1,4 +1,4 @@
-# 功能：校验版本标签并构建 Windows / macOS / Linux 安装包，创建或更新 GitHub Release。
+# 功能：校验版本标签并构建 Windows / macOS 安装包，创建或更新 GitHub Release。
 
 name: Release
 
@@ -35,10 +35,6 @@ jobs:
             os: macos-latest
             bundles: dmg
             args: --target universal-apple-darwin
-          - name: linux-x64
-            os: ubuntu-22.04
-            bundles: deb,appimage
-            args: ''
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
@@ -62,12 +58,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: 安装 Linux 系统依赖
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
 
       - name: 缓存 Rust 构建
         uses: Swatinem/rust-cache@v2
@@ -111,8 +101,6 @@ jobs:
           files=(
             src-tauri/target/release/bundle/nsis/*-setup.exe
             src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
           )
           if (( ${#files[@]} == 0 )); then
             echo "未找到 ${{ matrix.name }} 安装包" >&2
@@ -174,8 +162,7 @@ jobs:
               printf '\n---\n\n'
               printf -- '- Windows：下载 `*-setup.exe` 安装包，需要 WebView2 Runtime（Windows 11 通常已内置）。\n'
               printf -- '- macOS：下载 `.dmg`（通用二进制）。未签名，首次打开需右键「打开」或执行 `xattr -dr com.apple.quarantine /Applications/PinPage.app`。\n'
-              printf -- '- Linux：下载 `.deb` 或 `.AppImage`。\n'
-              printf -- '- 桌面嵌入模式、圆角与 Alt 拖动目前仅支持 Windows；其他平台提供浮动模式。\n'
+              printf -- '- 桌面嵌入模式、圆角与 Alt 拖动目前仅支持 Windows；macOS 提供浮动模式。\n'
               printf -- '- 使用同名 `.sha256` 文件核对安装包完整性。\n'
               printf -- '- 安装包尚未进行代码签名，Windows SmartScreen 可能提示「未知发布者」。\n'
               printf -- '- 完整提交记录：https://github.com/%s/commits/%s\n' "$GITHUB_REPOSITORY" "$RELEASE_TAG"
