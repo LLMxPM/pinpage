@@ -1,5 +1,5 @@
 // 功能：在 UI 线程统一应用桌面模式、边框、几何锁和圆角，避免跨线程子类化。
-use super::{corners, desktop, rules};
+use super::{caption, corners, desktop, rules};
 use crate::{
     errors::{self, AppMessage},
     models::{PinConfig, WindowMode},
@@ -70,6 +70,10 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
         rules.decorated.set(decorated);
         rules.scale.set(scale);
         corners::apply(hwnd, pin.rounded, decorated, scale)?;
+        // 只有系统边框才存在标题栏；无边框窗口不写入 DWM 配色。
+        if decorated {
+            caption::apply(hwnd);
+        }
         rules.anchor.set(unsafe { desktop::parent_rect(hwnd) });
         Ok(())
     })();

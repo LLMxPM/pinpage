@@ -10,7 +10,10 @@
     "quit": "退出并保存会话"
   },
   "topbar": {
-    "workspace": "工作空间"
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
+    "close": "关闭工作台"
   },
   "desktop": {
     "preview": "预览",

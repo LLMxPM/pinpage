@@ -10,7 +10,10 @@
     "quit": "Quit and save session"
   },
   "topbar": {
-    "workspace": "Workspace"
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close workspace"
   },
   "desktop": {
     "preview": "Preview",

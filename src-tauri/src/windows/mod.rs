@@ -79,6 +79,9 @@ pub fn show_manager(app: &AppHandle) {
             .inner_size(1080., 800.)
             .min_inner_size(760., 620.)
             .center()
+            // 原生标题栏会与自绘顶栏叠成两层，管理窗口只保留界面内的一条。
+            .decorations(false)
+            .shadow(false)
             .on_navigation(manager_navigation)
             .on_new_window(|_, _| NewWindowResponse::Deny)
             .build();

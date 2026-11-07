@@ -1,49 +1,79 @@
-/* 功能：布局精简顶栏与页面管理主区，适配默认和紧凑桌面窗口。 */
+/* 功能：布局自绘标题栏与页面管理主区，顶栏固定，仅内容区滚动。 */
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .topbar {
-  height: 72px;
+  flex: 0 0 auto;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: 22px;
-  padding: 0 max(28px, calc((100vw - 1184px) / 2));
+  gap: 12px;
+  padding: 0 6px 0 14px;
   background: #fff;
   border-bottom: 1px solid var(--line);
+  user-select: none;
 }
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.8px;
+  gap: 8px;
+  padding: 4px 6px 4px 2px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.brand:hover {
+  background: #f4f6f8;
 }
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 33px;
-  height: 35px;
+  width: 24px;
+  height: 24px;
   background: var(--accent);
-  border-radius: 10px;
+  border-radius: 7px;
   color: #fff;
 }
 .brand-mark svg {
   transform: rotate(24deg);
 }
-.brand-dot {
-  color: var(--accent);
-}
-.topbar-label {
-  border-left: 1px solid var(--line);
-  padding-left: 22px;
-  color: var(--muted);
-  font-size: 13px;
-}
 .topbar-actions {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 8px;
+}
+.window-controls {
+  display: flex;
+  gap: 2px;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+.window-button {
+  width: 40px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #566576;
+}
+.window-button:hover:not(:disabled) {
+  background: #eef1f5;
+  color: #252d38;
+}
+.window-button.close:hover:not(:disabled) {
+  background: #e04a3f;
+  color: #fff;
+}
+.workspace-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 .workspace {
   max-width: 1240px;
@@ -137,8 +167,7 @@
 }
 @media (max-width: 850px) {
   .topbar {
-    height: 64px;
-    padding: 0 24px;
+    padding: 0 4px 0 10px;
   }
   .workspace {
     padding: 26px 24px 20px;
@@ -146,20 +175,23 @@
 }
 @media (max-width: 540px) {
   .topbar {
-    gap: 12px;
-    padding: 0 16px;
+    gap: 8px;
   }
-  .brand {
-    font-size: 19px;
-  }
-  .topbar-label {
+  .brand span:last-child {
     display: none;
   }
   .topbar-actions {
     gap: 6px;
   }
   .topbar-actions button {
-    padding: 8px 10px;
+    padding: 6px 9px;
+  }
+  .window-controls {
+    margin-left: 0;
+    padding-left: 6px;
+  }
+  .window-button {
+    width: 32px;
   }
   .workspace {
     padding: 24px 16px 16px;

@@ -22,6 +22,15 @@ body {
   margin: 0;
   min-width: 360px;
 }
+/* 管理窗口使用自绘标题栏且无系统阴影，用固定覆盖层勾勒窗口边缘。 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
 button,
 input,
 textarea {

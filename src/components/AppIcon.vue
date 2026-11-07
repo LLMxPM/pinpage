@@ -24,6 +24,9 @@ const paths: Record<string, string> = {
   checklist: 'm3 6 1 1 2-2m-3 8 1 1 2-2M10 6h11M10 13h11M3 20h3m4 0h11',
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
   chevron: 'm8 10 4 4 4-4',
+  minimize: 'M5 12h14',
+  maximize: 'M5 5h14v14H5z',
+  restore: 'M9 8h11v11H9zM15 8V4H4v11h5',
 };
 </script>
 

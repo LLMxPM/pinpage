@@ -2,6 +2,8 @@
 use crate::errors::AppMessage;
 use tauri::AppHandle;
 #[cfg(windows)]
+mod caption;
+#[cfg(windows)]
 mod corners;
 #[cfg(windows)]
 mod desktop;
