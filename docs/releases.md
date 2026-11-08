@@ -1,8 +1,8 @@
 # 版本管理与 GitHub Release 升级
 
-PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安装包只从 `LLMxPM/pinpage` 的 GitHub Releases 获取；更新包使用 Tauri updater 签名，Windows 安装包代码签名暂未配置。
+PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安装包只从 `LLMxPM/pinpage` 的 GitHub Releases 获取；更新包使用 Tauri updater 签名，Windows 安装包代码签名暂未配置。应用内更新只在 Windows x64 正式构建启用，其他平台范围见[平台支持](platforms.md)。
 
-签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[验证记录](verification.md)。
+签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[开发与构建](development.md#当前状态与验收)。
 
 ## 版本规则
 

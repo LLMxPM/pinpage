@@ -4,9 +4,9 @@
 | --- | --- |
 | [用户指南](user-guide.md) | 安装启动、添加与管理页面、窗口操作、托盘、页面数据迁移、常见问题 |
 | [架构与数据](architecture.md) | 模块组成、窗口生命周期、权限与安全边界、本地副本、页面包、配置模型、多语言与性能 |
-| [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量 |
+| [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量、当前状态与验收 |
+| [平台支持](platforms.md) | Windows 与 macOS／其他平台的能力矩阵、配置回退、macOS 当前范围与验收状态 |
 | [版本与升级](releases.md) | 统一版本号、本地签名构建、GitHub Release 发布与升级数据保护 |
-| [验证记录](verification.md) | 已实现与已验证内容、性能数据、待目标环境验收项 |
 
 项目概览见英文 [README](../README.md) 或中文 [README](../README.zh-CN.md)。
 
@@ -22,7 +22,7 @@
 | `pin-settings.png` | 页面设置（来源与外观） |
 | `guide-add-page.png` | 添加页面弹窗 |
 | `guide-settings-geometry.png` | 页面设置中的外观与几何 |
-| `guide-preferences.png` | 设置 |
+| `guide-preferences.png` | 设置（当前仍为旧版设置布局，需按单页章节重新截取） |
 | `guide-examples.png` | 示例库 |
 | `guide-tray.png` | 托盘菜单 |
 
