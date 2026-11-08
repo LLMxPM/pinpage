@@ -121,12 +121,15 @@
   gap: 8px;
   margin-top: auto;
 }
-.pin-actions .icon-button {
+.pin-actions .settings-button,
+.pin-actions .locate-button {
   width: 32px;
   height: 32px;
-  margin-right: auto;
   border: 1px solid #dce1e8;
   background: #fff;
+}
+.pin-actions .settings-button {
+  margin-right: auto;
 }
 .pin-actions .primary,
 .pin-actions .secondary {

@@ -118,6 +118,9 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 .ok_or_else(|| AppMessage::new("errors.pageClosed"))?;
             match action {
                 "focus" => {
+                    if previous.mode == WindowMode::Floating {
+                        super::geometry::ensure_on_screen(&window)?;
+                    }
                     window
                         .unminimize()
                         .and_then(|_| window.show())

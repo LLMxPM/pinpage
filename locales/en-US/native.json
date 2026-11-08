@@ -4,7 +4,7 @@
     "openManager": "Open the manager",
     "recoverAll": "Recover all windows (restore frames)",
     "quit": "Quit PinPage",
-    "focus": "Show and activate",
+    "focus": "Bring to front",
     "open": "Open page",
     "close": "Close page (keep settings)",
     "visibility": "Show / hide",

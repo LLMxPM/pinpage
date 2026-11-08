@@ -4,7 +4,7 @@
     "openManager": "打开管理界面",
     "recoverAll": "找回全部窗口（恢复边框）",
     "quit": "退出 PinPage",
-    "focus": "显示并激活",
+    "focus": "带到最前",
     "open": "开启页面",
     "close": "关闭页面（保留配置）",
     "visibility": "显示 / 隐藏",

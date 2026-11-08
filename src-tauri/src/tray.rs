@@ -1,5 +1,5 @@
 // 功能：构建系统托盘及各悬浮窗的原生控制菜单。
-use crate::{errors::AppMessage, i18n, state, state::AppState, windows};
+use crate::{errors::AppMessage, i18n, models::WindowMode, state, state::AppState, windows};
 use tauri::{
     menu::{Menu, MenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -49,6 +49,10 @@ fn menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     for pin in pins {
         let submenu = Submenu::new(app, &pin.name, true)?;
         for (action, key) in PIN_ACTIONS {
+            // 桌面模式是 Explorer 的子窗口，无法抬到普通窗口前面。
+            if action == "focus" && pin.mode == WindowMode::Desktop {
+                continue;
+            }
             submenu.append(&MenuItem::with_id(
                 app,
                 format!("pin|{}|{action}", pin.id),

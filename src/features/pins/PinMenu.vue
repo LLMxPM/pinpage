@@ -75,9 +75,6 @@ onUnmounted(() => {
       <AppIcon name="more" :size="21" />
     </summary>
     <div class="menu-popup" :style="{ maxHeight: menuHeight }">
-      <button v-if="runtime?.open" :disabled="busy" @click="pick('visibility')">
-        <AppIcon name="eye" :size="16" />{{ t(runtime.visible ? 'ui.card.hide' : 'ui.card.show') }}
-      </button>
       <button :disabled="busy || !runtime?.open" @click="pick('reload')">
         <AppIcon name="refresh" :size="16" />{{ t('ui.card.actionReload') }}
       </button>

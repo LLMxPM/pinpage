@@ -48,6 +48,30 @@ pub fn restore(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
     Ok(())
 }
 
+/// 完全落在所有显示器工作区之外时先居中，避免“带到最前”仍停留在屏幕外。
+pub fn ensure_on_screen(window: &WebviewWindow) -> Result<(), AppMessage> {
+    // 最小化窗口在部分 Windows 版本上返回哨兵坐标，恢复时保留最小化前的位置。
+    if window.is_minimized().unwrap_or(false) {
+        return Ok(());
+    }
+    let position = window.outer_position().map_err(restore_failed)?;
+    let size = window.outer_size().map_err(restore_failed)?;
+    let monitors = window.available_monitors().map_err(restore_failed)?;
+    let width = size.width as i32;
+    let height = size.height as i32;
+    let intersects = monitors.iter().any(|monitor| {
+        let area = monitor.work_area();
+        position.x < area.position.x + area.size.width as i32
+            && position.x + width > area.position.x
+            && position.y < area.position.y + area.size.height as i32
+            && position.y + height > area.position.y
+    });
+    if intersects {
+        return Ok(());
+    }
+    window.center().map_err(restore_failed)
+}
+
 /// 将找回的窗口居中到当前主屏，防止边框恢复后仍位于屏幕外。
 pub fn recover(window: &WebviewWindow) -> Result<(), AppMessage> {
     window.center().map_err(restore_failed)

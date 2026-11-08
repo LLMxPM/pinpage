@@ -1,9 +1,10 @@
-<!-- 功能：紧凑呈现页面来源与运行状态，按状态放出开关/定位等主操作，低频操作收纳到更多菜单。 -->
+<!-- 功能：紧凑呈现页面来源与运行状态，分别提供开启、显示隐藏与带到最前操作，低频操作收纳到更多菜单。 -->
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
 import PinMenu from './PinMenu.vue';
+import { canBringToFront, primaryAction } from './pinActions';
 import { fromAppMessage, text } from '../../i18n/messages';
 import type { PinConfig, PinRuntime } from '../../types';
 
@@ -39,15 +40,10 @@ const status = computed(() => {
     ? { tone: 'running', key: 'ui.card.statusRunning' }
     : { tone: 'muted', key: 'ui.card.statusHidden' };
 });
-const primary = computed(() => {
-  if (!props.runtime?.open) return { operation: 'open', icon: 'power', key: 'ui.card.open' };
-  if (props.runtime.error) return { operation: 'reload', icon: 'refresh', key: 'ui.card.retry' };
-  return {
-    operation: 'focus',
-    icon: 'eye',
-    key: props.runtime.visible && props.pin.mode === 'floating' ? 'ui.card.locate' : 'ui.card.show',
-  };
-});
+const primary = computed(() => primaryAction(props.pin, props.runtime));
+const bringFront = computed(() => canBringToFront(props.pin, props.runtime));
+const hideable = computed(() => !!props.runtime?.open && !!props.runtime.visible);
+const closable = computed(() => !!props.runtime?.open);
 </script>
 
 <template>
@@ -82,7 +78,7 @@ const primary = computed(() => {
     <p v-if="runtimeError" class="pin-error" role="status">{{ runtimeError }}</p>
     <div class="pin-actions">
       <button
-        class="icon-button"
+        class="icon-button settings-button"
         :disabled="busy"
         :title="t('ui.card.settings')"
         :aria-label="t('ui.card.settings')"
@@ -90,18 +86,40 @@ const primary = computed(() => {
       >
         <AppIcon name="settings" :size="17" /></button
       ><button
-        v-if="runtime?.open"
+        v-if="bringFront"
+        class="icon-button locate-button"
+        :disabled="busy"
+        :title="t('ui.card.bringFront')"
+        :aria-label="t('ui.card.bringFront')"
+        @click="emit('action', pin.id, 'focus')"
+      >
+        <AppIcon name="target" :size="16" /></button
+      ><button
+        v-if="closable"
         class="secondary"
         :disabled="busy"
+        :title="t('ui.card.closeTitle')"
         @click="emit('action', pin.id, 'close')"
       >
         <AppIcon name="power" :size="16" />{{ t('ui.card.close') }}</button
-      ><button class="primary" :disabled="busy" @click="emit('action', pin.id, primary.operation)">
+      ><button
+        v-if="hideable"
+        class="secondary"
+        :disabled="busy"
+        @click="emit('action', pin.id, 'hide')"
+      >
+        <AppIcon name="eye" :size="16" />{{ t('ui.card.hide') }}</button
+      ><button
+        v-if="primary"
+        class="primary"
+        :disabled="busy"
+        @click="emit('action', pin.id, primary.operation)"
+      >
         <AppIcon
           :name="working ? 'refresh' : primary.icon"
           :size="16"
           :class="{ spinning: working }"
-        />{{ working ? t('ui.common.working') : t(primary.key) }}
+        />{{ working ? t('ui.common.working') : t(primary.labelKey) }}
       </button>
     </div>
   </article>
