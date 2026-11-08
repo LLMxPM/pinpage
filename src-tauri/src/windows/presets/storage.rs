@@ -14,12 +14,9 @@ fn validate(input: &mut PresetInput) -> Result<(), AppMessage> {
         return Err(AppMessage::new("errors.presetNameRange").arg("max", MAX_NAME));
     }
     let fields = &mut input.fields;
-    if !fields.width.is_finite()
-        || !fields.height.is_finite()
+    if !crate::windows::limits::contains(fields.width, fields.height)
         || !fields.fx.is_finite()
         || !fields.fy.is_finite()
-        || !(160. ..=3840.).contains(&fields.width)
-        || !(100. ..=2160.).contains(&fields.height)
         || !(0. ..=1.).contains(&fields.fx)
         || !(0. ..=1.).contains(&fields.fy)
     {

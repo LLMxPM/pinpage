@@ -82,8 +82,9 @@ pub fn normalize(fields: &mut PresetFields) {
     if fields.mode == WindowMode::Floating && fields.decorations {
         fields.rounded = false;
     }
-    fields.width = fields.width.clamp(160., 3840.);
-    fields.height = fields.height.clamp(100., 2160.);
+    let (width, height) = crate::windows::limits::clamp_size(fields.width, fields.height);
+    fields.width = width;
+    fields.height = height;
     fields.fx = fields.fx.clamp(0., 1.);
     fields.fy = fields.fy.clamp(0., 1.);
 }

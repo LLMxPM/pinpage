@@ -1,6 +1,7 @@
 // 功能：验证旧配置兼容、开关持久化及单页设置的几何约束。
 use super::*;
 use crate::models::SourceInput;
+use crate::windows::limits;
 
 /// 模拟缺少新增字段的配置，验证旧页面不会被重置。
 fn old_pin() -> PinConfig {
@@ -59,13 +60,19 @@ fn updates_preserve_identity_and_independent_locks() {
 #[test]
 /// 非法尺寸和空名称在任何原生调用之前拒绝。
 fn rejects_invalid_geometry() {
-    for width in [f64::NAN, f64::INFINITY, 0., 159., 3841.] {
+    for width in [
+        f64::NAN,
+        f64::INFINITY,
+        0.,
+        limits::MIN_WIDTH - 1.,
+        limits::MAX_WIDTH + 1.,
+    ] {
         let mut value = input();
         value.width = width;
         assert!(merge(&old_pin(), &value).is_err());
     }
     let mut value = input();
-    value.height = 99.;
+    value.height = limits::MIN_HEIGHT - 1.;
     assert!(merge(&old_pin(), &value).is_err());
     let mut value = input();
     value.name = "  ".into();

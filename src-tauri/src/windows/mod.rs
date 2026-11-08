@@ -3,6 +3,7 @@ mod actions;
 pub(crate) mod editor;
 mod events;
 mod geometry;
+pub(crate) mod limits;
 pub(crate) mod presets;
 mod settings;
 pub use actions::action;
@@ -183,10 +184,11 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
             error: None,
         },
     );
+    let (width, height) = limits::clamp_size(pin.width, pin.height);
     let builder = WebviewWindowBuilder::new(app, &pin.id, WebviewUrl::External(url))
         .title(window_title(app, &pin.name))
-        .inner_size(pin.width.clamp(160., 3840.), pin.height.clamp(100., 2160.))
-        .min_inner_size(160., 100.)
+        .inner_size(width, height)
+        .min_inner_size(limits::MIN_WIDTH, limits::MIN_HEIGHT)
         .resizable(!pin.size_locked)
         // 悬浮页通过托盘和管理界面访问，避免多个页面占用任务栏。
         .skip_taskbar(true)

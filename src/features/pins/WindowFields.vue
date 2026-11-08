@@ -3,6 +3,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import HintTip from '../../components/HintTip.vue';
+import { MAX_HEIGHT, MAX_WIDTH, MIN_HEIGHT, MIN_WIDTH } from './geometryLimits';
 import type { WindowValues } from '../../types';
 
 /// 预设编辑没有绝对坐标，只有页面设置传入 position，用于合并“尺寸与位置”分组。
@@ -128,8 +129,8 @@ function blurField(event: Event) {
           }}<input
             v-model.number="values.width"
             type="number"
-            min="160"
-            max="3840"
+            :min="MIN_WIDTH"
+            :max="MAX_WIDTH"
             required
             :disabled="fullscreen"
             @blur="commitInteger($event, 'width')"
@@ -140,8 +141,8 @@ function blurField(event: Event) {
           }}<input
             v-model.number="values.height"
             type="number"
-            min="100"
-            max="2160"
+            :min="MIN_HEIGHT"
+            :max="MAX_HEIGHT"
             required
             :disabled="fullscreen"
             @blur="commitInteger($event, 'height')"

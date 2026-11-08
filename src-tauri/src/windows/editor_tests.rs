@@ -1,5 +1,6 @@
 // 功能：验证局部窗口设置的状态隔离、输入边界及严格内容契约。
 use super::*;
+use crate::windows::limits;
 use serde_json::json;
 
 /// 构造已关闭、带预设的页面，确保编辑不改变生命周期。
@@ -49,7 +50,10 @@ fn no_op_and_independent_locks() {
 #[test]
 /// 非法尺寸和混入的身份、内容字段不能通过局部窗口接口写入。
 fn rejects_invalid_patch_and_cross_scope_fields() {
-    for value in [json!({"width": 159}), json!({"height": 2161})] {
+    for value in [
+        json!({"width": limits::MIN_WIDTH - 1.}),
+        json!({"height": limits::MAX_HEIGHT + 1.}),
+    ] {
         let patch = serde_json::from_value(value).unwrap();
         assert!(merge_window(&pin(), &patch).is_err());
     }

@@ -19,15 +19,11 @@ pub(super) fn target_geometry(
     // 全屏尺寸按目标显示器换算，覆盖任务栏区域，并收敛到设置允许的范围内。
     let (width, height, target_scale) = if fields.fullscreen {
         let monitor_scale = monitor.scale_factor().max(0.1);
-        (
-            (monitor.size().width as f64 / monitor_scale)
-                .round()
-                .clamp(160., 3840.),
-            (monitor.size().height as f64 / monitor_scale)
-                .round()
-                .clamp(100., 2160.),
-            monitor_scale,
-        )
+        let (width, height) = crate::windows::limits::clamp_size(
+            (monitor.size().width as f64 / monitor_scale).round(),
+            (monitor.size().height as f64 / monitor_scale).round(),
+        );
+        (width, height, monitor_scale)
     } else {
         (fields.width, fields.height, scale)
     };

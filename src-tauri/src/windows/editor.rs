@@ -28,17 +28,7 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
     if let Some(value) = input.y {
         next.y = Some(value);
     }
-    if !next.width.is_finite()
-        || !next.height.is_finite()
-        || !(160. ..=3840.).contains(&next.width)
-        || !(100. ..=2160.).contains(&next.height)
-    {
-        return Err(AppMessage::new("errors.geometryRange")
-            .arg("minWidth", 160)
-            .arg("maxWidth", 3840)
-            .arg("minHeight", 100)
-            .arg("maxHeight", 2160));
-    }
+    super::limits::check(next.width, next.height)?;
     if next.mode != previous.mode
         || next.always_on_top != previous.always_on_top
         || next.decorations != previous.decorations

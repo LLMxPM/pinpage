@@ -1,5 +1,6 @@
 // 功能：管理即时窗口字段的编辑、顺序提交及失败草稿，不以实时回传触发重复提交。
 import { computed, reactive, ref, watch } from 'vue';
+import { MAX_HEIGHT, MAX_WIDTH, MIN_HEIGHT, MIN_WIDTH } from './geometryLimits';
 import { windowValues } from './usePinSettingsForm';
 import type { PinConfig, WindowPatch, WindowValues } from '../../types';
 
@@ -47,9 +48,19 @@ export function useLiveWindow(
   function valid(key: keyof WindowValues) {
     const value = input[key];
     if (key === 'width')
-      return typeof value === 'number' && Number.isInteger(value) && value >= 160 && value <= 3840;
+      return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= MIN_WIDTH &&
+        value <= MAX_WIDTH
+      );
     if (key === 'height')
-      return typeof value === 'number' && Number.isInteger(value) && value >= 100 && value <= 2160;
+      return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= MIN_HEIGHT &&
+        value <= MAX_HEIGHT
+      );
     if (key === 'x' || key === 'y')
       return (
         typeof value === 'number' &&

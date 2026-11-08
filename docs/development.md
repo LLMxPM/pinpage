@@ -59,8 +59,9 @@ docs/                     用户、架构、开发与验证文档
 | 命令 | 覆盖范围 |
 | --- | --- |
 | `pnpm check:i18n` | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库 |
+| `pnpm check:limits` | 前端与原生窗口尺寸上下限是否一致 |
 | `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
-| `pnpm build` | 文案检查、类型检查与 Vite 生产构建 |
+| `pnpm build` | 文案与尺寸限制检查、类型检查及 Vite 生产构建 |
 | `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待和操作队列，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
 | `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |

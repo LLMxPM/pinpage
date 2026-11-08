@@ -532,6 +532,13 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 - 检查：`pnpm check`、`pnpm check:i18n`、`pnpm test:ui`（19 项）、`pnpm format:check`、`pnpm build` 通过；在 580 / 500 / 360 宽度及中英文下检查底栏与提示气泡，并用脚本测量未生效前后弹窗、表单与字段位置无变化。
 - 尚未在真实桌面执行预设切换后再撤销字段调整的组合操作；预设切换本身已从撤销链路移除。
 
+## 窗口尺寸范围放宽与常量收口（2026-11-08）
+
+- 宽高范围由 160～3840 × 100～2160 调整为 80～8192 × 60～8192 逻辑像素：覆盖 8K、5120 带鱼屏与竖屏 4K，同时保留安全上限，避免 WebView2 申请超大绘制面。
+- 上下限集中到原生 `windows/limits.rs` 与前端 `geometryLimits.ts`；新增 `pnpm check:limits` 比较两侧数值并纳入 `pnpm build`。设置提交、窗口创建与 `min_inner_size`、预设校验、归一化和全屏换算统一引用常量。
+- 测试：边界断言改用常量表达式；Rust 80 项单元测试与 3 项原生窗口集成测试通过；`pnpm check:limits`、`pnpm check`、`pnpm check:i18n`、`pnpm test:ui`、`pnpm build` 通过。
+- 尚未在真实桌面验证 80 宽窗口的鼠标缩放下限（Windows 最小跟踪尺寸可能大于该值）与 5120 超宽屏下全屏预设是否真正铺满。
+
 ## 待目标环境验收
 
 - 多语言：设置弹层保存语言后的托盘与通知重渲染、管理页重建 / 重启 / `--tray` 语言一致性、切换不重载内容页、英文最小窗口与 DPI 排版、中英文安装与卸载界面文案。明细见上方多语言章节。

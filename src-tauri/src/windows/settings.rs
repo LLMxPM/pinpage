@@ -8,17 +8,7 @@ use tauri::{AppHandle, Manager};
 
 /// 校验几何输入与名称，复制旧配置以兼容已有来源和开启状态。
 pub fn merge(pin: &PinConfig, input: &PinSettingsInput) -> Result<PinConfig, AppMessage> {
-    if !input.width.is_finite()
-        || !input.height.is_finite()
-        || !(160. ..=3840.).contains(&input.width)
-        || !(100. ..=2160.).contains(&input.height)
-    {
-        return Err(AppMessage::new("errors.geometryRange")
-            .arg("minWidth", 160)
-            .arg("maxWidth", 3840)
-            .arg("minHeight", 100)
-            .arg("maxHeight", 2160));
-    }
+    super::limits::check(input.width, input.height)?;
     let name = input.name.trim();
     if name.is_empty() || name.chars().count() > 80 {
         return Err(AppMessage::new("errors.nameRange").arg("max", 80));

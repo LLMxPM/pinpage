@@ -1,6 +1,7 @@
 // 功能：验证内置预设、归一化约束与跨屏相对位置换算。
 use super::*;
 use crate::models::{PresetFields, PresetInput, Settings, WindowMode, WindowPreset};
+use crate::windows::limits;
 
 /// 构造独立的编辑输入，不依赖真实显示器或用户配置。
 fn editor_input(name: &str) -> PresetInput {
@@ -48,7 +49,7 @@ fn template_permissions_validation_and_limit() {
     assert!(storage::delete_settings(&mut settings, "standard").is_err());
     for (width, fx) in [
         (f64::NAN, 0.),
-        (159., 0.),
+        (crate::windows::limits::MIN_WIDTH - 1., 0.),
         (500., -0.1),
         (500., f64::INFINITY),
     ] {
@@ -124,8 +125,8 @@ fn normalize_removes_conflicting_appearance() {
         rounded: true,
         position_locked: false,
         size_locked: false,
-        width: 100.,
-        height: 5000.,
+        width: 10.,
+        height: 9000.,
         fx: 2.,
         fy: -1.,
         fullscreen: false,
@@ -133,8 +134,8 @@ fn normalize_removes_conflicting_appearance() {
     normalize(&mut desktop);
     assert!(!desktop.always_on_top);
     assert!(desktop.rounded, "桌面模式不画系统边框，圆角仍然有效");
-    assert_eq!(desktop.width, 160.);
-    assert_eq!(desktop.height, 2160.);
+    assert_eq!(desktop.width, crate::windows::limits::MIN_WIDTH);
+    assert_eq!(desktop.height, crate::windows::limits::MAX_HEIGHT);
     assert_eq!((desktop.fx, desktop.fy), (1., 0.));
 
     let mut bordered = PresetFields {
