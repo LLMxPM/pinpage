@@ -41,6 +41,8 @@ PinPage 适合需要随时瞥一眼的内容：计时器、看板、便签、监
 
 完整操作见[用户指南](docs/user-guide.md)。从源码构建见[开发与构建](docs/development.md)。
 
+当前 Windows x64 正式版为 [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，首次接入应用内更新；v0.1.0 用户需要先手动安装一次这一版。
+
 Windows 为完整支持平台；macOS 目前仅覆盖标准浮动窗口，桌面模式、圆角、窗口锁与手势不可用，且尚未实机验收，详见[平台支持](docs/platforms.md)。
 
 ## 文档

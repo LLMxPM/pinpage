@@ -78,7 +78,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
@@ -101,6 +101,8 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm release:build` | 本地 NSIS 安装包与 `.sig` 生成成功；Windows 代码签名未配置 |
 | `pnpm format:check` / `cargo fmt --check` | 通过 |
 | `cargo clippy --all-targets -- -D clippy::all` | 通过 |
+
+2026-11-08，[主分支 CI](https://github.com/LLMxPM/pinpage/actions/runs/42462223685) 与 [v0.2.0 发布工作流](https://github.com/LLMxPM/pinpage/actions/runs/42462225046) 均通过。四项 Release 附件已公开，固定更新入口返回 `0.2.0`；重新下载的安装包通过 SHA-256、离线签名及版本绑定校验，篡改包与错误版本被拒绝。发布时修复了只查询已发布版本而读不到草稿的问题，保留原标签并使用工作流版本的发布脚本完成补发。安装交互、应用内升级与重启数据保留仍待验收。
 
 ### 已完成桌面验收
 

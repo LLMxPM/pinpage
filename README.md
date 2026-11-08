@@ -41,6 +41,8 @@ English | [简体中文](README.zh-CN.md)
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
+The current Windows x64 release is [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0), the first version with in-app updates. Users on v0.1.0 need to install this version manually once.
+
 Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
 
 ## Documentation
