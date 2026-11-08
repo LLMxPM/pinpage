@@ -35,18 +35,19 @@ const visibleError = computed(
   () => error.value ?? (snapshot.value.error ? fromAppMessage(snapshot.value.error) : null),
 );
 
-/// 复选框直接持久化升级偏好，不依赖工作台设置表单的保存按钮。
+/// 复选框直接持久化升级偏好，不依赖设置表单的保存按钮。
 function changeAutoCheck(event: Event) {
   void run('autoCheck', (event.target as HTMLInputElement).checked);
 }
 </script>
 
 <template>
-  <section class="update-settings form-section" :aria-label="t('ui.updates.title')">
-    <h3>{{ t('ui.updates.title') }}</h3>
-    <p>{{ t('ui.updates.currentVersion', { version: snapshot.currentVersion }) }}</p>
+  <div class="update-settings">
     <label class="setting-toggle">
-      <span>{{ t('ui.updates.autoCheck') }}</span>
+      <span
+        >{{ t('ui.updates.autoCheck')
+        }}<small class="instant-tag">{{ t('ui.updates.autoCheckHint') }}</small></span
+      >
       <input
         type="checkbox"
         role="switch"
@@ -140,13 +141,16 @@ function changeAutoCheck(event: Event) {
         </button>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
 .update-settings {
   display: grid;
   gap: 12px;
+}
+.update-settings .setting-toggle {
+  margin-bottom: 0;
 }
 .update-settings p {
   margin: 0;

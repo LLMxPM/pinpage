@@ -21,8 +21,6 @@ function emptySnapshot(): Snapshot {
       locale: 'zh-CN',
       gestureModifier: 'alt',
       restoreSession: true,
-      managerShortcut: 'Ctrl+Alt+P',
-      recoverShortcut: 'Ctrl+Alt+B',
       pins: [],
     },
     runtime: {},

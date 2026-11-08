@@ -1,4 +1,4 @@
-// 功能：装配应用状态、本地资源协议、托盘、快捷键及会话恢复。
+// 功能：装配应用状态、本地资源协议、托盘及会话恢复。
 mod commands;
 mod content;
 mod data;
@@ -9,7 +9,6 @@ mod import;
 mod models;
 mod package;
 mod platform;
-mod shortcuts;
 mod source;
 mod state;
 mod tray;
@@ -30,7 +29,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(shortcuts::plugin())
         .register_asynchronous_uri_scheme_protocol("pinpage", |context, request, responder| {
             let app = context.app_handle().clone();
             let label = context.webview_label().to_string();
@@ -60,13 +58,6 @@ pub fn run() {
             // 托盘在管理界面之前创建，必须先具备正确的原生翻译。
             tray::create(app.handle())?;
             let settings = app.state::<AppState>().settings.lock().unwrap().clone();
-            if let Err(error) = shortcuts::configure(
-                app.handle(),
-                &settings.manager_shortcut,
-                &settings.recover_shortcut,
-            ) {
-                state::report(app.handle(), error);
-            }
             platform::start(app.handle());
             // 托盘启动适用于已有会话，也便于独立采样内容窗口的资源开销。
             if !std::env::args().any(|argument| argument == "--tray") {

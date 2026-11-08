@@ -42,7 +42,6 @@ src-tauri/src/
   data.rs                 页面数据采集与回填
   state.rs                配置读写与运行态
   tray.rs                 托盘
-  shortcuts.rs            全局快捷键
   lib.rs / main.rs        应用装配与入口
 locales/                  中英文界面与原生消息
 examples/                 四个离线示例源码

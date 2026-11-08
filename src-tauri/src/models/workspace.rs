@@ -18,15 +18,13 @@ pub enum GestureModifier {
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
     pub schema_version: u32,
-    /// 语言偏好未知或类型不符时只回退该字段，不影响页面与快捷键。
+    /// 语言偏好未知或类型不符时只回退该字段，不影响页面与启动恢复。
     #[serde(deserialize_with = "lenient_locale")]
     pub locale: LocalePreference,
     /// 磁盘上的坏字段只回退 Alt，不能让已有页面丢失。
     #[serde(deserialize_with = "lenient_gesture_modifier")]
     pub gesture_modifier: GestureModifier,
     pub restore_session: bool,
-    pub manager_shortcut: String,
-    pub recover_shortcut: String,
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
@@ -63,15 +61,13 @@ where
 }
 
 impl Default for Settings {
-    /// 提供首版配置、默认快捷键与手势，允许旧配置缺失新增字段。
+    /// 提供首版配置与默认手势，允许旧配置缺失新增字段。
     fn default() -> Self {
         Self {
             schema_version: 1,
             locale: LocalePreference::default(),
             gesture_modifier: GestureModifier::default(),
             restore_session: true,
-            manager_shortcut: "Ctrl+Alt+P".into(),
-            recover_shortcut: "Ctrl+Alt+B".into(),
             pins: Vec::new(),
         }
     }
@@ -85,8 +81,6 @@ pub struct SettingsInput {
     /// 不使用磁盘配置的容错规则，避免错误输入被静默保存为 Alt。
     pub gesture_modifier: String,
     pub restore_session: bool,
-    pub manager_shortcut: String,
-    pub recover_shortcut: String,
 }
 
 /// 全局设置的可编辑部分，不包含页面配置。
@@ -95,8 +89,6 @@ pub struct WorkspaceSettings {
     pub locale: LocalePreference,
     pub gesture_modifier: GestureModifier,
     pub restore_session: bool,
-    pub manager_shortcut: String,
-    pub recover_shortcut: String,
 }
 
 impl WorkspaceSettings {
@@ -119,8 +111,6 @@ impl WorkspaceSettings {
             locale,
             gesture_modifier,
             restore_session: input.restore_session,
-            manager_shortcut: input.manager_shortcut.clone(),
-            recover_shortcut: input.recover_shortcut.clone(),
         })
     }
 
@@ -130,8 +120,6 @@ impl WorkspaceSettings {
             locale: settings.locale,
             gesture_modifier: settings.gesture_modifier,
             restore_session: settings.restore_session,
-            manager_shortcut: settings.manager_shortcut.clone(),
-            recover_shortcut: settings.recover_shortcut.clone(),
         }
     }
 }
@@ -146,9 +134,7 @@ mod tests {
         json!({
             "locale": "en-US",
             "gestureModifier": modifier,
-            "restoreSession": false,
-            "managerShortcut": "Ctrl+Alt+J",
-            "recoverShortcut": "Ctrl+Alt+K"
+            "restoreSession": false
         })
     }
 
@@ -166,8 +152,6 @@ mod tests {
             assert_eq!(settings.gesture_modifier, expected);
             assert_eq!(settings.locale, LocalePreference::EnUs);
             assert!(!settings.restore_session);
-            assert_eq!(settings.manager_shortcut, "Ctrl+Alt+J");
-            assert_eq!(settings.recover_shortcut, "Ctrl+Alt+K");
         }
     }
 

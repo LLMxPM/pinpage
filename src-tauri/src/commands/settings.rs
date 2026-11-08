@@ -1,11 +1,11 @@
-// 功能：串行保存工作台设置，处理手势发布、语言解析、快捷键回滚与原生界面刷新。
+// 功能：串行保存工作台设置，处理手势发布、语言解析与原生界面刷新。
 use crate::{
-    errors::AppMessage, i18n, models, models::WorkspaceSettings, shortcuts, state, state::AppState,
-    tray, windows,
+    errors::AppMessage, i18n, models, models::WorkspaceSettings, state, state::AppState, tray,
+    windows,
 };
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-/// 修改语言、窗口手势、会话恢复与快捷键；持久化失败时整体回滚，不留下半套设置。
+/// 修改语言、窗口手势与会话恢复；持久化失败时整体回滚，不留下半套设置。
 #[tauri::command]
 pub async fn update_settings(
     window: WebviewWindow,
@@ -20,30 +20,11 @@ pub async fn update_settings(
     state_ref.ensure_mutable()?;
     let previous = WorkspaceSettings::from_settings(&state_ref.settings.lock().unwrap());
 
-    // 先注册新快捷键：冲突时原有设置与原有组合都不发生变化。
-    if candidate.manager_shortcut != previous.manager_shortcut
-        || candidate.recover_shortcut != previous.recover_shortcut
-    {
-        shortcuts::configure(
-            &app,
-            &candidate.manager_shortcut,
-            &candidate.recover_shortcut,
-        )?;
-    }
-
     apply(&state_ref, &candidate);
     if let Err(error) = state_ref.save() {
         apply(&state_ref, &previous);
         let locale = state::locale(&app);
         if let Err(rollback) = state_ref.save() {
-            state::report(
-                &app,
-                i18n::caused_by(AppMessage::new("errors.rollbackFailed"), locale, &rollback),
-            );
-        }
-        if let Err(rollback) =
-            shortcuts::configure(&app, &previous.manager_shortcut, &previous.recover_shortcut)
-        {
             state::report(
                 &app,
                 i18n::caused_by(AppMessage::new("errors.rollbackFailed"), locale, &rollback),
@@ -68,8 +49,6 @@ fn apply(state: &AppState, values: &WorkspaceSettings) {
     settings.locale = values.locale;
     settings.gesture_modifier = values.gesture_modifier;
     settings.restore_session = values.restore_session;
-    settings.manager_shortcut = values.manager_shortcut.clone();
-    settings.recover_shortcut = values.recover_shortcut.clone();
 }
 
 /// 按新的有效语言刷新托盘和管理窗口标题；操作锁已释放，菜单重建不会与状态读取相互等待。
@@ -107,6 +86,7 @@ mod tests {
             (GestureModifier::Shift, "disabled"),
             (GestureModifier::Disabled, "alt"),
         ] {
+            // 旧配置中的快捷键字段已经废弃，反序列化时应被忽略。
             let original: Settings = serde_json::from_value(json!({
                 "locale": "system", "gestureModifier": before, "restoreSession": true,
                 "managerShortcut": "Ctrl+Alt+P", "recoverShortcut": "Ctrl+Alt+B",
@@ -127,8 +107,6 @@ mod tests {
                 locale: "en-US".into(),
                 gesture_modifier: after.into(),
                 restore_session: false,
-                manager_shortcut: "Ctrl+Alt+J".into(),
-                recover_shortcut: "Ctrl+Alt+K".into(),
             };
             let candidate = WorkspaceSettings::from_input(&input).unwrap();
             apply(&state, &candidate);
@@ -136,8 +114,6 @@ mod tests {
             expected["locale"] = json!("en-US");
             expected["gestureModifier"] = json!(after);
             expected["restoreSession"] = json!(false);
-            expected["managerShortcut"] = json!("Ctrl+Alt+J");
-            expected["recoverShortcut"] = json!("Ctrl+Alt+K");
             assert_eq!(
                 serde_json::to_value(state.snapshot().settings).unwrap(),
                 expected

@@ -9,6 +9,7 @@ const props = defineProps<{
   description?: string;
   busy?: boolean;
   wide?: boolean;
+  large?: boolean;
 }>();
 const emit = defineEmits<{ close: [] }>();
 const { t } = useI18n();
@@ -73,7 +74,7 @@ onUnmounted(() => {
       <section
         ref="dialog"
         class="app-dialog panel"
-        :class="{ wide }"
+        :class="{ wide, large }"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"

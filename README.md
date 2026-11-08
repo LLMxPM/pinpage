@@ -23,7 +23,7 @@ English | [简体中文](README.zh-CN.md)
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, and IndexedDB as a `.pinpage` package and restore it elsewhere.
 - **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
-- **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; tray and global shortcuts keep windows recoverable.
+- **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; the tray keeps windows recoverable.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the Windows UI language; switching does not reload open pages.
 - **GitHub Release updates** — check, download, verify, and install signed updates from this repository; installation requires confirmation. End-to-end Windows upgrade acceptance is pending; see [versioning and updates](docs/releases.md).
@@ -35,13 +35,13 @@ English | [简体中文](README.zh-CN.md)
 1. Download the Windows installer from [GitHub Releases](../../releases/latest) and install it.
 2. Click "Add page" and enter a web address, import a local page, or add a sample.
 3. Choose Floating window or Pinned to desktop under "Window options", then create the page.
-4. Reopen the workspace with `Ctrl+Alt+P` and recover all windows with `Ctrl+Alt+B`. By default, hold left Alt before left-dragging a borderless window or right-clicking a page to open its window menu; release Alt after the click, because the menu opens on release so Alt auto-repeat cannot dismiss it. Change or disable this modifier in Settings → Window operations.
+4. Reopen the workspace from the tray. By default, hold left Alt and left-drag a borderless window to move it, or Alt+right-click a page to open its window menu; release the right button and then Alt so the menu appears. Change or disable this modifier in Settings → Controls.
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
 ## Documentation
 
-- [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray and shortcuts, data migration, FAQ.
+- [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.

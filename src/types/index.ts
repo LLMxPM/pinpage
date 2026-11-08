@@ -67,8 +67,6 @@ export interface SettingsInput {
   locale: LocalePreference;
   gestureModifier: GestureModifier;
   restoreSession: boolean;
-  managerShortcut: string;
-  recoverShortcut: string;
 }
 
 export interface Settings extends SettingsInput {

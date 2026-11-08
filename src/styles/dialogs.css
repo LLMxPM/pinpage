@@ -23,6 +23,9 @@
 .app-dialog.wide {
   width: 580px;
 }
+.app-dialog.large {
+  width: 680px;
+}
 .dialog-heading {
   display: flex;
   align-items: flex-start;
@@ -107,6 +110,123 @@
   font-size: 14px;
   font-weight: 600;
 }
+/* 设置弹窗：单页内容连续排列，左侧只作为章节锚点。 */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.settings-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0;
+}
+.settings-nav button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5d6979;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+.settings-nav button:hover {
+  background: #f6f7f9;
+  color: #364253;
+}
+.settings-nav button.active {
+  color: #ad5439;
+  font-weight: 600;
+}
+.settings-nav button.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.settings-nav .nav-badge {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.settings-content {
+  min-width: 0;
+}
+.settings-section + .settings-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.settings-section .select-control {
+  margin-top: 0;
+}
+.settings-section > .setting-toggle {
+  margin-top: 18px;
+}
+.settings-hint {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.instant-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0f3f7;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: 1px;
+}
+.about-settings .update-settings {
+  margin-top: 22px;
+}
+.about-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.about-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.about-mark svg {
+  transform: rotate(24deg);
+}
+.about-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #252d38;
+}
+.about-identity p:last-child {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
 /* 来源三选横向平铺：新建与重新选择都是直达操作，不藏进菜单。 */
 .source-picks {
   display: grid;
@@ -128,22 +248,6 @@
   border-color: #d5947d;
   color: #ad5439;
 }
-.settings-quit {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-}
-.settings-quit p {
-  flex: 1 1 180px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
 .dialog-footer {
   flex-shrink: 0;
   display: flex;
@@ -153,10 +257,63 @@
   border-top: 1px solid var(--line);
   background: #fff;
 }
+/* 设置底栏：退出放在左下角，保存与关闭保持在右侧。 */
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  width: 100%;
+}
+.settings-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.settings-quit-button {
+  color: var(--muted);
+  font-size: 12px;
+}
+.settings-quit-button:hover:not(:disabled) {
+  color: #be3e3e;
+}
 .delete-message {
   font-size: 15px;
   line-height: 1.8;
   overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .settings-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-direction: row;
+    gap: 2px;
+    padding: 6px 0 10px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    scrollbar-width: none;
+  }
+  .settings-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .settings-nav button::before {
+    display: none;
+  }
+  .settings-nav button {
+    width: auto;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+  .settings-nav button.active {
+    background: var(--accent-soft);
+  }
 }
 @media (max-width: 540px) {
   .modal-backdrop {

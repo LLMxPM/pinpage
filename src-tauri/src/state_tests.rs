@@ -7,7 +7,7 @@ fn settings_from(json: &str) -> Settings {
     serde_json::from_str(json).expect("配置应能解析")
 }
 
-/// 构造带一个页面和自定义快捷键的旧版配置文本。
+/// 构造带一个页面和已废弃快捷键字段的旧版配置文本。
 fn legacy_config() -> String {
     serde_json::to_string(&serde_json::json!({
         "schemaVersion": 1,
@@ -24,12 +24,11 @@ fn legacy_config() -> String {
 }
 
 #[test]
-/// 缺少语言字段的旧配置只回退中文，页面与快捷键保持不变。
+/// 缺少语言字段的旧配置只回退中文，页面与会话保持不变。
 fn missing_locale_keeps_other_settings() {
     let settings = settings_from(&legacy_config());
     assert_eq!(settings.locale, LocalePreference::ZhCn);
     assert!(!settings.restore_session);
-    assert_eq!(settings.manager_shortcut, "Ctrl+Alt+J");
     assert_eq!(settings.pins.len(), 1);
     assert!(!settings.pins[0].enabled, "关闭状态不应被语言回退重置");
 }
@@ -80,7 +79,7 @@ fn gesture_modifier_defaults_to_alt() {
 }
 
 #[test]
-/// 缺少手势字段的旧配置只补默认值，不改变页面、语言、会话与快捷键。
+/// 缺少手势字段的旧配置只补默认值，不改变页面、语言与会话。
 fn missing_gesture_modifier_keeps_legacy_settings() {
     let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
     legacy["locale"] = serde_json::json!("en-US");
@@ -88,8 +87,6 @@ fn missing_gesture_modifier_keeps_legacy_settings() {
     assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
     assert_eq!(settings.locale, LocalePreference::EnUs);
     assert!(!settings.restore_session);
-    assert_eq!(settings.manager_shortcut, "Ctrl+Alt+J");
-    assert_eq!(settings.recover_shortcut, "Ctrl+Alt+K");
     assert_eq!(settings.pins.len(), 1);
     assert_eq!(settings.pins[0].id, "p-old");
     assert!(!settings.pins[0].enabled);

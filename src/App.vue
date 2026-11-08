@@ -43,6 +43,12 @@ const {
 const creatingOpen = ref(false);
 const launchMode = ref<'url' | 'import'>('url');
 const deletingPin = ref<PinConfig | null>(null);
+/// 设置按钮保留固定文字，有更新时通过角标和读屏标签补充状态。
+const settingsLabel = computed(() =>
+  updateAvailable.value
+    ? `${t('ui.updates.availableBadge')} · ${t('ui.sidebar.settings')}`
+    : undefined,
+);
 // 管理窗口使用自绘标题栏，拖动和窗口按钮直接调用原生窗口能力。
 const appWindow = desktopAvailable ? getCurrentWindow() : null;
 const maximized = ref(false);
@@ -126,10 +132,19 @@ function openSettings() {
       >
       <span v-if="!desktopAvailable" class="preview-badge">{{ t('ui.desktop.preview') }}</span>
       <div class="topbar-actions">
-        <button class="secondary compact" @click="openSettings">
-          <AppIcon name="settings" :size="16" />{{
-            updateAvailable ? t('ui.updates.availableBadge') : t('ui.sidebar.settings')
-          }}</button
+        <button
+          class="secondary compact"
+          :title="updateAvailable ? t('ui.updates.availableBadge') : undefined"
+          :aria-label="settingsLabel"
+          @click="openSettings"
+        >
+          <span class="settings-glyph"
+            ><AppIcon name="settings" :size="16" /><span
+              v-if="updateAvailable"
+              class="update-dot"
+              aria-hidden="true"
+          /></span>
+          {{ t('ui.sidebar.settings') }}</button
         ><button class="primary compact" :disabled="busy" @click="openCreate()">
           <AppIcon name="plus" :size="17" />{{ t('ui.workspace.add') }}
         </button>
@@ -250,6 +265,7 @@ function openSettings() {
       :settings="snapshot.settings"
       :busy="busy"
       :error="error"
+      :update-available="updateAvailable"
       @close="settingsOpen = false"
       @save="saveSettings"
       @quit="quit"

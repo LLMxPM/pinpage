@@ -46,6 +46,20 @@
   display: flex;
   gap: 8px;
 }
+.settings-glyph {
+  position: relative;
+  display: inline-flex;
+}
+.update-dot {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px #fff;
+}
 .window-controls {
   display: flex;
   gap: 2px;

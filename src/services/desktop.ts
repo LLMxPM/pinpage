@@ -46,7 +46,7 @@ export function updatePin(id: string, input: PinSettingsInput): Promise<void> {
   return invoke('update_pin', { id, input });
 }
 
-/// 更新恢复设置与全局快捷键，冲突时后端返回明确错误。
+/// 更新语言、启动恢复与窗口手势。
 export function updateSettings(input: SettingsInput): Promise<void> {
   return invoke('update_settings', { input });
 }

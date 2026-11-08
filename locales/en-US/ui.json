@@ -6,7 +6,7 @@
     "ariaLabel": "Connecting to PinPage"
   },
   "sidebar": {
-    "settings": "Preferences"
+    "settings": "Settings"
   },
   "topbar": {
     "minimize": "Minimize",
@@ -99,7 +99,7 @@
     "top": "Always on top",
     "border": "Show system frame",
     "rounded": "Rounded borderless corners",
-    "dragHint": "For borderless windows, hold the gesture modifier from Workspace settings before left-dragging; disabled gestures or a locked position prevent dragging",
+    "dragHint": "For borderless windows, hold the gesture modifier from Settings before left-dragging; disabled gestures or a locked position prevent dragging",
     "size": "Size",
     "width": "Width",
     "height": "Height",
@@ -117,7 +117,10 @@
     "sourceDirty": "Source changed — it applies when you save."
   },
   "settings": {
-    "title": "Workspace settings",
+    "title": "Settings",
+    "navGeneral": "General",
+    "navControls": "Controls",
+    "navAbout": "About",
     "restoreSession": "Reopen active pages on startup",
     "quit": "Quit PinPage",
     "quitHint": "Close all pages and quit the app",
@@ -125,19 +128,13 @@
     "languageZh": "简体中文",
     "languageEn": "English",
     "languageSystem": "System",
-    "managerShortcut": "Open the manager",
-    "recoverShortcut": "Recover all windows",
-    "managerPlaceholder": "Ctrl+Alt+P",
-    "recoverPlaceholder": "Ctrl+Alt+B",
     "save": "Save settings",
-    "shortcuts": "Global shortcuts",
-    "windowOperations": "Window operations",
-    "gestureModifier": "Gesture modifier (shared by both mouse buttons)",
+    "gestureModifier": "Gesture modifier",
     "gestureAlt": "Alt (left Alt only)",
     "gestureCtrl": "Ctrl (either side)",
     "gestureShift": "Shift (either side)",
     "gestureDisabled": "Off",
-    "gestureHint": "Hold the modifier first, then left-drag a borderless window with an unlocked position, or right-click to open its window menu. These gestures override the same mouse combinations in web pages. Select Off to disable both gestures. With Alt, release it after the right-click; the menu appears once Alt is released, because Alt auto-repeat dismisses native menus."
+    "gestureHint": "Hold the modifier to left-drag an unlocked borderless window or right-click to open its menu. With Alt, use Alt+left-drag to move the window; for Alt+right-click, release the right button and then Alt before the menu appears."
   },
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",
@@ -145,6 +142,7 @@
   },
   "common": {
     "closeDialog": "Close dialog",
+    "close": "Close",
     "cancel": "Cancel",
     "working": "Working…"
   },
@@ -163,9 +161,9 @@
     "addAria": "Add {name} sample"
   },
   "updates": {
-    "title": "About and updates",
     "currentVersion": "Current version v{version}",
-    "autoCheck": "Check for updates automatically (daily)",
+    "autoCheck": "Check for updates daily",
+    "autoCheckHint": "Saves instantly",
     "neverChecked": "Not checked yet",
     "lastCheck": "Last checked: {time}",
     "unsupported": "In-app updates are disabled in development builds, verification instances, and platforms other than Windows x64",
