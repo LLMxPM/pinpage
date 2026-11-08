@@ -9,7 +9,10 @@ use windows_sys::Win32::{
     UI::WindowsAndMessaging::*,
 };
 
-/// 系统边框使用系统外观，无边框按配置启用 12 逻辑像素圆角或完全直角。
+/// 圆角半径（逻辑像素）；平台回退统一使用同一取值，避免不同渲染路径外观不一致。
+const CORNER_RADIUS: f64 = 6.;
+
+/// 系统边框使用系统外观，无边框按配置启用 6 逻辑像素圆角或完全直角。
 pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result<(), AppMessage> {
     unsafe {
         let preference: i32 = if decorated {
@@ -35,7 +38,8 @@ pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result
             if GetWindowRect(window, &mut rect) == 0 {
                 return Err(AppMessage::new("errors.cornerRectFailed"));
             }
-            let diameter = (24. * scale).round() as i32;
+            // DWM 系统圆角固定约 8 逻辑像素，无法与 6px 统一；各平台与桌面挂载路径统一使用区域裁剪。
+            let diameter = ((CORNER_RADIUS * scale).round() as i32).max(1) * 2;
             let region = CreateRoundRectRgn(
                 0,
                 0,
