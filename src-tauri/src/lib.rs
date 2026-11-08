@@ -44,6 +44,8 @@ pub fn run() {
             commands::session::submit_page_data,
             commands::pin_action,
             commands::update_pin,
+            commands::save_preset,
+            commands::delete_preset,
             commands::settings::update_settings,
             commands::updates::updates_snapshot,
             commands::updates::update_action,

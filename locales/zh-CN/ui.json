@@ -87,7 +87,8 @@
     "exportNeedsOpen": "请先开启页面，再导出页面包",
     "deleteConfirm": "确定删除“{name}”吗？",
     "deleteImportedHint": "页面设置和导入文件将永久删除",
-    "deleteHint": "页面设置将永久删除"
+    "deleteHint": "页面设置将永久删除",
+    "metaPreset": "基于 {name}"
   },
   "pinSettings": {
     "title": "页面设置",
@@ -114,7 +115,12 @@
     "sourceUrl": "网页地址",
     "sourceUrlHint": "修改地址后保存会重新加载页面",
     "sourceImportHint": "重新选择后会用新文件替换已导入的副本，并重新加载页面",
-    "sourceDirty": "来源已改动，保存后生效"
+    "sourceDirty": "来源已改动，保存后生效",
+    "presets": "窗口预设",
+    "presetHint": "点选预设会立即改变窗口外观与位置；有未保存的修改时需先保存。",
+    "presetDirty": "先保存或取消当前修改，才能切换预设",
+    "presetSave": "存为预设",
+    "presetNamePlaceholder": "预设名称，例如：右上角计时器"
   },
   "settings": {
     "title": "设置",
@@ -134,11 +140,18 @@
     "gestureCtrl": "Ctrl（左右均可）",
     "gestureShift": "Shift（左右均可）",
     "gestureDisabled": "关闭",
-    "gestureHint": "按住修饰键后，左键拖动未锁定的无边框窗口，右键打开窗口菜单。使用 Alt 时，Alt+左键拖动窗口；Alt+右键需先松开右键，再松开 Alt，菜单才会显示。"
+    "gestureHint": "按住修饰键后，左键拖动未锁定的无边框窗口，右键打开窗口菜单。使用 Alt 时，Alt+左键拖动窗口；Alt+右键需先松开右键，再松开 Alt，菜单才会显示。",
+    "windowPresets": "自定义预设",
+    "presetEmpty": "还没有自定义预设。在页面设置里可以把当前外观与位置存为预设。",
+    "presetDelete": "删除预设“{name}”"
   },
   "toast": {
     "exportedWithData": "已导出 {count} 个文件，页面数据 {size}：{path}",
-    "exportedWithoutData": "已导出 {count} 个文件，页面数据未包含在内：{path}"
+    "exportedWithoutData": "已导出 {count} 个文件，页面数据未包含在内：{path}",
+    "presetApplied": "已切换到“{name}”",
+    "presetSaved": "已保存预设“{name}”",
+    "presetDeleted": "已删除预设“{name}”",
+    "undo": "撤销"
   },
   "common": {
     "closeDialog": "关闭弹窗",

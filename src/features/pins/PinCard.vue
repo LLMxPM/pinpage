@@ -5,11 +5,13 @@ import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
 import PinMenu from './PinMenu.vue';
 import { canBringToFront, primaryAction } from './pinActions';
+import { presetLabel } from './presets';
 import { fromAppMessage, text } from '../../i18n/messages';
-import type { PinConfig, PinRuntime } from '../../types';
+import type { PinConfig, PinRuntime, WindowPreset } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
+  presets: WindowPreset[];
   runtime?: PinRuntime;
   busy: boolean;
   working: boolean;
@@ -44,6 +46,11 @@ const primary = computed(() => primaryAction(props.pin, props.runtime));
 const bringFront = computed(() => canBringToFront(props.pin, props.runtime));
 const hideable = computed(() => !!props.runtime?.open && !!props.runtime.visible);
 const closable = computed(() => !!props.runtime?.open);
+/// 只在预设仍存在时展示来源标记，删除后的悬挂引用不会留下空标签。
+const activePreset = computed(() => {
+  const found = props.presets.find((preset) => preset.id === props.pin.preset);
+  return found ? presetLabel(found) : '';
+});
 </script>
 
 <template>
@@ -59,6 +66,7 @@ const closable = computed(() => !!props.runtime?.open);
       <span class="status-pill" :class="status.tone"><i />{{ t(status.key) }}</span
       ><PinMenu
         :pin="pin"
+        :presets="presets"
         :runtime="runtime"
         :busy="busy"
         @action="emit('action', pin.id, $event)"
@@ -73,6 +81,10 @@ const closable = computed(() => !!props.runtime?.open);
       ><span>{{ Math.round(pin.width) }} × {{ Math.round(pin.height) }}</span
       ><span v-if="pin.mode === 'floating' && pin.alwaysOnTop" class="top-label"
         ><AppIcon name="pin" :size="12" />{{ t('ui.card.metaPinned') }}</span
+      ><span v-if="activePreset" class="preset-label" :title="activePreset"
+        ><AppIcon name="check" :size="12" />{{
+          t('ui.card.metaPreset', { name: activePreset })
+        }}</span
       >
     </div>
     <p v-if="runtimeError" class="pin-error" role="status">{{ runtimeError }}</p>

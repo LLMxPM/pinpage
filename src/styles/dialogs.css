@@ -186,6 +186,32 @@
   font-size: 12px;
   line-height: 1.7;
 }
+/* 设置页内的预设分组沿用表单分隔线，仅补齐标题下间距。 */
+.settings-section .form-section h3 {
+  margin: 0 0 10px;
+}
+/* 自定义预设逐条列出，删除按钮靠右，名称过长时优先换行。 */
+.preset-manage {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.preset-manage li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #465466;
+  font-size: 13px;
+}
+.preset-manage li span {
+  overflow-wrap: anywhere;
+}
 .instant-tag {
   display: inline-block;
   margin-left: 8px;

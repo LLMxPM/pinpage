@@ -23,6 +23,7 @@ English | [简体中文](README.zh-CN.md)
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, and IndexedDB as a `.pinpage` package and restore it elsewhere.
 - **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
+- **One-click window presets** — four built-ins (standard window, minimal overlay, desktop sticker, read-only board) switch appearance, size, and relative position together; save the current shape as your own preset, and undo a switch you did not want.
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; the tray keeps windows recoverable.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the Windows UI language; switching does not reload open pages.

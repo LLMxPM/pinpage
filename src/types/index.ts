@@ -36,6 +36,8 @@ export interface PinConfig {
   rounded: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
+  /// 最近一次应用的预设 ID，表示“基于哪个预设”，手动调整后仍保留该来源标记。
+  preset: string | null;
 }
 
 export interface PinSettingsInput {
@@ -52,6 +54,30 @@ export interface PinSettingsInput {
   y: number;
   /// 省略表示沿用现有来源；只有用户改动地址或重新导入时才提交。
   source?: SourceInput;
+  /// 与某个预设完全一致时带上该 ID，否则为 null 表示“自定义”。
+  preset?: string | null;
+}
+
+/// 预设包含的外观与几何字段，与 Rust `PresetFields` 一致。
+export interface PresetFields {
+  mode: 'floating' | 'desktop';
+  alwaysOnTop: boolean;
+  decorations: boolean;
+  rounded: boolean;
+  positionLocked: boolean;
+  sizeLocked: boolean;
+  width: number;
+  height: number;
+  /// 目标显示器工作区内的归一化位置：0 贴左/上，1 贴右/下。
+  fx: number;
+  fy: number;
+}
+
+/// 窗口预设；内置项 name 为 null，由语言资源提供显示名。
+export interface WindowPreset extends PresetFields {
+  id: string;
+  name: string | null;
+  builtin: boolean;
 }
 
 export interface PinRuntime {
@@ -78,6 +104,8 @@ export interface Snapshot {
   settings: Settings;
   runtime: Record<string, PinRuntime>;
   notices: AppMessage[];
+  /// 内置与自定义预设，由 Rust 统一定义，前端只负责渲染。
+  presets: WindowPreset[];
   /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
   resolvedLocale: AppLocale;
 }

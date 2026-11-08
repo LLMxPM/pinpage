@@ -35,6 +35,7 @@ pub fn merge(pin: &PinConfig, input: &PinSettingsInput) -> Result<PinConfig, App
     next.height = input.height;
     next.x = Some(input.x);
     next.y = Some(input.y);
+    next.preset = input.preset.clone();
     Ok(next)
 }
 
@@ -100,6 +101,14 @@ pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), 
         .cloned()
         .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
     let mut next = merge(&previous, &input)?;
+    // 预设可能已被删除，落库前把失效引用收敛为“自定义”，避免界面标出不存在预设。
+    if next
+        .preset
+        .as_deref()
+        .is_some_and(|id| super::presets::find(app, id).is_none())
+    {
+        next.preset = None;
+    }
     let refreshed = match &input.source {
         Some(value) => {
             next.source = crate::source::prepare(app, id, value)?;

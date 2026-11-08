@@ -25,6 +25,10 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
         .find(|pin| pin.id == id)
         .cloned()
         .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
+    // 预设是一次组合提交：外观与几何一起应用，保存与回滚由 apply 统一处理。
+    if let Some(preset) = action.strip_prefix("preset:") {
+        return super::presets::apply(app, &previous, preset);
+    }
     match action {
         "open" | "reopen" => {
             super::open_pin(app, &previous)?;
@@ -105,6 +109,8 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 }
                 _ => unreachable!(),
             }
+            // 单字段操作会偏离预设组合，标记退化为“自定义”而不是继续声称基于某个预设。
+            next.preset = None;
             super::settings::apply(app, &previous, next)?;
             if action == "recover" {
                 if let Some(window) = app.get_webview_window(id) {

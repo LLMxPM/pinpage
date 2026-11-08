@@ -21,12 +21,14 @@ const { updateAvailable } = useUpdateSubscription();
 const {
   snapshot,
   pins,
+  presets,
   busy,
   pending,
   loading,
   ready,
   error,
   toast,
+  toastUndo,
   notices,
   settingsOpen,
   editingPinId,
@@ -37,6 +39,11 @@ const {
   createExample,
   exportPin,
   action,
+  applyPreset,
+  savePreset,
+  deletePreset,
+  undoPreset,
+  dismissToast,
   saveSettings,
   quit,
 } = useWorkspace();
@@ -96,11 +103,30 @@ async function createAndClose(input: CreatePin) {
   if (await create(input)) creatingOpen.value = false;
 }
 
-/// 所有页面删除先进入明确的确认弹窗，其余操作交给原生层。
+/// 所有页面删除先进入明确的确认弹窗，预设切换直接交给原生层组合应用。
 function cardAction(id: string, operation: string) {
   error.value = null;
   if (operation === 'delete') deletingPin.value = pins.value.find((pin) => pin.id === id) ?? null;
+  else if (operation.startsWith('preset:')) void applyPreset(id, operation.slice('preset:'.length));
   else void action(id, operation);
+}
+
+/// 设置弹窗里点选预设会立即应用，表单随后跟随新快照刷新。
+function pickPreset(id: string, presetId: string) {
+  error.value = null;
+  void applyPreset(id, presetId);
+}
+
+/// 把当前外观存为新预设，失败原因保留在弹窗内。
+function savePresetAs(id: string, name: string) {
+  error.value = null;
+  void savePreset(id, name);
+}
+
+/// 删除自定义预设，失败原因显示在工作台与设置弹窗。
+function removePreset(presetId: string) {
+  error.value = null;
+  void deletePreset(presetId);
 }
 
 /// 仅在原生删除成功后关闭确认框，删除失败的原因留在框内。
@@ -233,6 +259,7 @@ function openSettings() {
               v-for="pin in pins"
               :key="pin.id"
               :pin="pin"
+              :presets="presets"
               :runtime="snapshot.runtime[pin.id]"
               :busy="busy"
               :working="!!pending?.startsWith(pin.id + ':')"
@@ -247,7 +274,9 @@ function openSettings() {
     </main>
     <div v-if="toast" class="toast notice success-notice" role="status">
       <AppIcon name="check" :size="18" /><span>{{ text(toast) }}</span
-      ><button class="icon-button" :aria-label="t('ui.notice.closeToast')" @click="toast = null">
+      ><button v-if="toastUndo" class="toast-action" @click="undoPreset">
+        {{ t('ui.toast.undo') }}</button
+      ><button class="icon-button" :aria-label="t('ui.notice.closeToast')" @click="dismissToast">
         <AppIcon name="close" :size="16" />
       </button>
     </div>
@@ -263,22 +292,27 @@ function openSettings() {
     <SettingsDialog
       v-if="settingsOpen"
       :settings="snapshot.settings"
+      :presets="presets"
       :busy="busy"
       :error="error"
       :update-available="updateAvailable"
       @close="settingsOpen = false"
       @save="saveSettings"
+      @delete-preset="removePreset"
       @quit="quit"
     />
     <PinSettingsDialog
       v-if="editingPin"
       :key="editingPin.id"
       :pin="editingPin"
+      :presets="presets"
       :busy="busy"
       :error="error"
       @close="editingPinId = null"
       @error="error = $event"
       @save="savePin"
+      @preset="pickPreset(editingPin.id, $event)"
+      @save-preset="savePresetAs(editingPin.id, $event)"
     />
     <AppDialog
       v-if="deletingPin"

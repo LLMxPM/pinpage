@@ -7,17 +7,24 @@ import AppIcon from './AppIcon.vue';
 import AppSelect from './AppSelect.vue';
 import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import AboutSettings from '../features/updates/AboutSettings.vue';
+import { presetLabel } from '../features/pins/presets';
 import { text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
-import type { SettingsInput, UiMessage } from '../types';
+import type { SettingsInput, UiMessage, WindowPreset } from '../types';
 
 const props = defineProps<{
   settings: SettingsInput;
+  presets: WindowPreset[];
   busy: boolean;
   error: UiMessage | null;
   updateAvailable: boolean;
 }>();
-const emit = defineEmits<{ close: []; save: [input: SettingsInput]; quit: [] }>();
+const emit = defineEmits<{
+  close: [];
+  save: [input: SettingsInput];
+  deletePreset: [presetId: string];
+  quit: [];
+}>();
 const { t } = useI18n();
 const input = reactive<SettingsInput>({ ...props.settings });
 const baseline = { ...props.settings };
@@ -34,6 +41,8 @@ const sections = computed(
       { id: 'about', label: t('ui.settings.navAbout') },
     ] as const,
 );
+/// 内置预设由代码定义，设置弹窗里只管理可删除的自定义项。
+const customPresets = computed(() => props.presets.filter((preset) => !preset.builtin));
 const languageOptions = computed(
   () =>
     [
@@ -203,6 +212,27 @@ function save() {
               :disabled="busy"
             />
             <p class="settings-hint">{{ t('ui.settings.gestureHint') }}</p>
+            <div class="form-section">
+              <h3>{{ t('ui.settings.windowPresets') }}</h3>
+              <p v-if="!customPresets.length" class="settings-hint">
+                {{ t('ui.settings.presetEmpty') }}
+              </p>
+              <ul v-else class="preset-manage">
+                <li v-for="preset in customPresets" :key="preset.id">
+                  <span>{{ presetLabel(preset) }}</span>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    :disabled="busy"
+                    :title="t('ui.settings.presetDelete', { name: presetLabel(preset) })"
+                    :aria-label="t('ui.settings.presetDelete', { name: presetLabel(preset) })"
+                    @click="emit('deletePreset', preset.id)"
+                  >
+                    <AppIcon name="trash" :size="15" />
+                  </button>
+                </li>
+              </ul>
+            </div>
           </section>
           <section
             :id="sectionId('about')"

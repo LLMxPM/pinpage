@@ -105,6 +105,9 @@
 .pin-meta .top-label {
   color: #b46549;
 }
+.pin-meta .preset-label {
+  color: #4d7a63;
+}
 .pin-error {
   background: #fff6ed;
   border-radius: 6px;
@@ -184,6 +187,17 @@
 }
 .menu-popup .danger-text:hover:not(:disabled) {
   background: #fff0ee;
+}
+/* 预设分组用小标题分隔；当前应用的预设置为强调色并保留勾选图标。 */
+.menu-popup .menu-label {
+  margin: 4px 10px 2px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.menu-popup .preset-item.active {
+  color: var(--accent);
+  font-weight: 500;
 }
 .menu-divider {
   border-top: 1px solid var(--line);

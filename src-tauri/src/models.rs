@@ -86,6 +86,9 @@ pub struct PinConfig {
     pub position_locked: bool,
     #[serde(default)]
     pub size_locked: bool,
+    /// 最近一次显式应用的预设 ID，表示“基于哪个预设”，不代表窗口仍与预设完全一致。
+    #[serde(default)]
+    pub preset: Option<String>,
 }
 
 impl PinConfig {
@@ -93,6 +96,48 @@ impl PinConfig {
     pub fn effective_decorations(&self) -> bool {
         self.mode == WindowMode::Floating && self.decorations
     }
+}
+
+/// 预设包含的外观与几何字段；内置表与用户自定义项共用同一份结构。
+///
+/// 位置使用目标显示器工作区内的归一化比例 `fx`/`fy`，0 表示贴左或贴上、
+/// 1 表示贴右或贴下，避免绝对坐标在换屏或改 DPI 后失效。
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetFields {
+    pub mode: WindowMode,
+    pub always_on_top: bool,
+    pub decorations: bool,
+    pub rounded: bool,
+    pub position_locked: bool,
+    pub size_locked: bool,
+    pub width: f64,
+    pub height: f64,
+    pub fx: f64,
+    pub fy: f64,
+}
+
+/// 用户自定义预设；内置预设不落盘，配置里只保存它的 ID 引用。
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowPreset {
+    pub id: String,
+    /// 自定义名称；预留在反序列化时容忍缺失，便于旧配置演进。
+    #[serde(default)]
+    pub name: String,
+    #[serde(flatten)]
+    pub fields: PresetFields,
+}
+
+/// 下发给管理界面的预设视图：内置项不带名称，由前端按 i18n 键渲染。
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetView {
+    pub id: String,
+    pub name: Option<String>,
+    pub builtin: bool,
+    #[serde(flatten)]
+    pub fields: PresetFields,
 }
 
 #[derive(Clone, Deserialize)]
@@ -112,6 +157,9 @@ pub struct PinSettingsInput {
     /// 缺省表示沿用现有来源；只有用户明确改动地址或重新导入时才提交。
     #[serde(default)]
     pub source: Option<SourceInput>,
+    /// 全量表单提交时携带“基于哪个预设”，与预设字段不一致时由前端置空。
+    #[serde(default)]
+    pub preset: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Default)]
@@ -131,6 +179,8 @@ pub struct Snapshot {
     pub settings: Settings,
     pub runtime: HashMap<String, PinRuntime>,
     pub notices: Vec<AppMessage>,
+    /// 内置与自定义预设，Rust 是唯一来源，前端只负责渲染。
+    pub presets: Vec<PresetView>,
     /// Rust 已解析的有效语言，前端不再自行猜测系统语言。
     pub resolved_locale: AppLocale,
 }

@@ -1,20 +1,28 @@
 <!-- 功能：编辑页面来源、窗口外观与几何锁定；来源与新建页一致横向平铺，尺寸与位置就近配置锁定，失败时保留输入。 -->
 <script setup lang="ts">
-import { computed, reactive, useId } from 'vue';
+import { computed, reactive, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from '../../components/AppDialog.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import AppIcon from '../../components/AppIcon.vue';
 import { text } from '../../i18n/messages';
-import { usePinSettingsForm } from './usePinSettingsForm';
+import { presetLabel } from './presets';
+import { pinToInput, usePinSettingsForm } from './usePinSettingsForm';
 import { usePinSourceDraft } from './usePinSourceDraft';
-import type { PinConfig, PinSettingsInput, UiMessage } from '../../types';
+import type { PinConfig, PinSettingsInput, UiMessage, WindowPreset } from '../../types';
 
-const props = defineProps<{ pin: PinConfig; busy: boolean; error: UiMessage | null }>();
+const props = defineProps<{
+  pin: PinConfig;
+  presets: WindowPreset[];
+  busy: boolean;
+  error: UiMessage | null;
+}>();
 const emit = defineEmits<{
   close: [];
   save: [input: PinSettingsInput];
   error: [message: UiMessage];
+  preset: [presetId: string];
+  savePreset: [name: string];
 }>();
 const { t } = useI18n();
 const formId = useId();
@@ -30,6 +38,15 @@ const currentEntry = computed(() =>
   props.pin.source.kind === 'bundled' ? props.pin.source.entry : '',
 );
 const working = computed(() => props.busy || draft.choosing);
+/// 有未保存改动时禁止切换预设，避免随后的保存把预设结果覆盖掉。
+const dirty = computed(() => {
+  const baseline = pinToInput(props.pin);
+  return (Object.keys(baseline) as (keyof PinSettingsInput)[]).some(
+    (key) => !Object.is(input[key], baseline[key]),
+  );
+});
+const naming = ref(false);
+const presetName = ref('');
 const borderless = computed(() => input.mode === 'desktop' || !input.decorations);
 const showBorder = computed({
   get: () => input.mode === 'floating' && input.decorations,
@@ -45,9 +62,29 @@ const showOnTop = computed({
 });
 
 /// 提交完整字段；来源未改动时不带 source，后端因此不会重新加载页面或复制副本。
+/// 手动调整过字段时把预设标记降级为“自定义”，否则沿用当前来源标记。
 function save() {
   const changed = draft.input;
-  emit('save', changed ? { ...input, source: changed } : { ...input });
+  const payload: PinSettingsInput = {
+    ...input,
+    preset: dirty.value ? null : props.pin.preset,
+  };
+  emit('save', changed ? { ...payload, source: changed } : payload);
+}
+
+/// 存为预设使用当前已保存的窗口状态，因此名称输入在有未保存改动时被禁用。
+function submitPresetName() {
+  const name = presetName.value.trim();
+  if (!name) return;
+  emit('savePreset', name);
+  naming.value = false;
+  presetName.value = '';
+}
+
+/// 取消命名只收起输入行，不影响表单中的其他字段。
+function cancelPresetName() {
+  naming.value = false;
+  presetName.value = '';
 }
 </script>
 
@@ -116,6 +153,55 @@ function save() {
           <p v-if="draft.dirty" class="source-dirty">
             <AppIcon name="refresh" :size="15" />{{ t('ui.pinSettings.sourceDirty') }}
           </p>
+        </div>
+        <div class="form-section preset-section">
+          <h3>{{ t('ui.pinSettings.presets') }}</h3>
+          <div class="preset-chips">
+            <button
+              v-for="preset in presets"
+              :key="preset.id"
+              type="button"
+              class="preset-chip"
+              :class="{ active: pin.preset === preset.id }"
+              :disabled="working || dirty"
+              :title="dirty ? t('ui.pinSettings.presetDirty') : presetLabel(preset)"
+              @click="emit('preset', preset.id)"
+            >
+              <AppIcon :name="pin.preset === preset.id ? 'check' : 'expand'" :size="14" />{{
+                presetLabel(preset)
+              }}
+            </button>
+          </div>
+          <p class="preset-hint">
+            {{ t(dirty ? 'ui.pinSettings.presetDirty' : 'ui.pinSettings.presetHint') }}
+          </p>
+          <div v-if="naming" class="preset-save-row">
+            <input
+              v-model="presetName"
+              :placeholder="t('ui.pinSettings.presetNamePlaceholder')"
+              maxlength="40"
+              @keydown.enter.prevent="submitPresetName"
+            />
+            <button type="button" class="secondary" @click="cancelPresetName">
+              {{ t('ui.common.cancel') }}</button
+            ><button
+              type="button"
+              class="primary"
+              :disabled="!presetName.trim()"
+              @click="submitPresetName"
+            >
+              {{ t('ui.pinSettings.presetSave') }}
+            </button>
+          </div>
+          <button
+            v-else
+            type="button"
+            class="preset-save-toggle"
+            :disabled="working || dirty"
+            @click="naming = true"
+          >
+            <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
+          </button>
         </div>
         <div class="form-section">
           <h3>{{ t('ui.pinSettings.appearance') }}</h3>

@@ -87,7 +87,8 @@
     "exportNeedsOpen": "Open the page before exporting its package",
     "deleteConfirm": "Delete “{name}”?",
     "deleteImportedHint": "Page settings and imported files will be permanently deleted",
-    "deleteHint": "Page settings will be permanently deleted"
+    "deleteHint": "Page settings will be permanently deleted",
+    "metaPreset": "Based on {name}"
   },
   "pinSettings": {
     "title": "Page settings",
@@ -114,7 +115,12 @@
     "sourceUrl": "Web address",
     "sourceUrlHint": "Saving a new address reloads the page.",
     "sourceImportHint": "Picking new files replaces the imported copy and reloads the page.",
-    "sourceDirty": "Source changed — it applies when you save."
+    "sourceDirty": "Source changed — it applies when you save.",
+    "presets": "Window presets",
+    "presetHint": "Picking a preset changes the window appearance and position right away; save or discard unsaved edits first.",
+    "presetDirty": "Save or discard your edits before switching presets",
+    "presetSave": "Save as preset",
+    "presetNamePlaceholder": "Preset name, e.g. Timer at top right"
   },
   "settings": {
     "title": "Settings",
@@ -134,11 +140,18 @@
     "gestureCtrl": "Ctrl (either side)",
     "gestureShift": "Shift (either side)",
     "gestureDisabled": "Off",
-    "gestureHint": "Hold the modifier to left-drag an unlocked borderless window or right-click to open its menu. With Alt, use Alt+left-drag to move the window; for Alt+right-click, release the right button and then Alt before the menu appears."
+    "gestureHint": "Hold the modifier to left-drag an unlocked borderless window or right-click to open its menu. With Alt, use Alt+left-drag to move the window; for Alt+right-click, release the right button and then Alt before the menu appears.",
+    "windowPresets": "Custom presets",
+    "presetEmpty": "No custom presets yet. Save a page's current look and position as a preset in its settings.",
+    "presetDelete": "Delete preset “{name}”"
   },
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",
-    "exportedWithoutData": "Exported {count} file, page data not included: {path} | Exported {count} files, page data not included: {path}"
+    "exportedWithoutData": "Exported {count} file, page data not included: {path} | Exported {count} files, page data not included: {path}",
+    "presetApplied": "Switched to “{name}”",
+    "presetSaved": "Saved preset “{name}”",
+    "presetDeleted": "Deleted preset “{name}”",
+    "undo": "Undo"
   },
   "common": {
     "closeDialog": "Close dialog",

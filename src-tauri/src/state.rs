@@ -99,8 +99,10 @@ impl AppState {
 
     /// 汇总配置及短期运行态，管理界面重建后可重新读取。
     pub fn snapshot(&self) -> Snapshot {
+        let settings = self.settings.lock().unwrap().clone();
         Snapshot {
-            settings: self.settings.lock().unwrap().clone(),
+            presets: crate::windows::presets::all(&settings.window_presets),
+            settings,
             runtime: self.runtime.lock().unwrap().clone(),
             notices: self.notices.lock().unwrap().clone(),
             resolved_locale: *self.locale.lock().unwrap(),

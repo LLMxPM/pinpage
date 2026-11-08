@@ -66,6 +66,7 @@ pub async fn create_pin(
         rounded: false,
         position_locked: false,
         size_locked: false,
+        preset: None,
     };
     state.settings.lock().unwrap().pins.push(pin.clone());
     state::schedule_save(&app);
@@ -109,6 +110,44 @@ pub async fn quit_app(window: WebviewWindow, app: AppHandle) -> Result<(), AppMe
     windows::ensure_manager(&window)?;
     windows::quit(&app);
     Ok(())
+}
+
+/// 把页面当前外观与几何存为自定义预设，返回新预设 ID。
+#[tauri::command]
+pub async fn save_preset(
+    window: WebviewWindow,
+    app: AppHandle,
+    id: String,
+    name: String,
+) -> Result<String, AppMessage> {
+    windows::ensure_manager(&window)?;
+    let state = app.state::<AppState>();
+    let _operation = state.operation.lock().unwrap();
+    state.ensure_mutable()?;
+    let pin = state
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .find(|pin| pin.id == id)
+        .cloned()
+        .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
+    windows::presets::save(&app, &pin, &name)
+}
+
+/// 删除自定义预设；内置预设由代码定义，不接受删除。
+#[tauri::command]
+pub async fn delete_preset(
+    window: WebviewWindow,
+    app: AppHandle,
+    preset_id: String,
+) -> Result<(), AppMessage> {
+    windows::ensure_manager(&window)?;
+    let state = app.state::<AppState>();
+    let _operation = state.operation.lock().unwrap();
+    state.ensure_mutable()?;
+    windows::presets::delete(&app, &preset_id)
 }
 
 /// 用户给定的名称优先，留空时使用来源推导的兜底名称。

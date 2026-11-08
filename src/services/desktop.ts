@@ -46,6 +46,16 @@ export function updatePin(id: string, input: PinSettingsInput): Promise<void> {
   return invoke('update_pin', { id, input });
 }
 
+/// 把页面当前外观与位置存为自定义预设，返回新预设 ID。
+export function savePreset(id: string, name: string): Promise<string> {
+  return invoke('save_preset', { id, name });
+}
+
+/// 删除自定义预设；内置预设由 Rust 拒绝删除。
+export function deletePreset(presetId: string): Promise<void> {
+  return invoke('delete_preset', { presetId });
+}
+
 /// 更新语言、启动恢复与窗口手势。
 export function updateSettings(input: SettingsInput): Promise<void> {
   return invoke('update_settings', { input });

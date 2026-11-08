@@ -3,7 +3,8 @@ import { reactive, watch } from 'vue';
 import type { PinConfig, PinSettingsInput } from '../../types';
 
 /// 把窗口快照转换为表单值，逻辑尺寸取整，尚未定位的页面使用默认位置。
-function toInput(pin: PinConfig): PinSettingsInput {
+/// 预设标记不进入表单，避免“基于哪个预设”与可编辑字段混在一起。
+export function pinToInput(pin: PinConfig): PinSettingsInput {
   return {
     name: pin.name,
     mode: pin.mode,
@@ -22,7 +23,7 @@ function toInput(pin: PinConfig): PinSettingsInput {
 /// 同步当前页面的可编辑字段；切换页面时重置，原页面回传时只更新未改动字段。
 export function usePinSettingsForm(getPin: () => PinConfig) {
   let id = getPin().id;
-  let baseline = toInput(getPin());
+  let baseline = pinToInput(getPin());
   const input = reactive<PinSettingsInput>({ ...baseline });
   const fields = Object.keys(baseline) as (keyof PinSettingsInput)[];
 
@@ -32,7 +33,7 @@ export function usePinSettingsForm(getPin: () => PinConfig) {
   }
 
   watch(
-    () => ({ id: getPin().id, values: toInput(getPin()) }),
+    () => ({ id: getPin().id, values: pinToInput(getPin()) }),
     (next) => {
       if (next.id !== id) Object.assign(input, next.values);
       else for (const key of fields) syncField(key, next.values);

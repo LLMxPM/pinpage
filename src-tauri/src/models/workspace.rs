@@ -1,5 +1,5 @@
 // 功能：定义全局设置、窗口手势修饰键及严格输入与容错配置的转换契约。
-use super::{LocalePreference, PinConfig};
+use super::{LocalePreference, PinConfig, WindowPreset};
 use crate::errors::AppMessage;
 use serde::{Deserialize, Serialize};
 
@@ -28,10 +28,25 @@ pub struct Settings {
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
+    /// 用户自定义预设；内置预设定义在代码中，不写入配置。
+    #[serde(default, deserialize_with = "lenient_presets")]
+    pub window_presets: Vec<WindowPreset>,
 }
 
 /// 逐条解析页面记录，跳过来源类型已不再支持的旧条目。
 fn lenient_pins<'de, D>(deserializer: D) -> Result<Vec<PinConfig>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let values = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(values
+        .into_iter()
+        .filter_map(|value| serde_json::from_value(value).ok())
+        .collect())
+}
+
+/// 逐条解析自定义预设，跳过字段缺失或取值非法的条目。
+fn lenient_presets<'de, D>(deserializer: D) -> Result<Vec<WindowPreset>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -69,6 +84,7 @@ impl Default for Settings {
             gesture_modifier: GestureModifier::default(),
             restore_session: true,
             pins: Vec::new(),
+            window_presets: Vec::new(),
         }
     }
 }

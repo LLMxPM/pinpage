@@ -25,7 +25,14 @@
       "rounded": "Rounded borderless corners",
       "positionLock": "Lock position",
       "sizeLock": "Lock size",
-      "hide": "Hide page"
+      "hide": "Hide page",
+      "presets": "Window presets"
+    },
+    "presets": {
+      "standard": "Standard window",
+      "minimal": "Minimal overlay",
+      "sticker": "Desktop sticker",
+      "board": "Read-only board"
     }
   },
   "picker": {
@@ -168,6 +175,9 @@
     "updateInstallFailed": "Could not start the update installer; retry or install manually from GitHub Release",
     "updateBackupFailed": "Settings backup failed; update installation was stopped",
     "updateActionInvalid": "Unsupported update action or parameters",
-    "updateOpenFailed": "Could not open GitHub Release"
+    "updateOpenFailed": "Could not open GitHub Release",
+    "presetNotFound": "That preset does not exist or was deleted",
+    "presetNameRange": "Preset names must be 1 to {max} characters",
+    "presetLimit": "You can keep up to {max} custom presets; delete one first"
   }
 }

@@ -6,7 +6,7 @@ use crate::{
     state::{self, AppState},
 };
 use tauri::{
-    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
+    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu},
     AppHandle, Manager,
 };
 
@@ -36,6 +36,13 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
     else {
         return Ok(());
     };
+    let custom = app
+        .state::<AppState>()
+        .settings
+        .lock()
+        .unwrap()
+        .window_presets
+        .clone();
     let locale = state::locale(app);
     let text = |key: &str| i18n::text(locale, key, &Default::default());
     let failed = |error: tauri::Error| AppMessage::new("errors.windowMenuFailed").detail(error);
@@ -82,6 +89,25 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
         )
         .map_err(failed)?;
     }
+    // 预设子菜单按当前标记勾选，切换后再次弹出即反映最新状态。
+    let presets = Submenu::new(app, text("window.menu.presets"), true).map_err(failed)?;
+    for preset in crate::windows::presets::all(&custom) {
+        let name = crate::windows::presets::label(app, &preset);
+        presets
+            .append(
+                &CheckMenuItem::with_id(
+                    app,
+                    format!("pin|{id}|preset:{}", preset.id),
+                    name,
+                    true,
+                    pin.preset.as_deref() == Some(preset.id.as_str()),
+                    None::<&str>,
+                )
+                .map_err(failed)?,
+            )
+            .map_err(failed)?;
+    }
+    menu.append(&presets).map_err(failed)?;
     menu.append(&PredefinedMenuItem::separator(app).map_err(failed)?)
         .map_err(failed)?;
     for (menu_id, key) in [

@@ -4,6 +4,8 @@ import { applyLocale } from '../../i18n';
 import { fromAppMessage, message, toUiMessage } from '../../i18n/messages';
 import * as desktop from '../../services/desktop';
 import { formatBytes } from '../../services/format';
+import { presetLabel } from './presets';
+import { pinToInput } from './usePinSettingsForm';
 import type {
   CreatePin,
   ExampleId,
@@ -25,6 +27,7 @@ function emptySnapshot(): Snapshot {
     },
     runtime: {},
     notices: [],
+    presets: [],
     resolvedLocale: 'zh-CN',
   };
 }
@@ -40,6 +43,8 @@ export function useWorkspace() {
   const error = ref<UiMessage | null>(null);
   /// 成功类提示单独一条通道，避免和红色错误混在一起。
   const toast = ref<UiMessage | null>(null);
+  /// 提示条上的撤销动作，仅用于会同时移动窗口的预设切换。
+  const toastUndo = ref<null | (() => Promise<void>)>(null);
   const settingsOpen = ref(false);
   const editingPinId = ref<string | null>(null);
   let revision = 0;
@@ -48,13 +53,25 @@ export function useWorkspace() {
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /// 短暂展示导出结果，超时后自动收起。提示保存消息键和参数，不提前固化文字。
-  function notify(entry: UiMessage) {
+  /// 短暂展示操作结果，超时后自动收起。提示保存消息键和参数，不提前固化文字。
+  function notify(entry: UiMessage, undo: null | (() => Promise<void>) = null) {
     toast.value = entry;
+    toastUndo.value = undo;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.value = null;
-    }, 6000);
+    toastTimer = setTimeout(dismissToast, 6000);
+  }
+
+  /// 收起提示条时一并丢弃撤销动作，避免对已经过期的切换执行还原。
+  function dismissToast() {
+    toast.value = null;
+    toastUndo.value = null;
+  }
+
+  /// 撤销预设切换：把应用前的整套外观与几何重新提交一次。
+  async function undoPreset() {
+    const undo = toastUndo.value;
+    dismissToast();
+    await undo?.();
   }
 
   /// 保留最近一次请求的结果，原生窗口事件突发时不渲染旧快照。
@@ -102,6 +119,41 @@ export function useWorkspace() {
   /// 将单窗操作交给后端，避免前端乐观修改后与真实状态脱节。
   function action(id: string, operation: string) {
     return run(() => desktop.pinAction(id, operation), `${id}:${operation}`);
+  }
+
+  /// 应用预设会同时改变尺寸与位置，成功后提供一次撤销回到应用前的完整状态。
+  async function applyPreset(id: string, presetId: string) {
+    const pin = snapshot.value.settings.pins.find((item) => item.id === id);
+    const preset = snapshot.value.presets.find((item) => item.id === presetId);
+    if (!pin || !preset) return false;
+    const before: PinSettingsInput = { ...pinToInput(pin), preset: pin.preset };
+    const applied = await run(
+      () => desktop.pinAction(id, `preset:${presetId}`),
+      `${id}:preset:${presetId}`,
+    );
+    if (!applied) return false;
+    notify(message('ui.toast.presetApplied', { name: presetLabel(preset) }), () =>
+      run(() => desktop.updatePin(id, before), `${id}:preset:undo`).then(() => undefined),
+    );
+    return true;
+  }
+
+  /// 把页面当前外观与位置存为自定义预设，成功后提示名称。
+  async function savePreset(id: string, name: string) {
+    let created = '';
+    const saved = await run(async () => {
+      created = await desktop.savePreset(id, name);
+    }, `${id}:preset:save`);
+    if (saved && created) notify(message('ui.toast.presetSaved', { name }));
+    return saved;
+  }
+
+  /// 删除自定义预设；被删除预设标记过的页面会退回“自定义”。
+  async function deletePreset(presetId: string) {
+    const preset = snapshot.value.presets.find((item) => item.id === presetId);
+    const removed = await run(() => desktop.deletePreset(presetId), `preset:${presetId}:delete`);
+    if (removed && preset) notify(message('ui.toast.presetDeleted', { name: presetLabel(preset) }));
+    return removed;
   }
 
   /// 导出导入页的站点副本与页面数据，结果通过提示条反馈。
@@ -199,9 +251,16 @@ export function useWorkspace() {
     createExample,
     exportPin,
     action,
+    applyPreset,
+    savePreset,
+    deletePreset,
+    undoPreset,
+    dismissToast,
+    toastUndo,
     saveSettings,
     quit: () => run(desktop.quitApp),
     pins: computed(() => snapshot.value.settings.pins),
+    presets: computed(() => snapshot.value.presets),
     openCount: computed(
       () => Object.values(snapshot.value.runtime).filter((pin) => pin.open).length,
     ),

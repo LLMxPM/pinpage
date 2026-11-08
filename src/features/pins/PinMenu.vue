@@ -3,9 +3,10 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
-import type { PinConfig, PinRuntime } from '../../types';
+import { presetLabel } from './presets';
+import type { PinConfig, PinRuntime, WindowPreset } from '../../types';
 
-defineProps<{ pin: PinConfig; runtime?: PinRuntime; busy: boolean }>();
+defineProps<{ pin: PinConfig; presets: WindowPreset[]; runtime?: PinRuntime; busy: boolean }>();
 const emit = defineEmits<{ action: [operation: string]; export: [] }>();
 const { t } = useI18n();
 const menu = ref<HTMLDetailsElement>();
@@ -106,6 +107,20 @@ onUnmounted(() => {
         @click="pick('export')"
       >
         <AppIcon name="download" :size="16" />{{ t('ui.card.actionExport') }}
+      </button>
+      <div class="menu-divider" />
+      <p class="menu-label">{{ t('ui.pinSettings.presets') }}</p>
+      <button
+        v-for="preset in presets"
+        :key="preset.id"
+        class="preset-item"
+        :class="{ active: pin.preset === preset.id }"
+        :disabled="busy"
+        @click="pick(`preset:${preset.id}`)"
+      >
+        <AppIcon :name="pin.preset === preset.id ? 'check' : 'expand'" :size="16" />{{
+          presetLabel(preset)
+        }}
       </button>
       <div class="menu-divider" />
       <button class="danger-text" :disabled="busy" @click="pick('delete')">

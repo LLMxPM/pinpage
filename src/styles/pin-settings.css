@@ -129,3 +129,70 @@
     grid-template-columns: 1fr;
   }
 }
+/* 预设区块：胶囊按钮自动换行，命名输入与保存按钮同排，与外观分组保持一致的间距。 */
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #dce2e9;
+  border-radius: 999px;
+  background: #fff;
+  color: #465466;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.preset-chip:hover:not(:disabled) {
+  border-color: #c7d1dc;
+  background: #f7f9fb;
+}
+.preset-chip.active {
+  border-color: #e2a58e;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+.preset-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.preset-hint {
+  margin: 9px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.preset-save-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border: 1px dashed #c7d1dc;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.preset-save-toggle:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.preset-save-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.preset-save-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.preset-save-row input {
+  flex: 1;
+  min-width: 0;
+}

@@ -92,3 +92,23 @@ fn merge_never_applies_the_submitted_source() {
     assert_eq!(next.source, old_pin().source);
     assert_eq!(next.name, "桌面时钟");
 }
+
+#[test]
+/// 预设标记随表单提交落库，缺省时视为自定义，不影响其他字段。
+fn merge_carries_preset_marker() {
+    let value = serde_json::json!({
+        "name": "计时器", "mode": "floating", "alwaysOnTop": false,
+        "decorations": false, "rounded": true, "positionLocked": false,
+        "sizeLocked": false, "width": 420, "height": 360, "x": 10, "y": 10,
+        "preset": "minimal"
+    });
+    let tagged: PinSettingsInput = serde_json::from_value(value.clone()).unwrap();
+    let next = merge(&old_pin(), &tagged).unwrap();
+    assert_eq!(next.preset.as_deref(), Some("minimal"));
+    assert_eq!(next.width, 420.);
+
+    let mut untagged = value;
+    untagged.as_object_mut().unwrap().remove("preset");
+    let plain: PinSettingsInput = serde_json::from_value(untagged).unwrap();
+    assert!(merge(&old_pin(), &plain).unwrap().preset.is_none());
+}
