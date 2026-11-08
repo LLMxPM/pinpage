@@ -71,6 +71,8 @@ export interface PresetFields {
   /// 目标显示器工作区内的归一化位置：0 贴左/上，1 贴右/下。
   fx: number;
   fy: number;
+  /// 全屏项在应用时按目标显示器整屏尺寸换算，忽略 width/height。
+  fullscreen: boolean;
 }
 
 /// 窗口预设；内置项 name 为 null，由语言资源提供显示名。

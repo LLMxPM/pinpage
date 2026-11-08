@@ -99,13 +99,13 @@ fn merge_carries_preset_marker() {
     let value = serde_json::json!({
         "name": "计时器", "mode": "floating", "alwaysOnTop": false,
         "decorations": false, "rounded": true, "positionLocked": false,
-        "sizeLocked": false, "width": 420, "height": 360, "x": 10, "y": 10,
-        "preset": "minimal"
+        "sizeLocked": false, "width": 320, "height": 480, "x": 10, "y": 10,
+        "preset": "topRight"
     });
     let tagged: PinSettingsInput = serde_json::from_value(value.clone()).unwrap();
     let next = merge(&old_pin(), &tagged).unwrap();
-    assert_eq!(next.preset.as_deref(), Some("minimal"));
-    assert_eq!(next.width, 420.);
+    assert_eq!(next.preset.as_deref(), Some("topRight"));
+    assert_eq!(next.width, 320.);
 
     let mut untagged = value;
     untagged.as_object_mut().unwrap().remove("preset");

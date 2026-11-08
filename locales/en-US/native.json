@@ -29,10 +29,10 @@
       "presets": "Window presets"
     },
     "presets": {
+      "fullscreen": "Full-screen overlay",
       "standard": "Standard window",
-      "minimal": "Minimal overlay",
-      "sticker": "Desktop sticker",
-      "board": "Read-only board"
+      "topRight": "Top-right overlay",
+      "bottomRight": "Bottom-right desktop"
     }
   },
   "picker": {

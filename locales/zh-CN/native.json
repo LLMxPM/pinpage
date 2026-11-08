@@ -29,10 +29,10 @@
       "presets": "窗口预设"
     },
     "presets": {
+      "fullscreen": "全屏悬浮",
       "standard": "标准窗口",
-      "minimal": "极简悬浮",
-      "sticker": "桌面贴纸",
-      "board": "只读看板"
+      "topRight": "右上角悬浮",
+      "bottomRight": "右下角桌面"
     }
   },
   "picker": {

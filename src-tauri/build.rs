@@ -15,6 +15,8 @@ fn main() {
             "submit_page_data",
             "pin_action",
             "update_pin",
+            "save_preset",
+            "delete_preset",
             "update_settings",
             "updates_snapshot",
             "update_action",

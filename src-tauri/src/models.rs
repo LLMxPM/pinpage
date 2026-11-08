@@ -115,6 +115,9 @@ pub struct PresetFields {
     pub height: f64,
     pub fx: f64,
     pub fy: f64,
+    /// 全屏项在应用时按目标显示器整屏尺寸换算；普通预设沿用表中的宽高。
+    #[serde(default)]
+    pub fullscreen: bool,
 }
 
 /// 用户自定义预设；内置预设不落盘，配置里只保存它的 ID 引用。

@@ -19,6 +19,22 @@ pub const MAX_NAME: usize = 40;
 fn builtin_table() -> [(&'static str, PresetFields); 4] {
     [
         (
+            "fullscreen",
+            PresetFields {
+                mode: WindowMode::Floating,
+                always_on_top: false,
+                decorations: false,
+                rounded: true,
+                position_locked: false,
+                size_locked: false,
+                width: 960.,
+                height: 720.,
+                fx: 0.,
+                fy: 0.,
+                fullscreen: true,
+            },
+        ),
+        (
             "standard",
             PresetFields {
                 mode: WindowMode::Floating,
@@ -31,10 +47,11 @@ fn builtin_table() -> [(&'static str, PresetFields); 4] {
                 height: 720.,
                 fx: 0.5,
                 fy: 0.5,
+                fullscreen: false,
             },
         ),
         (
-            "minimal",
+            "topRight",
             PresetFields {
                 mode: WindowMode::Floating,
                 always_on_top: true,
@@ -42,14 +59,15 @@ fn builtin_table() -> [(&'static str, PresetFields); 4] {
                 rounded: true,
                 position_locked: true,
                 size_locked: false,
-                width: 420.,
-                height: 360.,
+                width: 320.,
+                height: 480.,
                 fx: 1.,
                 fy: 0.,
+                fullscreen: false,
             },
         ),
         (
-            "sticker",
+            "bottomRight",
             PresetFields {
                 mode: WindowMode::Desktop,
                 always_on_top: false,
@@ -61,21 +79,7 @@ fn builtin_table() -> [(&'static str, PresetFields); 4] {
                 height: 480.,
                 fx: 1.,
                 fy: 1.,
-            },
-        ),
-        (
-            "board",
-            PresetFields {
-                mode: WindowMode::Floating,
-                always_on_top: false,
-                decorations: false,
-                rounded: true,
-                position_locked: true,
-                size_locked: true,
-                width: 520.,
-                height: 640.,
-                fx: 1.,
-                fy: 0.5,
+                fullscreen: false,
             },
         ),
     ]
@@ -158,8 +162,10 @@ pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppM
     next.size_locked = preset.fields.size_locked;
     next.width = preset.fields.width;
     next.height = preset.fields.height;
-    // 位置必须在原生应用前算好：位置锁在应用过程中同步生效，之后再移动会被规则拦回。
-    if let Some((x, y)) = target_position(app, previous, &preset.fields) {
+    // 位置与全屏尺寸必须在原生应用前算好：位置锁在应用过程中同步生效，之后再移动会被规则拦回。
+    if let Some((width, height, x, y)) = target_geometry(app, previous, &preset.fields) {
+        next.width = width;
+        next.height = height;
         next.x = Some(x);
         next.y = Some(y);
     }
@@ -167,41 +173,86 @@ pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppM
     super::settings::apply(app, previous, next)
 }
 
-/// 按归一化比例换算屏幕坐标；同一边框状态下用真实外框差值抵消边框占位。
-fn target_position(
+/// 计算目标显示器上的逻辑尺寸与物理坐标；全屏预设铺满整个显示器，其余按归一化比例定位。
+fn target_geometry(
     app: &AppHandle,
     previous: &PinConfig,
     fields: &PresetFields,
-) -> Option<(i32, i32)> {
+) -> Option<(f64, f64, i32, i32)> {
+    let window = app.get_webview_window(&previous.id);
+    let monitor = target_monitor(app, window.as_ref(), previous)?;
+    let area = monitor.work_area();
     let scale = if previous.scale > 0.1 {
         previous.scale
     } else {
         1.
     };
-    let window = app.get_webview_window(&previous.id);
-    let (frame_width, frame_height) = frame_delta(&window, previous, fields, scale);
-    let width = (fields.width * scale).round() as i64 + frame_width as i64;
-    let height = (fields.height * scale).round() as i64 + frame_height as i64;
-    // 窗口未打开或尚未定位时没有可用坐标，此时直接按主屏工作区换算。
-    let known = match &window {
-        Some(window) => window.outer_position().ok().map(|point| (point.x, point.y)),
-        None => previous.x.zip(previous.y),
+    // 全屏尺寸按目标显示器换算，覆盖任务栏区域，并收敛到设置允许的范围内。
+    let (width, height, target_scale) = if fields.fullscreen {
+        let monitor_scale = monitor.scale_factor().max(0.1);
+        (
+            (monitor.size().width as f64 / monitor_scale)
+                .round()
+                .clamp(160., 3840.),
+            (monitor.size().height as f64 / monitor_scale)
+                .round()
+                .clamp(100., 2160.),
+            monitor_scale,
+        )
+    } else {
+        (fields.width, fields.height, scale)
     };
-    // 以窗口中心判断所在显示器，窗口跨屏时仍归属面积更大的那一块。
-    let monitor = known
-        .and_then(|(x, y)| {
+    // 全屏以显示器全区域为边界，其他预设以工作区为边界，避开任务栏与停靠区域。
+    let (origin, bounds) = if fields.fullscreen {
+        (*monitor.position(), *monitor.size())
+    } else {
+        (area.position, area.size)
+    };
+    let (frame_width, frame_height) = frame_delta(&window, previous, fields, scale);
+    let physical_width = (width * target_scale).round() as i64 + frame_width as i64;
+    let physical_height = (height * target_scale).round() as i64 + frame_height as i64;
+    let room_width = (bounds.width as i64 - physical_width).max(0);
+    let room_height = (bounds.height as i64 - physical_height).max(0);
+    Some((
+        width,
+        height,
+        origin.x + (fields.fx.clamp(0., 1.) * room_width as f64).round() as i32,
+        origin.y + (fields.fy.clamp(0., 1.) * room_height as f64).round() as i32,
+    ))
+}
+
+/// 以窗口中心判断所在显示器；窗口未打开时使用保存的坐标，最后回退到主屏。
+fn target_monitor(
+    app: &AppHandle,
+    window: Option<&tauri::WebviewWindow>,
+    previous: &PinConfig,
+) -> Option<tauri::Monitor> {
+    let scale = if previous.scale > 0.1 {
+        previous.scale
+    } else {
+        1.
+    };
+    let fallback = (
+        (previous.width * scale).round() as i32,
+        (previous.height * scale).round() as i32,
+    );
+    let known = match window {
+        Some(window) => window.outer_position().ok().map(|point| {
+            let size = window
+                .outer_size()
+                .map(|size| (size.width as i32, size.height as i32))
+                .unwrap_or(fallback);
+            (point.x, point.y, size)
+        }),
+        None => previous.x.zip(previous.y).map(|(x, y)| (x, y, fallback)),
+    };
+    known
+        .and_then(|(x, y, (width, height))| {
             app.monitor_from_point(x as f64 + width as f64 / 2., y as f64 + height as f64 / 2.)
                 .ok()
                 .flatten()
         })
-        .or_else(|| app.primary_monitor().ok().flatten())?;
-    let area = monitor.work_area();
-    let room_width = (area.size.width as i64 - width).max(0);
-    let room_height = (area.size.height as i64 - height).max(0);
-    Some((
-        area.position.x + (fields.fx.clamp(0., 1.) * room_width as f64).round() as i32,
-        area.position.y + (fields.fy.clamp(0., 1.) * room_height as f64).round() as i32,
-    ))
+        .or_else(|| app.primary_monitor().ok().flatten())
 }
 
 /// 边框占位：仅在边框状态不变时可从当前窗口量出，切换边框时无法预估，按无边框处理。
@@ -297,6 +348,7 @@ fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields, App
         height: pin.height.round(),
         fx: ((x - area.position.x) as f64 / room_width as f64).clamp(0., 1.),
         fy: ((y - area.position.y) as f64 / room_height as f64).clamp(0., 1.),
+        fullscreen: false,
     })
 }
 
@@ -335,6 +387,44 @@ mod tests {
             .all(|preset| preset.builtin && preset.name.is_none()));
     }
 
+    /// 新内置预设顺序固定：全屏、标准窗口、右上角、右下角；两角统一 320×480。
+    #[test]
+    fn builtin_order_and_geometry() {
+        let views = all(&[]);
+        let ids: Vec<&str> = views.iter().map(|preset| preset.id.as_str()).collect();
+        assert_eq!(ids, ["fullscreen", "standard", "topRight", "bottomRight"]);
+        let full = &views[0].fields;
+        assert!(full.fullscreen);
+        assert!(!full.always_on_top);
+        let standard = &views[1].fields;
+        assert_eq!((standard.width, standard.height), (960., 720.));
+        assert_eq!((standard.fx, standard.fy), (0.5, 0.5));
+        let top_right = &views[2].fields;
+        assert_eq!(
+            (
+                top_right.width,
+                top_right.height,
+                top_right.fx,
+                top_right.fy
+            ),
+            (320., 480., 1., 0.)
+        );
+        assert!(top_right.always_on_top);
+        let bottom_right = &views[3].fields;
+        assert_eq!(
+            (
+                bottom_right.width,
+                bottom_right.height,
+                bottom_right.fx,
+                bottom_right.fy
+            ),
+            (320., 480., 1., 1.)
+        );
+        assert_eq!(bottom_right.mode, WindowMode::Desktop);
+        assert!(!bottom_right.always_on_top);
+        assert!(!bottom_right.fullscreen);
+    }
+
     /// 桌面模式不允许置顶但保留圆角；浮动模式有系统边框时圆角必须失效。
     #[test]
     fn normalize_removes_conflicting_appearance() {
@@ -349,6 +439,7 @@ mod tests {
             height: 5000.,
             fx: 2.,
             fy: -1.,
+            fullscreen: false,
         };
         normalize(&mut desktop);
         assert!(!desktop.always_on_top);
@@ -384,6 +475,7 @@ mod tests {
                 height: 300.,
                 fx: 0.,
                 fy: 0.,
+                fullscreen: false,
             },
         }];
         let views = all(&custom);
