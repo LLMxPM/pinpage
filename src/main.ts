@@ -10,6 +10,7 @@ import './styles/examples.css';
 import './styles/launcher.css';
 import './styles/pins.css';
 import './styles/pin-settings.css';
+import './styles/presets.css';
 import './styles/workspace.css';
 
 // 浏览器预览没有 Rust 快照，先按默认中文呈现；连接桌面后由快照给出有效语言。

@@ -57,18 +57,3 @@
   margin: 0;
   box-shadow: 0 8px 32px #24304418;
 }
-/* 提示条内联动作：仅用于可撤销的预设切换，避免再弹一个确认框。 */
-.toast .toast-action {
-  margin-left: 6px;
-  padding: 3px 7px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.toast .toast-action:hover {
-  background: var(--accent-soft);
-}

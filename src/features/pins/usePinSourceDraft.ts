@@ -31,11 +31,15 @@ export function usePinSourceDraft(
   return {
     address,
     input,
-    dirty: computed(() => input.value !== null),
+    dirty: computed(() => {
+      const source = getPin().source;
+      return source.kind === 'url' ? address.value.trim() !== source.url : input.value !== null;
+    }),
     preview: picker.preview,
     entry: picker.entry,
     entryOptions: picker.entryOptions,
     choosing: picker.choosing,
     choose: picker.choose,
+    reset: restart,
   };
 }

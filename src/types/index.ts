@@ -36,7 +36,7 @@ export interface PinConfig {
   rounded: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
-  /// 最近一次应用的预设 ID，表示“基于哪个预设”，手动调整后仍保留该来源标记。
+  /// 当前匹配的预设 ID；窗口参数调整后清空，修改内容不影响它。
   preset: string | null;
 }
 
@@ -56,6 +56,27 @@ export interface PinSettingsInput {
   source?: SourceInput;
   /// 与某个预设完全一致时带上该 ID，否则为 null 表示“自定义”。
   preset?: string | null;
+}
+
+/// 窗口即时设置不携带名称或来源，避免覆盖内容草稿与最新几何信息。
+export type WindowValues = Omit<PinSettingsInput, 'name' | 'source' | 'preset'>;
+export type WindowPatch = Partial<WindowValues>;
+
+/// 原生事务前后快照，供撤销使用，避免依赖可能滞后的前端回传。
+export interface WindowChange {
+  before: PinConfig;
+  after: PinConfig;
+}
+
+/// 页面内容独立提交，只有来源改动时才重新加载页面。
+export interface PinContentInput {
+  name: string;
+  source?: SourceInput;
+}
+
+/// 预设编辑输入；省略 ID 创建副本，提供 ID 更新自定义项。
+export interface PresetInput extends PresetFields {
+  name: string;
 }
 
 /// 预设包含的外观与几何字段，与 Rust `PresetFields` 一致。

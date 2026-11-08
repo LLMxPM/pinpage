@@ -1,90 +1,74 @@
-<!-- 功能：编辑页面来源、窗口外观与几何锁定；来源与新建页一致横向平铺，尺寸与位置就近配置锁定，失败时保留输入。 -->
+<!-- 功能：将窗口即时设置与内容保存分区，关闭前确认放弃尚未生效的输入。 -->
 <script setup lang="ts">
-import { computed, reactive, ref, useId } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from '../../components/AppDialog.vue';
-import AppSelect from '../../components/AppSelect.vue';
-import AppIcon from '../../components/AppIcon.vue';
+import PinContentSettings from './PinContentSettings.vue';
+import PinWindowSettings from './PinWindowSettings.vue';
 import { text } from '../../i18n/messages';
-import { presetLabel } from './presets';
-import { pinToInput, usePinSettingsForm } from './usePinSettingsForm';
-import { usePinSourceDraft } from './usePinSourceDraft';
-import type { PinConfig, PinSettingsInput, UiMessage, WindowPreset } from '../../types';
+import type { PinConfig, PinContentInput, UiMessage, WindowPatch, WindowPreset } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
   presets: WindowPreset[];
   busy: boolean;
   error: UiMessage | null;
+  open: boolean;
+  canUndo: boolean;
+  applyWindow: (patch: WindowPatch) => Promise<PinConfig | null>;
+  applyPreset: (id: string) => Promise<boolean>;
+  savePreset: (name: string, id?: string) => Promise<boolean>;
+  saveContent: (input: PinContentInput) => Promise<boolean | undefined>;
+  undo: () => Promise<boolean>;
 }>();
-const emit = defineEmits<{
-  close: [];
-  save: [input: PinSettingsInput];
-  error: [message: UiMessage];
-  preset: [presetId: string];
-  savePreset: [name: string];
-}>();
+const emit = defineEmits<{ close: []; error: [message: UiMessage]; manage: [] }>();
 const { t } = useI18n();
 const formId = useId();
-const input = usePinSettingsForm(() => props.pin);
-// 包成响应式对象后，模板可以直接读写草稿里的各个响应式字段，无需逐个 .value。
-const draft = reactive(
-  usePinSourceDraft(() => props.pin, { onError: (reason) => emit('error', reason) }),
+const tab = ref<'window' | 'content'>('window');
+const contentDirty = ref(false);
+const windowDirty = ref(false);
+const windowUnapplied = ref(false);
+const windowFailed = ref(false);
+const windowSettings = ref<InstanceType<typeof PinWindowSettings> | null>(null);
+/// 底栏与自动保存说明共用一行，展示已生效的实际几何，避免表单高度随输入抖动。
+const actualGeometry = computed(() =>
+  t('ui.pinSettings.unappliedGeometry', {
+    width: Math.round(props.pin.width),
+    height: Math.round(props.pin.height),
+    x: props.pin.x ?? '—',
+    y: props.pin.y ?? '—',
+  }),
 );
-const isUrlSource = computed(() => props.pin.source.kind === 'url');
-/// 当前来源的展示文本单独取值，避免模板里再做联合类型收窄。
-const currentUrl = computed(() => (props.pin.source.kind === 'url' ? props.pin.source.url : ''));
-const currentEntry = computed(() =>
-  props.pin.source.kind === 'bundled' ? props.pin.source.entry : '',
-);
-const working = computed(() => props.busy || draft.choosing);
-/// 有未保存改动时禁止切换预设，避免随后的保存把预设结果覆盖掉。
-const dirty = computed(() => {
-  const baseline = pinToInput(props.pin);
-  return (Object.keys(baseline) as (keyof PinSettingsInput)[]).some(
-    (key) => !Object.is(input[key], baseline[key]),
-  );
-});
-const naming = ref(false);
-const presetName = ref('');
-const borderless = computed(() => input.mode === 'desktop' || !input.decorations);
-const showBorder = computed({
-  get: () => input.mode === 'floating' && input.decorations,
-  set: (value: boolean) => {
-    input.decorations = value;
-  },
-});
-const showOnTop = computed({
-  get: () => input.mode === 'floating' && input.alwaysOnTop,
-  set: (value: boolean) => {
-    input.alwaysOnTop = value;
-  },
-});
+const localPending = ref(false);
+const choosing = ref(false);
+const confirming = ref(false);
+const closeRequested = ref(false);
 
-/// 提交完整字段；来源未改动时不带 source，后端因此不会重新加载页面或复制副本。
-/// 手动调整过字段时把预设标记降级为“自定义”，否则沿用当前来源标记。
-function save() {
-  const changed = draft.input;
-  const payload: PinSettingsInput = {
-    ...input,
-    preset: dirty.value ? null : props.pin.preset,
-  };
-  emit('save', changed ? { ...payload, source: changed } : payload);
+// 点击“完成”触发数字失焦提交时，等待提交结束后继续关闭，不要求用户再点一次。
+watch(
+  () => props.busy || localPending.value,
+  (pending) => {
+    if (!pending && closeRequested.value) {
+      closeRequested.value = false;
+      close();
+    }
+  },
+);
+
+/// 放弃未生效的窗口数字输入，交由表单组件回填实际值。
+function resetWindowInput() {
+  windowSettings.value?.resetInput();
 }
 
-/// 存为预设使用当前已保存的窗口状态，因此名称输入在有未保存改动时被禁用。
-function submitPresetName() {
-  const name = presetName.value.trim();
-  if (!name) return;
-  emit('savePreset', name);
-  naming.value = false;
-  presetName.value = '';
-}
-
-/// 取消命名只收起输入行，不影响表单中的其他字段。
-function cancelPresetName() {
-  naming.value = false;
-  presetName.value = '';
+/// 已生效窗口操作不会被“关闭”还原，只确认丢弃未提交的内容或数字输入。
+function close() {
+  if (choosing.value) return;
+  if (props.busy || localPending.value) {
+    closeRequested.value = true;
+    return;
+  }
+  if (contentDirty.value || windowDirty.value) confirming.value = true;
+  else emit('close');
 }
 </script>
 
@@ -92,201 +76,115 @@ function cancelPresetName() {
   <AppDialog
     :title="t('ui.pinSettings.title')"
     :description="pin.name"
-    :busy="working"
+    :busy="busy || localPending || choosing"
     wide
-    @close="emit('close')"
+    @close="close"
   >
-    <form :id="formId" class="pin-settings-form" @submit.prevent="save">
-      <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
-      <fieldset class="form-fields" :disabled="working">
-        <label class="field-label"
-          >{{ t('ui.pinSettings.name')
-          }}<input v-model="input.name" required maxlength="80" autofocus
-        /></label>
-        <div class="form-section">
-          <h3>{{ t('ui.pinSettings.source') }}</h3>
-          <label v-if="isUrlSource" class="field-label"
-            >{{ t('ui.pinSettings.sourceUrl')
-            }}<input
-              v-model="draft.address"
-              :placeholder="t('ui.form.urlPlaceholder')"
-              :title="currentUrl"
-              autocomplete="url"
-              spellcheck="false"
-          /></label>
-          <div v-else class="import-selection">
-            <p class="source-current">
-              <AppIcon name="window" :size="16" />{{
-                t('ui.card.importedSource', { entry: currentEntry })
-              }}
-            </p>
-            <div class="source-picks">
-              <button type="button" class="source-pick" @click="draft.choose('directory')">
-                <AppIcon name="folder" :size="16" />{{ t('ui.form.pickFolder') }}
-              </button>
-              <button type="button" class="source-pick" @click="draft.choose('file')">
-                <AppIcon name="window" :size="16" />{{ t('ui.form.pickFile') }}
-              </button>
-              <button type="button" class="source-pick" @click="draft.choose('package')">
-                <AppIcon name="download" :size="16" />{{ t('ui.form.pickPackage') }}
-              </button>
-            </div>
-            <p v-if="draft.choosing" class="import-progress" role="status">
-              {{ t('ui.common.working') }}
-            </p>
-            <div v-if="draft.preview" class="import-summary">
-              <p><AppIcon name="check" :size="16" />{{ draft.preview.label }}</p>
-              <AppSelect
-                v-if="draft.preview.candidates.length > 1"
-                v-model="draft.entry"
-                :label="t('ui.form.entry')"
-                :options="draft.entryOptions"
-                :disabled="working"
-              />
-            </div>
-          </div>
-          <p class="source-hint">
-            {{
-              t(isUrlSource ? 'ui.pinSettings.sourceUrlHint' : 'ui.pinSettings.sourceImportHint')
-            }}
-          </p>
-          <p v-if="draft.dirty" class="source-dirty">
-            <AppIcon name="refresh" :size="15" />{{ t('ui.pinSettings.sourceDirty') }}
-          </p>
-        </div>
-        <div class="form-section preset-section">
-          <h3>{{ t('ui.pinSettings.presets') }}</h3>
-          <div class="preset-chips">
-            <button
-              v-for="preset in presets"
-              :key="preset.id"
-              type="button"
-              class="preset-chip"
-              :class="{ active: pin.preset === preset.id }"
-              :disabled="working || dirty"
-              :title="dirty ? t('ui.pinSettings.presetDirty') : presetLabel(preset)"
-              @click="emit('preset', preset.id)"
-            >
-              <AppIcon :name="pin.preset === preset.id ? 'check' : 'expand'" :size="14" />{{
-                presetLabel(preset)
-              }}
-            </button>
-          </div>
-          <p class="preset-hint">
-            {{ t(dirty ? 'ui.pinSettings.presetDirty' : 'ui.pinSettings.presetHint') }}
-          </p>
-          <div v-if="naming" class="preset-save-row">
-            <input
-              v-model="presetName"
-              :placeholder="t('ui.pinSettings.presetNamePlaceholder')"
-              maxlength="40"
-              @keydown.enter.prevent="submitPresetName"
-            />
-            <button type="button" class="secondary" @click="cancelPresetName">
-              {{ t('ui.common.cancel') }}</button
-            ><button
-              type="button"
-              class="primary"
-              :disabled="!presetName.trim()"
-              @click="submitPresetName"
-            >
-              {{ t('ui.pinSettings.presetSave') }}
-            </button>
-          </div>
-          <button
-            v-else
-            type="button"
-            class="preset-save-toggle"
-            :disabled="working || dirty"
-            @click="naming = true"
-          >
-            <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
-          </button>
-        </div>
-        <div class="form-section">
-          <h3>{{ t('ui.pinSettings.appearance') }}</h3>
-          <fieldset class="mode-picker">
-            <legend>{{ t('ui.pinSettings.modeLegend') }}</legend>
-            <label :class="{ active: input.mode === 'floating' }"
-              ><input v-model="input.mode" type="radio" value="floating" /><span
-                ><strong>{{ t('ui.pinSettings.floating') }}</strong></span
-              ></label
-            >
-            <label :class="{ active: input.mode === 'desktop' }"
-              ><input v-model="input.mode" type="radio" value="desktop" /><span
-                ><strong>{{ t('ui.pinSettings.desktop') }}</strong></span
-              ></label
-            >
-          </fieldset>
-          <div class="pin-setting-checks">
-            <label class="check-row"
-              ><input v-model="showOnTop" type="checkbox" :disabled="input.mode === 'desktop'" />{{
-                t('ui.pinSettings.top')
-              }}</label
-            >
-            <label class="check-row"
-              ><input v-model="showBorder" type="checkbox" :disabled="input.mode === 'desktop'" />{{
-                t('ui.pinSettings.border')
-              }}</label
-            >
-            <label class="check-row"
-              ><input v-model="input.rounded" type="checkbox" :disabled="!borderless" />{{
-                t('ui.pinSettings.rounded')
-              }}</label
-            >
-          </div>
-          <p v-if="borderless" class="drag-hint">
-            <AppIcon name="info" :size="15" />{{ t('ui.pinSettings.dragHint') }}
-          </p>
-        </div>
-        <div class="form-section">
-          <div class="section-head">
-            <h3>{{ t('ui.pinSettings.size') }}</h3>
-            <label class="setting-toggle"
-              ><span
-                ><strong>{{ t('ui.pinSettings.lockSize') }}</strong></span
-              ><input v-model="input.sizeLocked" class="switch" type="checkbox" role="switch"
-            /></label>
-          </div>
-          <div class="geometry-fields">
-            <label class="field-label"
-              >{{ t('ui.pinSettings.width')
-              }}<input v-model.number="input.width" type="number" min="160" max="3840" required
-            /></label>
-            <label class="field-label"
-              >{{ t('ui.pinSettings.height')
-              }}<input v-model.number="input.height" type="number" min="100" max="2160" required
-            /></label>
-          </div>
-        </div>
-        <div class="form-section">
-          <div class="section-head">
-            <h3>{{ t('ui.pinSettings.position') }}</h3>
-            <label class="setting-toggle"
-              ><span
-                ><strong>{{ t('ui.pinSettings.lockPosition') }}</strong></span
-              ><input v-model="input.positionLocked" class="switch" type="checkbox" role="switch"
-            /></label>
-          </div>
-          <div class="geometry-fields">
-            <label class="field-label"
-              >{{ t('ui.pinSettings.positionX')
-              }}<input v-model.number="input.x" type="number" required
-            /></label>
-            <label class="field-label"
-              >{{ t('ui.pinSettings.positionY')
-              }}<input v-model.number="input.y" type="number" required
-            /></label>
-          </div>
-        </div>
-      </fieldset>
-    </form>
+    <template #heading-extra>
+      <nav v-if="!confirming" class="settings-tabs" :aria-label="t('ui.pinSettings.title')">
+        <button
+          v-for="item in ['window', 'content'] as const"
+          :key="item"
+          type="button"
+          :class="{ active: tab === item }"
+          :aria-pressed="tab === item"
+          @click="tab = item"
+        >
+          {{ t(item === 'window' ? 'ui.pinSettings.tabWindow' : 'ui.pinSettings.tabContent')
+          }}<span v-if="item === 'content' && contentDirty"> ·</span>
+        </button>
+      </nav>
+    </template>
+    <div v-if="error" class="notice error-notice" role="alert">{{ text(error) }}</div>
+    <div v-if="confirming" class="discard-confirm">
+      <p>{{ t('ui.pinSettings.discardConfirm') }}</p>
+      <p class="settings-hint">{{ t('ui.pinSettings.discardHint') }}</p>
+    </div>
+    <div v-show="!confirming">
+      <PinWindowSettings
+        v-show="tab === 'window'"
+        ref="windowSettings"
+        :pin="pin"
+        :presets="presets"
+        :open="open"
+        :apply="applyWindow"
+        :apply-preset="applyPreset"
+        :save-preset="savePreset"
+        @manage="emit('manage')"
+        @dirty="windowDirty = $event"
+        @pending="localPending = $event"
+        @unapplied="windowUnapplied = $event"
+        @failed="windowFailed = $event"
+      />
+      <PinContentSettings
+        v-show="tab === 'content'"
+        :pin="pin"
+        :busy="busy"
+        :form-id="formId"
+        :save="saveContent"
+        @error="emit('error', $event)"
+        @dirty="contentDirty = $event"
+        @pending="choosing = $event"
+      />
+    </div>
     <template #footer>
-      <button type="button" class="secondary" :disabled="working" @click="emit('close')">
-        {{ t('ui.common.cancel') }}</button
-      ><button class="primary" :disabled="working" type="submit" :form="formId">
-        {{ working ? t('ui.pinSettings.busy') : t('ui.pinSettings.save') }}
-      </button>
+      <template v-if="confirming">
+        <button type="button" class="secondary" @click="confirming = false">
+          {{ t('ui.pinSettings.continueEditing') }}
+        </button>
+        <button type="button" class="primary" @click="emit('close')">
+          {{ t('ui.pinSettings.discardAndClose') }}
+        </button>
+      </template>
+      <template v-else>
+        <div class="footer-left">
+          <template v-if="tab === 'window'">
+            <template v-if="windowUnapplied || windowFailed">
+              <span class="footer-status" :class="{ 'error-text': windowFailed }" role="status">
+                {{ windowFailed ? t('ui.pinSettings.status.failed') : actualGeometry }}
+              </span>
+              <button
+                v-if="windowUnapplied"
+                type="button"
+                class="text-button"
+                :disabled="localPending"
+                @click="resetWindowInput"
+              >
+                {{ t('ui.pinSettings.restoreActual') }}
+              </button>
+            </template>
+            <template v-else>
+              <button
+                v-if="canUndo"
+                type="button"
+                class="text-button"
+                :disabled="busy || localPending"
+                @click="undo()"
+              >
+                {{ t('ui.pinSettings.undoWindow') }}
+              </button>
+              <span class="footer-note">{{ t('ui.pinSettings.footerWindow') }}</span>
+            </template>
+          </template>
+        </div>
+        <button
+          v-if="tab === 'content' && contentDirty"
+          class="primary"
+          type="submit"
+          :form="formId"
+          :disabled="busy || choosing"
+        >
+          {{ t('ui.pinSettings.saveContent') }}
+        </button>
+        <button
+          type="button"
+          :class="tab === 'content' && contentDirty ? 'secondary' : 'primary'"
+          :disabled="choosing"
+          @click="close"
+        >
+          {{ t('ui.pinSettings.done') }}
+        </button>
+      </template>
     </template>
   </AppDialog>
 </template>

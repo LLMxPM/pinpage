@@ -23,7 +23,7 @@ pnpm tauri dev
 ```text
 src/
   features/launcher/      添加页面、来源导入
-  features/pins/          工作台、页面卡片与页面设置
+  features/pins/          工作台、即时窗口设置、独立内容保存与共用预设管理器
   features/updates/       版本、下载进度与安装确认
   components/             通用组件
   services/               Tauri 调用封装
@@ -33,6 +33,8 @@ src/
 src-tauri/src/
   commands/               前端命令入口
   windows/                窗口生命周期、事件与几何
+  windows/editor.rs       窗口局部事务与内容独立保存
+  windows/presets/         内置定义、相对几何、预设读写及测试
   platform/               Windows 专用适配
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
@@ -59,7 +61,7 @@ docs/                     用户、架构、开发与验证文档
 | `pnpm check:i18n` | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库 |
 | `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
 | `pnpm build` | 文案检查、类型检查与 Vite 生产构建 |
-| `pnpm test:ui` | 设置表单回传合并、编辑保留与提交行为，不连接真实配置 |
+| `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待和操作队列，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
 | `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
 | `pnpm test:release` | 版本同步、标签约束与 GitHub 更新清单 |

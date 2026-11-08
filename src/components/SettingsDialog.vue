@@ -3,11 +3,9 @@
 import { computed, onMounted, onUnmounted, reactive, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from './AppDialog.vue';
-import AppIcon from './AppIcon.vue';
 import AppSelect from './AppSelect.vue';
 import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import AboutSettings from '../features/updates/AboutSettings.vue';
-import { presetLabel } from '../features/pins/presets';
 import { text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
 import type { SettingsInput, UiMessage, WindowPreset } from '../types';
@@ -22,7 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   save: [input: SettingsInput];
-  deletePreset: [presetId: string];
+  managePresets: [];
   quit: [];
 }>();
 const { t } = useI18n();
@@ -41,7 +39,7 @@ const sections = computed(
       { id: 'about', label: t('ui.settings.navAbout') },
     ] as const,
 );
-/// 内置预设由代码定义，设置弹窗里只管理可删除的自定义项。
+/// 自定义预设数量用于入口摘要，管理操作由共用管理器处理。
 const customPresets = computed(() => props.presets.filter((preset) => !preset.builtin));
 const languageOptions = computed(
   () =>
@@ -217,21 +215,17 @@ function save() {
               <p v-if="!customPresets.length" class="settings-hint">
                 {{ t('ui.settings.presetEmpty') }}
               </p>
-              <ul v-else class="preset-manage">
-                <li v-for="preset in customPresets" :key="preset.id">
-                  <span>{{ presetLabel(preset) }}</span>
-                  <button
-                    type="button"
-                    class="icon-button"
-                    :disabled="busy"
-                    :title="t('ui.settings.presetDelete', { name: presetLabel(preset) })"
-                    :aria-label="t('ui.settings.presetDelete', { name: presetLabel(preset) })"
-                    @click="emit('deletePreset', preset.id)"
-                  >
-                    <AppIcon name="trash" :size="15" />
-                  </button>
-                </li>
-              </ul>
+              <p v-else class="settings-hint">
+                {{ t('ui.presets.customCount', { count: customPresets.length }) }}
+              </p>
+              <button
+                type="button"
+                class="secondary"
+                :disabled="busy"
+                @click="emit('managePresets')"
+              >
+                {{ t('ui.presets.manage') }}
+              </button>
             </div>
           </section>
           <section

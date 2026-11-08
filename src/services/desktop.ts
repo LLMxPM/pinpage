@@ -7,6 +7,10 @@ import type {
   ExportResult,
   ImportPreview,
   PinSettingsInput,
+  PinContentInput,
+  WindowPatch,
+  WindowChange,
+  PresetInput,
   SettingsInput,
   Snapshot,
 } from '../types';
@@ -47,8 +51,27 @@ export function updatePin(id: string, input: PinSettingsInput): Promise<void> {
 }
 
 /// 把页面当前外观与位置存为自定义预设，返回新预设 ID。
-export function savePreset(id: string, name: string): Promise<string> {
-  return invoke('save_preset', { id, name });
+export function savePreset(id: string, name: string, presetId?: string): Promise<string> {
+  return invoke('save_preset', { id, name, presetId: presetId ?? null });
+}
+
+/// 局部应用窗口设置，返回原生层确认的最终状态。
+export function updateWindow(
+  id: string,
+  input: WindowPatch,
+  expected?: WindowPatch,
+): Promise<WindowChange> {
+  return invoke('update_window', { id, input, expected: expected ?? null });
+}
+
+/// 内容单独保存，来源未变时不重新加载页面。
+export function updateContent(id: string, input: PinContentInput): Promise<void> {
+  return invoke('update_content', { id, input });
+}
+
+/// 编辑自定义预设或创建副本，不联动现有窗口。
+export function writePreset(input: PresetInput, presetId?: string): Promise<string> {
+  return invoke('write_preset', { input, presetId: presetId ?? null });
 }
 
 /// 删除自定义预设；内置预设由 Rust 拒绝删除。

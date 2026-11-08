@@ -10,6 +10,7 @@ import NewPinForm from './features/launcher/NewPinForm.vue';
 import ExampleGallery from './features/launcher/ExampleGallery.vue';
 import PinCard from './features/pins/PinCard.vue';
 import PinSettingsDialog from './features/pins/PinSettingsDialog.vue';
+import PresetManagerDialog from './features/pins/PresetManagerDialog.vue';
 import { useWorkspace } from './features/pins/useWorkspace';
 import { useUpdateSubscription } from './features/updates/useUpdates';
 import { text } from './i18n/messages';
@@ -28,7 +29,6 @@ const {
   ready,
   error,
   toast,
-  toastUndo,
   notices,
   settingsOpen,
   editingPinId,
@@ -42,12 +42,16 @@ const {
   applyPreset,
   savePreset,
   deletePreset,
-  undoPreset,
+  writePreset,
+  applyWindow,
+  undoWindow,
+  undoState,
   dismissToast,
   saveSettings,
   quit,
 } = useWorkspace();
 const creatingOpen = ref(false);
+const presetManagerOpen = ref(false);
 const launchMode = ref<'url' | 'import'>('url');
 const deletingPin = ref<PinConfig | null>(null);
 /// 设置按钮保留固定文字，有更新时通过角标和读屏标签补充状态。
@@ -61,7 +65,12 @@ const appWindow = desktopAvailable ? getCurrentWindow() : null;
 const maximized = ref(false);
 let unwatchResize: (() => void) | null = null;
 const modalOpen = computed(
-  () => creatingOpen.value || settingsOpen.value || !!editingPin.value || !!deletingPin.value,
+  () =>
+    creatingOpen.value ||
+    settingsOpen.value ||
+    !!editingPin.value ||
+    !!deletingPin.value ||
+    presetManagerOpen.value,
 );
 
 /// 顶栏空白处按下左键拖动窗口，双击在最大化与还原之间切换；按钮和链接保持自身行为。
@@ -111,22 +120,10 @@ function cardAction(id: string, operation: string) {
   else void action(id, operation);
 }
 
-/// 设置弹窗里点选预设会立即应用，表单随后跟随新快照刷新。
-function pickPreset(id: string, presetId: string) {
+/// 两处入口共用同一个预设管理器，打开时清除上一次操作错误。
+function managePresets() {
   error.value = null;
-  void applyPreset(id, presetId);
-}
-
-/// 把当前外观存为新预设，失败原因保留在弹窗内。
-function savePresetAs(id: string, name: string) {
-  error.value = null;
-  void savePreset(id, name);
-}
-
-/// 删除自定义预设，失败原因显示在工作台与设置弹窗。
-function removePreset(presetId: string) {
-  error.value = null;
-  void deletePreset(presetId);
+  presetManagerOpen.value = true;
 }
 
 /// 仅在原生删除成功后关闭确认框，删除失败的原因留在框内。
@@ -274,8 +271,6 @@ function openSettings() {
     </main>
     <div v-if="toast" class="toast notice success-notice" role="status">
       <AppIcon name="check" :size="18" /><span>{{ text(toast) }}</span
-      ><button v-if="toastUndo" class="toast-action" @click="undoPreset">
-        {{ t('ui.toast.undo') }}</button
       ><button class="icon-button" :aria-label="t('ui.notice.closeToast')" @click="dismissToast">
         <AppIcon name="close" :size="16" />
       </button>
@@ -298,7 +293,7 @@ function openSettings() {
       :update-available="updateAvailable"
       @close="settingsOpen = false"
       @save="saveSettings"
-      @delete-preset="removePreset"
+      @manage-presets="managePresets"
       @quit="quit"
     />
     <PinSettingsDialog
@@ -310,9 +305,26 @@ function openSettings() {
       :error="error"
       @close="editingPinId = null"
       @error="error = $event"
-      @save="savePin"
-      @preset="pickPreset(editingPin.id, $event)"
-      @save-preset="savePresetAs(editingPin.id, $event)"
+      :open="!!snapshot.runtime[editingPin.id]?.open"
+      :can-undo="undoState?.id === editingPin.id"
+      :apply-window="(patch) => applyWindow(editingPin!.id, patch)"
+      :apply-preset="(id) => applyPreset(editingPin!.id, id)"
+      :save-preset="(name, id) => savePreset(editingPin!.id, name, id)"
+      :save-content="savePin"
+      :undo="() => undoWindow(editingPin!.id)"
+      @manage="managePresets"
+    />
+    <PresetManagerDialog
+      v-if="presetManagerOpen"
+      :presets="presets"
+      :busy="busy"
+      :error="error"
+      :write="writePreset"
+      :remove="deletePreset"
+      @close="
+        presetManagerOpen = false;
+        error = null;
+      "
     />
     <AppDialog
       v-if="deletingPin"

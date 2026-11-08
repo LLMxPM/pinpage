@@ -1,8 +1,9 @@
 <!-- 功能：统一弹窗外观、滚动区域、焦点约束、Esc 关闭和关闭后焦点恢复。 -->
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, useId } from 'vue';
+import { nextTick, onMounted, onUnmounted, onUpdated, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppIcon from './AppIcon.vue';
+import { pushDialog, isActiveDialog } from './dialogStack';
 
 const props = defineProps<{
   title: string;
@@ -19,6 +20,17 @@ const previousFocus = document.activeElement as HTMLElement | null;
 const root = document.getElementById('app');
 const previousInert = root?.inert ?? false;
 const previousOverflow = document.body.style.overflow;
+let popDialog: (() => void) | undefined;
+
+/// 视图切换移除了原焦点时，将焦点放回当前可见表单或弹窗容器。
+function restoreDialogFocus() {
+  const element = dialog.value;
+  if (!element || !isActiveDialog(element) || element.contains(document.activeElement)) return;
+  const autofocus = Array.from(element.querySelectorAll<HTMLElement>('[autofocus]')).find(
+    (field) => field.getClientRects().length > 0,
+  );
+  (autofocus ?? element).focus();
+}
 
 /// 操作进行中保留弹窗与输入，避免用户误以为任务已取消。
 function close() {
@@ -56,12 +68,15 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  if (dialog.value) popDialog = pushDialog(dialog.value);
   if (root) root.inert = true;
   document.body.style.overflow = 'hidden';
   await nextTick();
-  (dialog.value?.querySelector<HTMLElement>('[autofocus]') ?? dialog.value)?.focus();
+  restoreDialogFocus();
 });
+onUpdated(restoreDialogFocus);
 onUnmounted(() => {
+  popDialog?.();
   if (root) root.inert = previousInert;
   document.body.style.overflow = previousOverflow;
   if (previousFocus?.isConnected) previousFocus.focus();
@@ -85,6 +100,9 @@ onUnmounted(() => {
           <div>
             <h2 :id="titleId">{{ title }}</h2>
             <p v-if="description">{{ description }}</p>
+          </div>
+          <div v-if="$slots['heading-extra']" class="dialog-heading-extra">
+            <slot name="heading-extra" />
           </div>
           <button
             type="button"

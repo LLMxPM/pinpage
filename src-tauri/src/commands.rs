@@ -1,4 +1,5 @@
 // 功能：提供经过管理窗口身份校验的 IPC 命令入口，并协调窗口创建与状态通知。
+pub mod editor;
 pub mod session;
 pub mod settings;
 pub mod updates;
@@ -119,6 +120,7 @@ pub async fn save_preset(
     app: AppHandle,
     id: String,
     name: String,
+    preset_id: Option<String>,
 ) -> Result<String, AppMessage> {
     windows::ensure_manager(&window)?;
     let state = app.state::<AppState>();
@@ -133,7 +135,7 @@ pub async fn save_preset(
         .find(|pin| pin.id == id)
         .cloned()
         .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
-    windows::presets::save(&app, &pin, &name)
+    windows::presets::save(&app, &pin, &name, preset_id.as_deref())
 }
 
 /// 删除自定义预设；内置预设由代码定义，不接受删除。

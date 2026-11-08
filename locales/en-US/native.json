@@ -178,6 +178,9 @@
     "updateOpenFailed": "Could not open GitHub Release",
     "presetNotFound": "That preset does not exist or was deleted",
     "presetNameRange": "Preset names must be 1 to {max} characters",
-    "presetLimit": "You can keep up to {max} custom presets; delete one first"
+    "presetLimit": "You can keep up to {max} custom presets; delete one first",
+    "presetReadonly": "Built-in presets are read-only. Create a copy to edit.",
+    "presetFieldsInvalid": "Preset size or relative position is outside the allowed range",
+    "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone."
   }
 }

@@ -1,6 +1,6 @@
 // 功能：合并原生窗口回传与设置草稿，更新未编辑字段并保留用户尚未提交的修改。
 import { reactive, watch } from 'vue';
-import type { PinConfig, PinSettingsInput } from '../../types';
+import type { PinConfig, PinSettingsInput, WindowValues } from '../../types';
 
 /// 把窗口快照转换为表单值，逻辑尺寸取整，尚未定位的页面使用默认位置。
 /// 预设标记不进入表单，避免“基于哪个预设”与可编辑字段混在一起。
@@ -18,6 +18,12 @@ export function pinToInput(pin: PinConfig): PinSettingsInput {
     x: pin.x ?? 60,
     y: pin.y ?? 60,
   };
+}
+
+/// 只返回窗口可编辑字段，撤销与即时提交不会触碰内容和开启状态。
+export function windowValues(pin: PinConfig): WindowValues {
+  const { name: _name, source: _source, preset: _preset, ...values } = pinToInput(pin);
+  return values;
 }
 
 /// 同步当前页面的可编辑字段；切换页面时重置，原页面回传时只更新未改动字段。

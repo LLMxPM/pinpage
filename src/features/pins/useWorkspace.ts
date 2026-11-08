@@ -4,12 +4,12 @@ import { applyLocale } from '../../i18n';
 import { fromAppMessage, message, toUiMessage } from '../../i18n/messages';
 import * as desktop from '../../services/desktop';
 import { formatBytes } from '../../services/format';
-import { presetLabel } from './presets';
-import { pinToInput } from './usePinSettingsForm';
+import { createOperationQueue } from './operationQueue';
+import { useWindowActions } from './useWindowActions';
 import type {
   CreatePin,
   ExampleId,
-  PinSettingsInput,
+  PinContentInput,
   SettingsInput,
   Snapshot,
   UiMessage,
@@ -43,8 +43,6 @@ export function useWorkspace() {
   const error = ref<UiMessage | null>(null);
   /// 成功类提示单独一条通道，避免和红色错误混在一起。
   const toast = ref<UiMessage | null>(null);
-  /// 提示条上的撤销动作，仅用于会同时移动窗口的预设切换。
-  const toastUndo = ref<null | (() => Promise<void>)>(null);
   const settingsOpen = ref(false);
   const editingPinId = ref<string | null>(null);
   let revision = 0;
@@ -54,24 +52,15 @@ export function useWorkspace() {
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   /// 短暂展示操作结果，超时后自动收起。提示保存消息键和参数，不提前固化文字。
-  function notify(entry: UiMessage, undo: null | (() => Promise<void>) = null) {
+  function notify(entry: UiMessage) {
     toast.value = entry;
-    toastUndo.value = undo;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(dismissToast, 6000);
   }
 
-  /// 收起提示条时一并丢弃撤销动作，避免对已经过期的切换执行还原。
+  /// 收起提示条；窗口字段撤销由页面设置底栏提供，不随提示条保存。
   function dismissToast() {
     toast.value = null;
-    toastUndo.value = null;
-  }
-
-  /// 撤销预设切换：把应用前的整套外观与几何重新提交一次。
-  async function undoPreset() {
-    const undo = toastUndo.value;
-    dismissToast();
-    await undo?.();
   }
 
   /// 保留最近一次请求的结果，原生窗口事件突发时不渲染旧快照。
@@ -90,25 +79,28 @@ export function useWorkspace() {
     }
   }
 
-  /// 统一呈现桌面操作错误，完成后刷新实际状态。
-  async function run(operation: () => Promise<void>, key = 'app'): Promise<boolean> {
-    if (busy.value) return false;
-    if (!desktop.desktopAvailable) {
-      error.value = message('ui.desktop.desktopRequired');
-      return false;
-    }
-    pending.value = key;
-    error.value = null;
-    try {
-      await operation();
-      return true;
-    } catch (reason) {
-      error.value = toUiMessage(reason);
-      return false;
-    } finally {
-      await refresh();
-      pending.value = null;
-    }
+  const enqueue = createOperationQueue();
+
+  /// 统一排队并呈现桌面操作错误，完成后刷新实际状态。
+  function run(operation: () => Promise<void>, key = 'app'): Promise<boolean> {
+    return enqueue(async () => {
+      if (!desktop.desktopAvailable) {
+        error.value = message('ui.desktop.desktopRequired');
+        return false;
+      }
+      pending.value = key;
+      error.value = null;
+      try {
+        await operation();
+        return true;
+      } catch (reason) {
+        error.value = toUiMessage(reason);
+        return false;
+      } finally {
+        await refresh();
+        pending.value = null;
+      }
+    });
   }
 
   /// 创建页面，来源验证和系统窗口创建均在原生层完成。
@@ -121,40 +113,7 @@ export function useWorkspace() {
     return run(() => desktop.pinAction(id, operation), `${id}:${operation}`);
   }
 
-  /// 应用预设会同时改变尺寸与位置，成功后提供一次撤销回到应用前的完整状态。
-  async function applyPreset(id: string, presetId: string) {
-    const pin = snapshot.value.settings.pins.find((item) => item.id === id);
-    const preset = snapshot.value.presets.find((item) => item.id === presetId);
-    if (!pin || !preset) return false;
-    const before: PinSettingsInput = { ...pinToInput(pin), preset: pin.preset };
-    const applied = await run(
-      () => desktop.pinAction(id, `preset:${presetId}`),
-      `${id}:preset:${presetId}`,
-    );
-    if (!applied) return false;
-    notify(message('ui.toast.presetApplied', { name: presetLabel(preset) }), () =>
-      run(() => desktop.updatePin(id, before), `${id}:preset:undo`).then(() => undefined),
-    );
-    return true;
-  }
-
-  /// 把页面当前外观与位置存为自定义预设，成功后提示名称。
-  async function savePreset(id: string, name: string) {
-    let created = '';
-    const saved = await run(async () => {
-      created = await desktop.savePreset(id, name);
-    }, `${id}:preset:save`);
-    if (saved && created) notify(message('ui.toast.presetSaved', { name }));
-    return saved;
-  }
-
-  /// 删除自定义预设；被删除预设标记过的页面会退回“自定义”。
-  async function deletePreset(presetId: string) {
-    const preset = snapshot.value.presets.find((item) => item.id === presetId);
-    const removed = await run(() => desktop.deletePreset(presetId), `preset:${presetId}:delete`);
-    if (removed && preset) notify(message('ui.toast.presetDeleted', { name: presetLabel(preset) }));
-    return removed;
-  }
+  const windowActions = useWindowActions(snapshot, run, notify);
 
   /// 导出导入页的站点副本与页面数据，结果通过提示条反馈。
   async function exportPin(id: string) {
@@ -199,13 +158,12 @@ export function useWorkspace() {
     });
   }
 
-  /// 单页设置成功后关闭弹窗，失败时保留正在编辑的内容。
-  function savePin(input: PinSettingsInput) {
+  /// 内容保存成功后保持弹窗打开，失败时保留正在编辑的草稿。
+  async function savePin(input: PinContentInput) {
     const id = editingPinId.value;
     if (!id) return;
     return run(async () => {
-      await desktop.updatePin(id, input);
-      editingPinId.value = null;
+      await desktop.updateContent(id, input);
     });
   }
 
@@ -251,12 +209,8 @@ export function useWorkspace() {
     createExample,
     exportPin,
     action,
-    applyPreset,
-    savePreset,
-    deletePreset,
-    undoPreset,
+    ...windowActions,
     dismissToast,
-    toastUndo,
     saveSettings,
     quit: () => run(desktop.quitApp),
     pins: computed(() => snapshot.value.settings.pins),

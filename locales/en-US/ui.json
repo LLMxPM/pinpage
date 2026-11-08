@@ -88,7 +88,7 @@
     "deleteConfirm": "Delete “{name}”?",
     "deleteImportedHint": "Page settings and imported files will be permanently deleted",
     "deleteHint": "Page settings will be permanently deleted",
-    "metaPreset": "Based on {name}"
+    "metaPreset": "Preset · {name}"
   },
   "pinSettings": {
     "title": "Page settings",
@@ -100,12 +100,11 @@
     "top": "Always on top",
     "border": "Show system frame",
     "rounded": "Rounded borderless corners",
-    "dragHint": "For borderless windows, hold the gesture modifier from Settings before left-dragging; disabled gestures or a locked position prevent dragging",
+    "dragHint": "Hold the gesture modifier to drag borderless windows; a locked position cannot be moved",
     "size": "Size",
     "width": "Width",
     "height": "Height",
     "lockSize": "Lock size",
-    "position": "Position",
     "positionX": "Horizontal X",
     "positionY": "Vertical Y",
     "lockPosition": "Lock position",
@@ -117,10 +116,26 @@
     "sourceImportHint": "Picking new files replaces the imported copy and reloads the page.",
     "sourceDirty": "Source changed — it applies when you save.",
     "presets": "Window presets",
-    "presetHint": "Picking a preset changes the window appearance and position right away; save or discard unsaved edits first.",
-    "presetDirty": "Save or discard your edits before switching presets",
-    "presetSave": "Save as preset",
-    "presetNamePlaceholder": "Preset name, e.g. Timer at top right"
+    "presetSave": "Save as new preset",
+    "presetNamePlaceholder": "Preset name, e.g. Timer at top right",
+    "tabWindow": "Window",
+    "tabContent": "Content",
+    "done": "Done",
+    "saveContent": "Save content",
+    "closedHint": "This page is closed. Changes are saved for the next time it opens.",
+    "restoreActual": "Restore actual values",
+    "undoWindow": "Undo last adjustment",
+    "discardContent": "Discard content changes",
+    "discardConfirm": "Discard unsaved content or unapplied input and close?",
+    "discardHint": "Window settings that already took effect will be kept.",
+    "continueEditing": "Keep editing",
+    "discardAndClose": "Discard input and close",
+    "status": {
+      "failed": "Could not apply. Your input is kept."
+    },
+    "geometry": "Size & position",
+    "footerWindow": "Changes apply and save instantly",
+    "unappliedGeometry": "Not applied · Actual: {width} × {height} · X {x} / Y {y}"
   },
   "settings": {
     "title": "Settings",
@@ -148,10 +163,9 @@
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",
     "exportedWithoutData": "Exported {count} file, page data not included: {path} | Exported {count} files, page data not included: {path}",
-    "presetApplied": "Switched to “{name}”",
     "presetSaved": "Saved preset “{name}”",
     "presetDeleted": "Deleted preset “{name}”",
-    "undo": "Undo"
+    "presetUpdated": "Updated preset “{name}”"
   },
   "common": {
     "closeDialog": "Close dialog",
@@ -202,5 +216,41 @@
       "ignored": "Version skipped",
       "error": "Update failed; retry or visit GitHub Release"
     }
+  },
+  "presets": {
+    "manage": "Manage presets",
+    "name": "Preset name",
+    "edit": "Edit preset",
+    "copy": "Create copy",
+    "copyName": "{name} copy",
+    "delete": "Delete preset",
+    "save": "Save preset",
+    "back": "Back to list",
+    "builtin": "Built-in · Read-only",
+    "snapshotHint": "Presets save window appearance, size, and relative position. Editing a preset only affects future applications.",
+    "updateFromWindow": "Update “{name}”",
+    "overwriteConfirm": "Replace preset “{name}” with the current window settings?",
+    "confirmUpdate": "Confirm update",
+    "deleteConfirm": "Delete preset “{name}”?",
+    "deleteHint": "Only the preset is deleted. Existing pages keep their appearance and position.",
+    "discardConfirm": "Discard unsaved preset changes and return to the list?",
+    "discard": "Discard changes",
+    "customCount": "{count} custom presets saved",
+    "fullscreen": "Fill the target display",
+    "relativePosition": "Relative position",
+    "horizontalPercent": "Horizontal position (%)",
+    "verticalPercent": "Vertical position (%)",
+    "anchors": {
+      "topLeft": "Top left",
+      "top": "Top center",
+      "topRight": "Top right",
+      "left": "Middle left",
+      "center": "Center",
+      "right": "Middle right",
+      "bottomLeft": "Bottom left",
+      "bottom": "Bottom center",
+      "bottomRight": "Bottom right"
+    },
+    "discardCloseConfirm": "Discard unsaved preset changes and close the manager?"
   }
 }

@@ -28,7 +28,7 @@
 }
 .dialog-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 22px 24px 18px;
@@ -49,6 +49,10 @@
 }
 .dialog-heading .icon-button {
   margin-right: -5px;
+}
+/* 标题栏内的分段切换：与标题同排，替代独立的一行标签。 */
+.dialog-heading-extra {
+  margin-left: auto;
 }
 .dialog-body {
   flex: 1 1 auto;
@@ -277,11 +281,43 @@
 .dialog-footer {
   flex-shrink: 0;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 16px 24px;
   border-top: 1px solid var(--line);
   background: #fff;
+}
+/* 底栏左侧承载撤销等次要操作，右侧保留主操作。 */
+.footer-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-right: auto;
+  min-width: 0;
+}
+.footer-note,
+.footer-status {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.footer-status.error-text {
+  color: #be3e3e;
+}
+.footer-left .text-button {
+  flex-shrink: 0;
+}
+/* 撤销与说明同排时用细线分隔，避免读成一句话。 */
+.footer-left .text-button + .footer-note {
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
 }
 /* 设置底栏：退出放在左下角，保存与关闭保持在右侧。 */
 .settings-footer {

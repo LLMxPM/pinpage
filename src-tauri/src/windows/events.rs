@@ -73,6 +73,14 @@ pub(super) fn capture(window: &WebviewWindow) {
             || pin.x != Some(position.x)
             || pin.y != Some(position.y)
             || pin.scale != scale;
+        // 忽略逻辑尺寸换算的亚像素差异，实际拖动或缩放后不再勾选旧预设。
+        if pin.width.round() != (size.width as f64 / scale).round()
+            || pin.height.round() != (size.height as f64 / scale).round()
+            || pin.x.is_some_and(|x| x != position.x)
+            || pin.y.is_some_and(|y| y != position.y)
+        {
+            pin.preset = None;
+        }
         pin.width = size.width as f64 / scale;
         pin.height = size.height as f64 / scale;
         pin.x = Some(position.x);

@@ -88,7 +88,7 @@
     "deleteConfirm": "确定删除“{name}”吗？",
     "deleteImportedHint": "页面设置和导入文件将永久删除",
     "deleteHint": "页面设置将永久删除",
-    "metaPreset": "基于 {name}"
+    "metaPreset": "预设 · {name}"
   },
   "pinSettings": {
     "title": "页面设置",
@@ -100,12 +100,11 @@
     "top": "始终置顶",
     "border": "显示系统边框",
     "rounded": "无边框圆角",
-    "dragHint": "无边框窗口先按住设置中的手势修饰键，再用左键拖动；关闭手势或锁定位置后不可拖动",
+    "dragHint": "无边框窗口需按住手势修饰键拖动；锁定位置后不可拖动",
     "size": "尺寸",
     "width": "宽度",
     "height": "高度",
     "lockSize": "锁定大小",
-    "position": "位置",
     "positionX": "横向 X",
     "positionY": "纵向 Y",
     "lockPosition": "锁定位置",
@@ -117,10 +116,26 @@
     "sourceImportHint": "重新选择后会用新文件替换已导入的副本，并重新加载页面",
     "sourceDirty": "来源已改动，保存后生效",
     "presets": "窗口预设",
-    "presetHint": "点选预设会立即改变窗口外观与位置；有未保存的修改时需先保存。",
-    "presetDirty": "先保存或取消当前修改，才能切换预设",
-    "presetSave": "存为预设",
-    "presetNamePlaceholder": "预设名称，例如：右上角计时器"
+    "presetSave": "另存为新预设",
+    "presetNamePlaceholder": "预设名称，例如：右上角计时器",
+    "tabWindow": "窗口",
+    "tabContent": "内容",
+    "done": "完成",
+    "saveContent": "保存内容",
+    "closedHint": "页面当前已关闭，修改会保存，并在下次开启时生效。",
+    "restoreActual": "恢复实际值",
+    "undoWindow": "撤销上次调整",
+    "discardContent": "放弃内容修改",
+    "discardConfirm": "还有未保存的内容或未生效的输入，确定放弃并关闭吗？",
+    "discardHint": "已经生效的窗口设置会保留。",
+    "continueEditing": "继续编辑",
+    "discardAndClose": "放弃输入并关闭",
+    "status": {
+      "failed": "应用失败，输入已保留"
+    },
+    "geometry": "尺寸与位置",
+    "footerWindow": "更改即时生效并自动保存",
+    "unappliedGeometry": "未生效 · 实际：{width} × {height} · X {x} / Y {y}"
   },
   "settings": {
     "title": "设置",
@@ -148,10 +163,9 @@
   "toast": {
     "exportedWithData": "已导出 {count} 个文件，页面数据 {size}：{path}",
     "exportedWithoutData": "已导出 {count} 个文件，页面数据未包含在内：{path}",
-    "presetApplied": "已切换到“{name}”",
     "presetSaved": "已保存预设“{name}”",
     "presetDeleted": "已删除预设“{name}”",
-    "undo": "撤销"
+    "presetUpdated": "已更新预设“{name}”"
   },
   "common": {
     "closeDialog": "关闭弹窗",
@@ -202,5 +216,41 @@
       "ignored": "已忽略此版本",
       "error": "更新失败，可重试或前往 GitHub Release"
     }
+  },
+  "presets": {
+    "manage": "管理预设",
+    "name": "预设名称",
+    "edit": "编辑预设",
+    "copy": "创建副本",
+    "copyName": "{name} 副本",
+    "delete": "删除预设",
+    "save": "保存预设",
+    "back": "返回列表",
+    "builtin": "内置 · 只读",
+    "snapshotHint": "预设保存窗口外观、尺寸和相对位置。修改预设只影响以后应用它的结果。",
+    "updateFromWindow": "更新“{name}”",
+    "overwriteConfirm": "将当前窗口配置覆盖到预设“{name}”？",
+    "confirmUpdate": "确认更新",
+    "deleteConfirm": "确定删除预设“{name}”吗？",
+    "deleteHint": "只删除预设，现有页面会保留当前外观和位置。",
+    "discardConfirm": "放弃尚未保存的预设修改并返回列表？",
+    "discard": "放弃修改",
+    "customCount": "已保存 {count} 个自定义预设",
+    "fullscreen": "铺满目标显示器",
+    "relativePosition": "相对位置",
+    "horizontalPercent": "横向位置（%）",
+    "verticalPercent": "纵向位置（%）",
+    "anchors": {
+      "topLeft": "左上",
+      "top": "上中",
+      "topRight": "右上",
+      "left": "左中",
+      "center": "居中",
+      "right": "右中",
+      "bottomLeft": "左下",
+      "bottom": "下中",
+      "bottomRight": "右下"
+    },
+    "discardCloseConfirm": "放弃尚未保存的预设修改并关闭管理器？"
   }
 }

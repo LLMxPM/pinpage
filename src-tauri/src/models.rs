@@ -3,7 +3,9 @@ use crate::errors::AppMessage;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+mod editor;
 mod workspace;
+pub use editor::{PinContentInput, PresetInput, WindowChange, WindowPatch};
 pub use workspace::{GestureModifier, Settings, SettingsInput, WorkspaceSettings};
 
 /// 用户语言偏好，随配置持久化；`system` 表示由平台解析。
@@ -86,7 +88,7 @@ pub struct PinConfig {
     pub position_locked: bool,
     #[serde(default)]
     pub size_locked: bool,
-    /// 最近一次显式应用的预设 ID，表示“基于哪个预设”，不代表窗口仍与预设完全一致。
+    /// 当前匹配的预设 ID；调整窗口参数后清空，内容修改不影响它。
     #[serde(default)]
     pub preset: Option<String>,
 }

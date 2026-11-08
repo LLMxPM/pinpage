@@ -1,0 +1,132 @@
+/* 功能：页面设置分区、实时状态以及预设管理列表、编辑与确认的布局。 */
+/* 标题栏内的分段切换：紧凑胶囊，激活项浮于浅色底槽之上。 */
+.settings-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #f2f4f7;
+}
+.settings-tabs button {
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-tabs button.active {
+  background: #fff;
+  color: var(--accent-hover);
+  font-weight: 600;
+  box-shadow: 0 1px 2px #1f293714;
+}
+@media (max-width: 540px) {
+  .settings-tabs {
+    padding: 2px;
+  }
+  .settings-tabs button {
+    padding: 5px 10px;
+    font-size: 12.5px;
+  }
+}
+.closed-hint {
+  margin: 0 0 12px;
+}
+.inline-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.inline-actions .preset-save-toggle {
+  margin-top: 0;
+}
+.preset-section {
+  margin-top: 18px;
+}
+.preset-section > .section-head {
+  margin-bottom: 12px;
+}
+.preset-section .inline-actions {
+  margin-top: 12px;
+}
+.preset-confirm {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafbfc;
+}
+.preset-confirm p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.preset-library {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.preset-library li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.preset-library li:last-child {
+  border-bottom: 0;
+}
+.preset-summary {
+  min-width: 0;
+  flex: 1 1 220px;
+  overflow-wrap: anywhere;
+}
+.preset-summary strong {
+  font-size: 14px;
+}
+.preset-summary p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.preset-badge {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.preset-fullscreen {
+  margin-top: 16px;
+}
+.anchor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  max-width: 340px;
+  margin-top: 12px;
+}
+.anchor-grid button {
+  padding: 9px 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  color: var(--muted);
+  font-size: 12px;
+}
+.anchor-grid button.active {
+  border-color: #e2a58e;
+  color: var(--accent-hover);
+  background: var(--accent-soft);
+}
+.danger-button {
+  background: #b93636;
+  border-color: #b93636;
+}
+.discard-confirm p {
+  line-height: 1.8;
+}
