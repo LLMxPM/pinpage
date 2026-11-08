@@ -41,7 +41,7 @@ English | [简体中文](README.zh-CN.md)
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
-Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
+Windows is the fully supported platform. macOS is experimental: default builds expose standard floating windows, while `experimental-macos-drag` enables a fixed Option-drag implementation for community testing. Desktop mode, rounded corners, window locks, and configurable gestures remain unavailable. macOS CI and verification bundles are configured, but this branch has no macOS build or hardware acceptance results yet. See [Platform support](docs/platforms.md) and [macOS development and verification](docs/macos-development.md) (Chinese).
 
 ## Documentation
 
@@ -49,6 +49,7 @@ Windows is the fully supported platform. macOS currently covers standard floatin
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and current acceptance status.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
+- [macOS development and verification](docs/macos-development.md) (Chinese) — setup, default and experimental builds, CI artifacts, and community test reports.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
 
 ## License

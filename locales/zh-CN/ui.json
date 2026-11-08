@@ -48,7 +48,7 @@
     "needDesktop": "请在桌面应用中导入页面",
     "optional": "选填",
     "windowOptions": "窗口选项",
-    "platformLimited": "当前平台仅支持标准浮动窗口；桌面模式和原生拖动手势暂不可用"
+    "platformLimited": "当前平台仅支持浮动窗口；桌面模式暂不可用"
   },
   "pins": {
     "title": "我的页面",

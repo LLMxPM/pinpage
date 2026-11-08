@@ -184,7 +184,7 @@ pub struct PinRuntime {
 #[allow(dead_code)]
 pub enum PlatformDragModifier {
     Alt,
-    /// 预留给未来的 macOS 固定手势实现；当前能力层不会声明未实现的选项。
+    /// macOS 实验构建提供固定拖动手势，默认构建不声明此能力。
     Option,
 }
 

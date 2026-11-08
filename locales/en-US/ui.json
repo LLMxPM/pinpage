@@ -48,7 +48,7 @@
     "needDesktop": "Import pages from the desktop app",
     "optional": "Optional",
     "windowOptions": "Window options",
-    "platformLimited": "This platform supports standard floating windows only; desktop mode and native drag gestures are unavailable"
+    "platformLimited": "This platform supports floating windows only; desktop mode is unavailable"
   },
   "pins": {
     "title": "My pages",
