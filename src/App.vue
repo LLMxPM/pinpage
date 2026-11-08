@@ -11,11 +11,13 @@ import ExampleGallery from './features/launcher/ExampleGallery.vue';
 import PinCard from './features/pins/PinCard.vue';
 import PinSettingsDialog from './features/pins/PinSettingsDialog.vue';
 import { useWorkspace } from './features/pins/useWorkspace';
+import { useUpdateSubscription } from './features/updates/useUpdates';
 import { text } from './i18n/messages';
 import { desktopAvailable } from './services/desktop';
 import type { CreatePin, PinConfig } from './types';
 
 const { t } = useI18n();
+const { updateAvailable } = useUpdateSubscription();
 const {
   snapshot,
   pins,
@@ -125,7 +127,9 @@ function openSettings() {
       <span v-if="!desktopAvailable" class="preview-badge">{{ t('ui.desktop.preview') }}</span>
       <div class="topbar-actions">
         <button class="secondary compact" @click="openSettings">
-          <AppIcon name="settings" :size="16" />{{ t('ui.sidebar.settings') }}</button
+          <AppIcon name="settings" :size="16" />{{
+            updateAvailable ? t('ui.updates.availableBadge') : t('ui.sidebar.settings')
+          }}</button
         ><button class="primary compact" :disabled="busy" @click="openCreate()">
           <AppIcon name="plus" :size="17" />{{ t('ui.workspace.add') }}
         </button>

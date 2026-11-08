@@ -13,6 +13,7 @@ mod shortcuts;
 mod source;
 mod state;
 mod tray;
+mod updates;
 #[cfg(windows)]
 mod window_menu;
 mod windows;
@@ -28,6 +29,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(shortcuts::plugin())
         .register_asynchronous_uri_scheme_protocol("pinpage", |context, request, responder| {
             let app = context.app_handle().clone();
@@ -45,11 +47,16 @@ pub fn run() {
             commands::pin_action,
             commands::update_pin,
             commands::settings::update_settings,
+            commands::updates::updates_snapshot,
+            commands::updates::update_action,
             commands::quit_app
         ])
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(AppState::load(path));
+            let update_path = app.path().app_config_dir()?.join("updates.json");
+            app.manage(updates::UpdateState::load(app.handle(), update_path));
+            updates::start_background(app.handle());
             // 托盘在管理界面之前创建，必须先具备正确的原生翻译。
             tray::create(app.handle())?;
             let settings = app.state::<AppState>().settings.lock().unwrap().clone();
@@ -69,6 +76,8 @@ pub fn run() {
                 let app = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     for pin in settings.pins.into_iter().filter(|pin| pin.enabled) {
+                        let state = app.state::<AppState>();
+                        let _operation = state.operation.lock().unwrap();
                         if let Err(error) = windows::open_pin(&app, &pin) {
                             // 原因按当前语言渲染为参数，页面名称始终保留用户原值。
                             let reason = i18n::render(state::locale(&app), &error);

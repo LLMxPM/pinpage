@@ -89,6 +89,7 @@ pub(super) fn apply(
 pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), AppMessage> {
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
+    state.ensure_mutable()?;
     let previous = state
         .settings
         .lock()

@@ -17,6 +17,7 @@ pub async fn update_settings(
     let state_ref = app.state::<AppState>();
     // 与管理窗口内的开关、样式切换共用操作锁，避免保存语言时覆盖并发窗口状态。
     let _operation = state_ref.operation.lock().unwrap();
+    state_ref.ensure_mutable()?;
     let previous = WorkspaceSettings::from_settings(&state_ref.settings.lock().unwrap());
 
     // 先注册新快捷键：冲突时原有设置与原有组合都不发生变化。

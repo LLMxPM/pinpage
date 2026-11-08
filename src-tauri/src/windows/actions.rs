@@ -15,6 +15,7 @@ fn window_failed(error: impl std::fmt::Display) -> AppMessage {
 pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage> {
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
+    state.ensure_mutable()?;
     let previous = state
         .settings
         .lock()

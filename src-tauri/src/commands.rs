@@ -1,6 +1,7 @@
 // 功能：提供经过管理窗口身份校验的 IPC 命令入口，并协调窗口创建与状态通知。
 pub mod session;
 pub mod settings;
+pub mod updates;
 
 use crate::{
     errors::AppMessage,
@@ -27,6 +28,8 @@ pub async fn create_pin(
 ) -> Result<(), AppMessage> {
     windows::ensure_manager(&window)?;
     let state = app.state::<AppState>();
+    let _operation = state.operation.lock().unwrap();
+    state.ensure_mutable()?;
     // 站点副本以页面 ID 命名，先分配 ID 再复制，避免复制完成后还要改名。
     let id = format!("p-{}", uuid::Uuid::new_v4().simple());
     let source = crate::source::prepare(&app, &id, &input.source)?;

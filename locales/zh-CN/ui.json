@@ -161,5 +161,35 @@
     "clock": "数字时钟",
     "add": "添加",
     "addAria": "添加{name}示例"
+  },
+  "updates": {
+    "title": "关于与更新",
+    "currentVersion": "当前版本 v{version}",
+    "autoCheck": "自动检查更新（每天一次）",
+    "neverChecked": "尚未检查",
+    "lastCheck": "上次检查：{time}",
+    "unsupported": "开发构建、验证实例及非 Windows x64 平台不启用应用内升级",
+    "downloadProgress": "更新下载进度",
+    "releaseNotes": "更新说明",
+    "check": "检查更新",
+    "download": "下载更新",
+    "ignore": "忽略此版本",
+    "install": "安装并重启",
+    "openRelease": "打开 GitHub Release",
+    "availableBadge": "有更新",
+    "installWarning": "安装将关闭所有页面并重启 PinPage，网页尚未保存的内容或计时状态可能丢失，请先在页面内保存",
+    "confirmInstall": "确认安装并重启",
+    "status": {
+      "idle": "等待检查",
+      "checking": "正在检查更新…",
+      "upToDate": "已是最新正式版",
+      "available": "发现新版本",
+      "downloading": "正在下载更新…",
+      "verifying": "正在验证更新签名…",
+      "ready": "更新已下载并通过验签",
+      "installing": "正在保存配置并启动安装…",
+      "ignored": "已忽略此版本",
+      "error": "更新失败，可重试或前往 GitHub Release"
+    }
   }
 }

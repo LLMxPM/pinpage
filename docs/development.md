@@ -3,7 +3,7 @@
 ## 环境要求
 
 - Node.js 与 pnpm（当前验证环境：Node.js 22.23.4、pnpm 10.30.3）
-- Rust MSVC 工具链（当前验证环境：Rust 1.98.1）
+- Rust MSVC 工具链，最低 1.90（当前验证环境：Rust 1.98.1）
 - Visual Studio Build Tools，包含桌面 C++ 工作负载
 - WebView2 Runtime
 
@@ -24,6 +24,7 @@ pnpm tauri dev
 src/
   features/launcher/      添加页面、来源导入
   features/pins/          工作台、页面卡片与页面设置
+  features/updates/       版本、下载进度与安装确认
   components/             通用组件
   services/               Tauri 调用封装
   i18n/                   前端多语言与消息映射
@@ -33,6 +34,7 @@ src-tauri/src/
   commands/               前端命令入口
   windows/                窗口生命周期、事件与几何
   platform/               Windows 专用适配
+  updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
   import.rs               导入复制与站点副本
   package.rs              页面包导入导出
@@ -44,7 +46,7 @@ src-tauri/src/
   lib.rs / main.rs        应用装配与入口
 locales/                  中英文界面与原生消息
 examples/                 四个离线示例源码
-scripts/                  文案检查与性能采样脚本
+scripts/                  版本同步、发布、签名构建、文案检查与性能采样
 tests/                    UI 表单测试与本地路径样例
 docs/                     用户、架构、开发与验证文档
 ```
@@ -60,6 +62,8 @@ docs/                     用户、架构、开发与验证文档
 | `pnpm build` | 文案检查、类型检查与 Vite 生产构建 |
 | `pnpm test:ui` | 设置表单回传合并、编辑保留与提交行为，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
+| `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
+| `pnpm test:release` | 版本同步、标签约束与 GitHub 更新清单 |
 | `cargo fmt --manifest-path src-tauri/Cargo.toml --check` | Rust 格式检查 |
 | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all` | Rust 静态检查 |
 | `pnpm format:check` | 前端、语言资源、脚本、配置与样例文件的 Prettier 检查 |
@@ -71,12 +75,14 @@ docs/                     用户、架构、开发与验证文档
 ## 打包
 
 ```powershell
-pnpm tauri build
+pnpm release:build
 ```
 
 - Release 可执行文件：`src-tauri/target/release/pinpage.exe`
 - NSIS 安装包：`src-tauri/target/release/bundle/nsis/`
 - 构建产物不提交 Git。
+
+本地签名构建与离线验签命令见[版本与升级](releases.md)。Windows 安装包代码签名暂未配置。
 
 直接运行可执行文件时可追加 `--tray`，只创建托盘并按设置恢复悬浮窗，工作台按需打开。
 
@@ -89,11 +95,11 @@ pnpm tauri build
 
 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签时构造 Windows 安装包并创建 GitHub Release：
 
-1. 将 `package.json`、`src-tauri/tauri.conf.json` 和 `src-tauri/Cargo.toml` 的版本同步为待发布版本。
-2. 提交并推送 `main`，再创建并推送标签，例如 `git tag v0.1.0 && git push origin v0.1.0`。
-3. 工作流会校验标签与三处版本号一致，执行 `pnpm tauri build`，上传 NSIS 安装包及同名 `.sha256` 校验文件。
+1. 运行 `pnpm version:set <版本>`，同步前端、Tauri、Cargo 与 Cargo 锁文件中的应用版本。
+2. 提交并推送 `main`，再创建并推送标签，例如 `git tag v0.2.0` 和 `git push origin v0.2.0`。
+3. 工作流校验版本、签名构建并离线验签，准备草稿，上传 NSIS 安装包、`.sig`、`.sha256` 和 `latest.json`，全部就绪才正式发布。预发布和旧版补发不会覆盖 Latest。
 
-也可在 Actions 页面手动运行 Release 并输入已存在的标签。当前安装包未进行代码签名，Windows SmartScreen 可能提示未知发布者。
+也可在 Actions 页面手动运行 Release 并输入已存在的标签。已发布版本禁止覆盖，操作细节见[版本与升级](releases.md)。当前安装包未进行 Windows 代码签名，Windows SmartScreen 可能提示未知发布者。
 
 ## 独立验证实例
 

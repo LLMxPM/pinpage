@@ -62,6 +62,10 @@ pub(super) fn capture(window: &WebviewWindow) {
     }
     let state = window.state::<AppState>();
     let mut settings = state.settings.lock().unwrap();
+    // 安装前的最终快照之后不再吸收窗口事件，避免覆盖刚保存的会话。
+    if state.installing.load(Ordering::SeqCst) || state.read_only {
+        return;
+    }
     let mut changed = false;
     if let Some(pin) = settings.pins.iter_mut().find(|p| p.id == window.label()) {
         changed = pin.width != size.width as f64 / scale

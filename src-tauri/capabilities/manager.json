@@ -18,6 +18,8 @@
     "allow-pin-action",
     "allow-update-pin",
     "allow-update-settings",
+    "allow-updates-snapshot",
+    "allow-update-action",
     "allow-quit-app"
   ]
 }

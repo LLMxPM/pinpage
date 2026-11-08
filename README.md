@@ -26,6 +26,7 @@ English | [简体中文](README.zh-CN.md)
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; tray and global shortcuts keep windows recoverable.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the Windows UI language; switching does not reload open pages.
+- **GitHub Release updates** — check, download, verify, and install signed updates from this repository; installation requires confirmation. End-to-end Windows upgrade acceptance is pending; see [versioning and updates](docs/releases.md).
 - **Four offline tools built in** — focus timer, quick notes, daily checklist, and digital clock, each added as an independent imported page.
 - **Measured footprint** — first-round Release sampling measured about 205 / 291 / 377 MiB of private commit memory for 1 / 3 / 5 idle timers across the whole process group. Details are in the [architecture notes](docs/architecture.md).
 
@@ -43,6 +44,7 @@ Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To bui
 - [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray and shortcuts, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances.
+- [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
 - [Verification log](docs/verification.md) (Chinese) — implemented and verified items, performance data, pending acceptance scenarios.
 
 ## License

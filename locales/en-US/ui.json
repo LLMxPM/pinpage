@@ -161,5 +161,35 @@
     "clock": "Digital clock",
     "add": "Add",
     "addAria": "Add {name} sample"
+  },
+  "updates": {
+    "title": "About and updates",
+    "currentVersion": "Current version v{version}",
+    "autoCheck": "Check for updates automatically (daily)",
+    "neverChecked": "Not checked yet",
+    "lastCheck": "Last checked: {time}",
+    "unsupported": "In-app updates are disabled in development builds, verification instances, and platforms other than Windows x64",
+    "downloadProgress": "Update download progress",
+    "releaseNotes": "Release notes",
+    "check": "Check for updates",
+    "download": "Download update",
+    "ignore": "Skip this version",
+    "install": "Install and restart",
+    "openRelease": "Open GitHub Release",
+    "availableBadge": "Update available",
+    "installWarning": "Installing closes all pages and restarts PinPage. Unsaved page content or timer state may be lost. Save your work in each page first",
+    "confirmInstall": "Confirm install and restart",
+    "status": {
+      "idle": "Ready to check",
+      "checking": "Checking for updates…",
+      "upToDate": "Latest stable version installed",
+      "available": "New version available",
+      "downloading": "Downloading update…",
+      "verifying": "Verifying update signature…",
+      "ready": "Update downloaded and signature verified",
+      "installing": "Saving settings and starting installer…",
+      "ignored": "Version skipped",
+      "error": "Update failed; retry or visit GitHub Release"
+    }
   }
 }

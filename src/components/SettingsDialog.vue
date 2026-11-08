@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import AppDialog from './AppDialog.vue';
 import AppIcon from './AppIcon.vue';
 import AppSelect from './AppSelect.vue';
+import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import { text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
 import type { SettingsInput, UiMessage } from '../types';
@@ -91,6 +92,7 @@ function save() {
         </div>
       </fieldset>
     </form>
+    <UpdateSettings :busy="busy" />
     <div class="settings-quit">
       <p>{{ t('ui.settings.quitHint') }}</p>
       <button

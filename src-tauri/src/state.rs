@@ -29,6 +29,9 @@ pub struct AppState {
     /// Rust 解析后的有效语言，是原生界面与快照的唯一来源。
     pub locale: Mutex<AppLocale>,
     pub exiting: AtomicBool,
+    /// 安装期间冻结配置；失败后可恢复，退出标记只在 installer 真正启动前设置。
+    pub installing: AtomicBool,
+    pub read_only: bool,
     revision: AtomicU64,
     saving: AtomicBool,
     writer: Mutex<()>,
@@ -36,10 +39,21 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// 加载配置；损坏或来自更新版本的配置保留为备份，并反馈通知。
+    /// 加载配置；未来版本只读保护，损坏文件保留备份，不覆盖未知结构。
     pub fn load(path: PathBuf) -> Self {
         let mut notices = Vec::new();
+        let mut read_only = false;
         let settings = match std::fs::read(&path) {
+            Ok(bytes)
+                if serde_json::from_slice::<serde_json::Value>(&bytes)
+                    .ok()
+                    .and_then(|value| value.get("schemaVersion").and_then(|value| value.as_u64()))
+                    .is_some_and(|version| version > 1) =>
+            {
+                read_only = true;
+                notices.push(AppMessage::new("errors.configNewer"));
+                Settings::default()
+            }
             Ok(bytes) => match serde_json::from_slice::<Settings>(&bytes) {
                 Ok(value) if value.schema_version == 1 => value,
                 _ => {
@@ -74,6 +88,8 @@ impl AppState {
             notices: Mutex::new(notices),
             locale: Mutex::new(locale),
             exiting: AtomicBool::new(false),
+            installing: AtomicBool::new(false),
+            read_only,
             revision: AtomicU64::new(0),
             saving: AtomicBool::new(false),
             writer: Mutex::new(()),
@@ -94,6 +110,41 @@ impl AppState {
     /// 在同目录写入临时文件后原子替换，避免半写入的配置被加载。
     pub fn save(&self) -> Result<(), AppMessage> {
         let _writer = self.writer.lock().unwrap();
+        self.ensure_mutable()?;
+        self.write_config()
+    }
+
+    /// 所有配置修改入口与安装共用检查，未知配置版本和安装冻结都不能写入。
+    pub fn ensure_mutable(&self) -> Result<(), AppMessage> {
+        if self.read_only {
+            return Err(AppMessage::new("errors.configNewer"));
+        }
+        if self.installing.load(Ordering::SeqCst) {
+            return Err(AppMessage::new("errors.updateBusy"));
+        }
+        Ok(())
+    }
+
+    /// 持有操作锁调用；冻结后保存最后快照并备份，任一步失败都中止安装。
+    pub fn prepare_update(&self) -> Result<(), AppMessage> {
+        let _writer = self.writer.lock().unwrap();
+        self.ensure_mutable()?;
+        self.installing.store(true, Ordering::SeqCst);
+        let result = self.write_config().and_then(|()| {
+            let backup = self.path.with_extension("pre-update.json");
+            let temporary = self.path.with_extension("pre-update.tmp");
+            std::fs::copy(&self.path, &temporary)
+                .and_then(|_| replace_file(&temporary, &backup))
+                .map_err(|error| AppMessage::new("errors.updateBackupFailed").detail(error))
+        });
+        if result.is_err() {
+            self.installing.store(false, Ordering::SeqCst);
+        }
+        result
+    }
+
+    /// 调用者持有写入锁；原子替换与安装前最终保存共用同一实现。
+    fn write_config(&self) -> Result<(), AppMessage> {
         let config = self.settings.lock().unwrap().clone();
         let parent = self
             .path
@@ -119,7 +170,10 @@ impl AppState {
 
 /// Windows 的 rename 不覆盖已有文件，使用系统原子替换接口。
 #[cfg(windows)]
-fn replace_file(source: &std::path::Path, target: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn replace_file(
+    source: &std::path::Path,
+    target: &std::path::Path,
+) -> std::io::Result<()> {
     use std::os::windows::ffi::OsStrExt;
     let source: Vec<u16> = source.as_os_str().encode_wide().chain(Some(0)).collect();
     let target: Vec<u16> = target.as_os_str().encode_wide().chain(Some(0)).collect();
@@ -140,7 +194,10 @@ fn replace_file(source: &std::path::Path, target: &std::path::Path) -> std::io::
 
 /// Unix 的同文件系统 rename 提供原子替换。
 #[cfg(not(windows))]
-fn replace_file(source: &std::path::Path, target: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn replace_file(
+    source: &std::path::Path,
+    target: &std::path::Path,
+) -> std::io::Result<()> {
     std::fs::rename(source, target)
 }
 
@@ -152,6 +209,9 @@ pub fn notify(app: &AppHandle) {
 /// 合并 500ms 内连续的窗口事件，只有最后一个修订触发落盘。
 pub fn schedule_save(app: &AppHandle) {
     let state = app.state::<AppState>();
+    if state.installing.load(Ordering::SeqCst) || state.read_only {
+        return;
+    }
     state.revision.fetch_add(1, Ordering::SeqCst);
     if state.saving.swap(true, Ordering::SeqCst) {
         return;
@@ -165,8 +225,10 @@ pub fn schedule_save(app: &AppHandle) {
             if state.revision.load(Ordering::SeqCst) != revision {
                 continue;
             }
-            if let Err(error) = state.save() {
-                report(&app, error);
+            if !state.installing.load(Ordering::SeqCst) {
+                if let Err(error) = state.save() {
+                    report(&app, error);
+                }
             }
             state.saving.store(false, Ordering::SeqCst);
             // 检查落盘与释放标记之间到来的事件，避免最后一个修订丢失。
@@ -200,6 +262,10 @@ pub fn report(app: &AppHandle, message: AppMessage) {
 #[cfg(test)]
 #[path = "state_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "state_update_tests.rs"]
+mod update_tests;
 
 /// 读取当前有效语言，供托盘、窗口标题等原生界面渲染。
 pub fn locale(app: &AppHandle) -> AppLocale {

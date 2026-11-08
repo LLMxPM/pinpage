@@ -31,8 +31,13 @@ __pycache__/
 /logs/
 /tmp/
 /runtime-data/
+/release-notes.md
+/docs/updater-signing.local.md
 /WebView2/
 *.WebView2/
+# updater 私钥及密码只能保存在仓库之外，防止误加入。
+*.key
+*.password
 
 # 编辑器与操作系统文件
 .idea/

@@ -154,6 +154,8 @@ pub fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<(), AppMessa
 
 /// 创建一个内容 WebView，来源校验与资源授权在窗口创建前完成。
 pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
+    let state = app.state::<AppState>();
+    state.ensure_mutable()?;
     if let Some(window) = app.get_webview_window(&pin.id) {
         window
             .show()
@@ -169,7 +171,6 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     let navigation_id = pin.id.clone();
     let navigation_app = app.clone();
     let popup_app = app.clone();
-    let state = app.state::<AppState>();
     state.runtime.lock().unwrap().insert(
         pin.id.clone(),
         PinRuntime {
@@ -284,7 +285,12 @@ pub fn recover_all(app: &AppHandle) {
 
 /// 退出前保存会话，并防止窗口销毁事件误删需要恢复的记录。
 pub fn quit(app: &AppHandle) {
-    if let Err(error) = app.state::<AppState>().save() {
+    let state = app.state::<AppState>();
+    if let Err(error) = if state.read_only {
+        Ok(())
+    } else {
+        state.save()
+    } {
         state::report(app, error);
         show_manager(app);
         return;

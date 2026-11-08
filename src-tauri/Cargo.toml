@@ -1,11 +1,11 @@
 # 功能：声明 PinPage 桌面应用及系统集成依赖。
 [package]
 name = "pinpage"
-version = "0.1.0"
+version = "0.2.0"
 description = "将计时器、看板和本地工具页固定在桌面上方"
 license = "MIT"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.90"
 
 [lib]
 name = "pinpage_lib"
@@ -27,6 +27,12 @@ uuid = { version = "1", features = ["v4"] }
 percent-encoding = "2"
 mime_guess = "2"
 zip = { version = "2", default-features = false, features = ["deflate"] }
+tauri-plugin-updater = "2.14.1"
+semver = "1.0.28"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_UI_Input_KeyboardAndMouse", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_System_Threading", "Win32_System_LibraryLoader"] }
+
+[dev-dependencies]
+base64 = "0.22"
+minisign-verify = "0.3"

@@ -161,6 +161,18 @@
     "createExportFailed": "The export file could not be created",
     "writePackageFailed": "Writing the page package failed",
     "readPackageFailed": "The page package could not be read",
-    "noPendingData": "There is no page data waiting to be restored"
+    "noPendingData": "There is no page data waiting to be restored",
+    "configNewer": "Settings were created by a newer version; writes are disabled. Open them with a newer PinPage",
+    "updateSourceInvalid": "Invalid update source; only stable GitHub Release installers from this repository are accepted",
+    "updatePreferencesFailed": "Could not read or save update preferences",
+    "updateUnsupported": "This build does not support in-app updates",
+    "updateBusy": "An update task is running or a package is ready; complete it first",
+    "updateCheckFailed": "Update check failed; check your connection to GitHub and retry",
+    "updateNotReady": "No update package is available; check for updates and download first",
+    "updateDownloadFailed": "Download or signature verification failed; the update will not be installed",
+    "updateInstallFailed": "Could not start the update installer; retry or install manually from GitHub Release",
+    "updateBackupFailed": "Settings backup failed; update installation was stopped",
+    "updateActionInvalid": "Unsupported update action or parameters",
+    "updateOpenFailed": "Could not open GitHub Release"
   }
 }

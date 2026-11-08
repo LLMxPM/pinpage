@@ -1,5 +1,4 @@
-# 功能：校验版本标签并构建 Windows NSIS 安装包，创建或更新 GitHub Release。
-
+# 功能：构建并签名 Windows 升级包，在 GitHub 草稿附件完整后发布正式 Release。
 name: Release
 
 on:
@@ -9,15 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 要发布的标签，例如 v0.1.0（需已存在）
+        description: 要发布的标签，例如 v0.2.0（需已存在）
         required: true
         type: string
 
 permissions:
   contents: write
 
+# 不同版本也串行发布，防止旧版补发覆盖 Latest 指向。
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-publish
   cancel-in-progress: false
 
 jobs:
@@ -50,84 +50,61 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      - name: 校验标签与项目版本
-        shell: bash
-        run: |
-          set -euo pipefail
-          tag="$RELEASE_TAG"
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
-            echo "标签格式无效：$tag（应为 v<主>.<次>.<修订>，可带预发布后缀）" >&2
-            exit 1
-          fi
-          version="${tag#v}"
-          config_version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
-          package_version="$(node -p "require('./package.json').version")"
-          cargo_version="$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)"
-          if [[ "$version" != "$config_version" || "$version" != "$package_version" || "$version" != "$cargo_version" ]]; then
-            echo "标签版本 $version 与项目版本不一致：" >&2
-            echo "  tauri.conf.json: $config_version" >&2
-            echo "  package.json:    $package_version" >&2
-            echo "  Cargo.toml:      $cargo_version" >&2
-            exit 1
-          fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 构建安装包
+      - name: 校验版本与发布逻辑
+        shell: pwsh
+        run: |
+          pnpm version:check $env:RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm test:release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $version = (Get-Content -Raw -LiteralPath package.json | ConvertFrom-Json).version
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: 检查签名配置
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) { throw '缺少 updater 私钥 Secret，停止发布' }
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) { throw '缺少 updater 私钥密码 Secret，停止发布' }
+
+      - name: 构建并签名安装包
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri build
 
-      - name: 生成校验文件
-        shell: bash
+      - name: 验证安装包签名与版本绑定
+        shell: pwsh
         run: |
-          set -euo pipefail
-          bundle_dir="src-tauri/target/release/bundle/nsis"
-          installer="$(find "$bundle_dir" -maxdepth 1 -name '*-setup.exe' -print -quit)"
-          if [[ -z "$installer" ]]; then
-            echo "未在 $bundle_dir 找到 NSIS 安装包" >&2
-            exit 1
-          fi
-          (
-            cd "$(dirname "$installer")"
-            sha256sum "$(basename "$installer")" > "$(basename "$installer").sha256"
-          )
-          echo "INSTALLER=$installer" >> "$GITHUB_ENV"
+          $installer = Get-Item -LiteralPath "src-tauri/target/release/bundle/nsis/PinPage_$($env:VERSION)_x64-setup.exe"
+          cargo run --locked --manifest-path src-tauri/Cargo.toml --example verify-update -- $installer.FullName
+
+      - name: 准备 Release 草稿
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/publish.mjs prepare
+
+      - name: 生成升级清单和校验文件
+        run: node scripts/release/artifacts.mjs
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: pinpage-${{ env.VERSION }}-windows-x64
+          name: pinpage-${{ env.RELEASE_TAG }}-windows-x64
           path: |
-            ${{ env.INSTALLER }}
-            ${{ env.INSTALLER }}.sha256
+            src-tauri/target/release/bundle/nsis/PinPage_${{ env.VERSION }}_x64-setup.exe
+            src-tauri/target/release/bundle/nsis/PinPage_${{ env.VERSION }}_x64-setup.exe.sig
+            src-tauri/target/release/bundle/nsis/PinPage_${{ env.VERSION }}_x64-setup.exe.sha256
+            src-tauri/target/release/bundle/nsis/latest.json
           if-no-files-found: error
           retention-days: 14
 
-      - name: 创建或更新 Release
-        shell: bash
+      - name: 校验附件并发布
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          case "$RELEASE_TAG" in
-            *-*) prerelease=(--prerelease) ;;
-            *) prerelease=() ;;
-          esac
-          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$INSTALLER" "$INSTALLER.sha256" --clobber
-          else
-            gh release create "$RELEASE_TAG" "$INSTALLER" "$INSTALLER.sha256" \
-              --title "PinPage $RELEASE_TAG" \
-              --generate-notes \
-              "${prerelease[@]}"
-            {
-              gh release view "$RELEASE_TAG" --json body -q .body
-              printf '\n---\n\n'
-              printf -- '- 下载下方 `*-setup.exe` 安装包，需要 WebView2 Runtime（Windows 11 通常已内置）。\n'
-              printf -- '- 使用同名 `.sha256` 文件核对安装包完整性。\n'
-              printf -- '- 安装包尚未进行代码签名，Windows SmartScreen 可能提示「未知发布者」。\n'
-              printf -- '- 完整提交记录：https://github.com/%s/commits/%s\n' "$GITHUB_REPOSITORY" "$RELEASE_TAG"
-            } > release-notes.md
-            gh release edit "$RELEASE_TAG" --notes-file release-notes.md
-          fi
+        run: node scripts/release/publish.mjs publish

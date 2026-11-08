@@ -16,6 +16,8 @@ fn main() {
             "pin_action",
             "update_pin",
             "update_settings",
+            "updates_snapshot",
+            "update_action",
             "quit_app",
         ]),
     ))

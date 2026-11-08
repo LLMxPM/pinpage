@@ -161,6 +161,18 @@
     "createExportFailed": "无法创建导出文件",
     "writePackageFailed": "写入页面包失败",
     "readPackageFailed": "无法读取页面包",
-    "noPendingData": "没有待恢复的页面数据"
+    "noPendingData": "没有待恢复的页面数据",
+    "configNewer": "配置来自更新版本，当前程序已停止写入，请使用新版 PinPage 打开",
+    "updateSourceInvalid": "升级来源无效，只接受本仓库正式版的 GitHub Release 安装包",
+    "updatePreferencesFailed": "读取或保存升级偏好失败",
+    "updateUnsupported": "此构建不支持应用内升级",
+    "updateBusy": "升级任务正在进行或安装包已就绪，请先完成当前任务",
+    "updateCheckFailed": "检查更新失败，请检查 GitHub 网络连接后重试",
+    "updateNotReady": "没有可用的升级包，请先检查并下载更新",
+    "updateDownloadFailed": "下载或签名验证失败，更新不会安装",
+    "updateInstallFailed": "无法启动更新安装程序，可重试或从 GitHub Release 手动安装",
+    "updateBackupFailed": "升级前配置备份失败，已中止安装",
+    "updateActionInvalid": "不支持的升级操作或参数",
+    "updateOpenFailed": "无法打开 GitHub Release"
   }
 }

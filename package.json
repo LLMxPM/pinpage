@@ -1,11 +1,15 @@
 {
   "name": "pinpage",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "scripts": {
+    "version:set": "node scripts/version.mjs",
+    "version:check": "node scripts/version.mjs --check",
+    "test:release": "node --test tests/release.test.mjs",
+    "release:build": "node scripts/build-signed.mjs",
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "check": "vue-tsc --noEmit",
     "check:i18n": "node scripts/check-i18n.mjs",
@@ -28,6 +32,7 @@
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.10",
     "prettier": "^3.9.10",
+    "semver": "^7.8.6",
     "typescript": "~5.9.3",
     "vite": "^8.3.6",
     "vue-tsc": "^3.3.14"
