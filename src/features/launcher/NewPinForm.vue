@@ -6,12 +6,14 @@ import AppDialog from '../../components/AppDialog.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import AppIcon from '../../components/AppIcon.vue';
 import { text } from '../../i18n/messages';
+import { hasNativeDrag } from '../pins/platform';
 import { useImportSource } from './useImportSource';
-import type { CreatePin, ImportPreview, UiMessage } from '../../types';
+import type { CreatePin, ImportPreview, PlatformCapabilities, UiMessage } from '../../types';
 
 const props = defineProps<{
   busy: boolean;
   error: UiMessage | null;
+  capabilities: PlatformCapabilities;
   initialMode: 'url' | 'import';
 }>();
 const emit = defineEmits<{ create: [input: CreatePin]; error: [message: UiMessage]; close: [] }>();
@@ -22,8 +24,8 @@ const address = ref('');
 const name = ref('');
 const nameAuto = ref(true);
 const top = ref(true);
-// 新页面默认无边框，贴合悬浮看板的轻量定位；需要系统边框时可在创建表单或页面设置里打开。
-const borderless = ref(true);
+// 有原生拖动手势时默认无边框；没有手势的平台默认保留系统边框，保证窗口可移动。
+const borderless = ref(hasNativeDrag(props.capabilities));
 const windowMode = ref<'floating' | 'desktop'>('floating');
 // 选择器的预览、入口候选与错误收敛由共用组合式函数负责，本组件只管名称与窗口偏好。
 const { preview, entry, choosing, entryOptions, choose } = useImportSource({
@@ -55,6 +57,7 @@ function adoptName(selected: ImportPreview) {
 function submit() {
   if (props.busy || choosing.value) return;
   if (mode.value === 'import' && !preview.value) return;
+  if (windowMode.value === 'desktop' && !props.capabilities.desktopMode) return;
   emit('create', {
     name: name.value,
     alwaysOnTop: top.value,
@@ -142,12 +145,22 @@ function submit() {
                 ><strong>{{ t('ui.form.modeFloating') }}</strong></span
               ></label
             >
-            <label :class="{ active: windowMode === 'desktop' }"
-              ><input v-model="windowMode" type="radio" value="desktop" /><span
+            <label
+              :class="{ active: windowMode === 'desktop' }"
+              :title="!capabilities.desktopMode ? t('ui.form.platformLimited') : undefined"
+              ><input
+                v-model="windowMode"
+                type="radio"
+                value="desktop"
+                :disabled="!capabilities.desktopMode"
+              /><span
                 ><strong>{{ t('ui.form.modeDesktop') }}</strong></span
               ></label
             >
           </fieldset>
+          <p v-if="!capabilities.desktopMode" class="settings-hint">
+            {{ t('ui.form.platformLimited') }}
+          </p>
           <div class="creation-options">
             <label class="check-row"
               ><input v-model="displayTop" type="checkbox" :disabled="windowMode === 'desktop'" />{{

@@ -57,6 +57,7 @@
     "hint": "正在恢复页面数据…"
   },
   "errors": {
+    "platformFallback": "部分页面使用了当前平台不支持的窗口能力，已回退为标准浮动窗口；原有内容与尺寸保持不变",
     "unknown": "操作未完成，请重试",
     "localeInvalid": "语言设置无效",
     "gestureModifierInvalid": "窗口手势修饰键无效",
@@ -138,7 +139,7 @@
     "rollbackFailed": "窗口设置回滚失败",
     "trayRefreshFailed": "托盘菜单更新失败",
     "settingsSavedTrayFailed": "设置已保存，但托盘菜单更新失败，下一次窗口操作会重试",
-    "platformUnsupported": "此版本的窗口模式设置仅支持 Windows",
+    "platformUnsupported": "当前平台不支持此窗口能力，已保留原有窗口配置",
     "readPosition": "无法读取窗口位置",
     "taskInterrupted": "窗口配置任务已中断",
     "desktopUnavailable": "当前桌面暂不可用，请稍后重试桌面模式",

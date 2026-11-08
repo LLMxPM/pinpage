@@ -6,11 +6,19 @@ import AppDialog from '../../components/AppDialog.vue';
 import PinContentSettings from './PinContentSettings.vue';
 import PinWindowSettings from './PinWindowSettings.vue';
 import { text } from '../../i18n/messages';
-import type { PinConfig, PinContentInput, UiMessage, WindowPatch, WindowPreset } from '../../types';
+import type {
+  PinConfig,
+  PinContentInput,
+  PlatformCapabilities,
+  UiMessage,
+  WindowPatch,
+  WindowPreset,
+} from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
   presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
   busy: boolean;
   error: UiMessage | null;
   open: boolean;
@@ -106,6 +114,7 @@ function close() {
         ref="windowSettings"
         :pin="pin"
         :presets="presets"
+        :capabilities="capabilities"
         :open="open"
         :apply="applyWindow"
         :apply-preset="applyPreset"

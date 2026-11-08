@@ -178,6 +178,30 @@ pub struct PinRuntime {
     pub error: Option<AppMessage>,
 }
 
+/// 无边框窗口的默认或固定拖动修饰键，与前端序列化契约共用。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
+pub enum PlatformDragModifier {
+    Alt,
+    /// 预留给未来的 macOS 固定手势实现；当前能力层不会声明未实现的选项。
+    Option,
+}
+
+/// 当前构建实际支持的窗口能力；前端裁剪入口，Rust 在每次应用前最终校验。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlatformCapabilities {
+    pub desktop_mode: bool,
+    pub rounded: bool,
+    pub position_lock: bool,
+    pub size_lock: bool,
+    /// 是否允许配置手势修饰键；固定手势只通过 drag_modifier 表达。
+    pub window_gestures: bool,
+    /// None 表示没有原生修饰键手势，无边框窗口仍可通过托盘找回。
+    pub drag_modifier: Option<PlatformDragModifier>,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
@@ -188,6 +212,8 @@ pub struct Snapshot {
     pub presets: Vec<PresetView>,
     /// Rust 已解析的有效语言，前端不再自行猜测系统语言。
     pub resolved_locale: AppLocale,
+    /// 当前构建支持的窗口能力，管理界面据此裁剪所有入口。
+    pub capabilities: PlatformCapabilities,
 }
 
 #[derive(Clone, Deserialize)]

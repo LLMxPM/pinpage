@@ -159,6 +159,7 @@ pub fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<(), AppMessa
 pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     let state = app.state::<AppState>();
     state.ensure_mutable()?;
+    crate::platform::validate_pin(crate::platform::capabilities(), pin)?;
     if let Some(window) = app.get_webview_window(&pin.id) {
         window
             .show()

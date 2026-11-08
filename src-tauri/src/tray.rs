@@ -46,11 +46,16 @@ fn menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         .unwrap()
         .pins
         .clone();
+    let capabilities = crate::platform::capabilities();
     for pin in pins {
         let submenu = Submenu::new(app, &pin.name, true)?;
         for (action, key) in PIN_ACTIONS {
             // 桌面模式是 Explorer 的子窗口，无法抬到普通窗口前面。
             if action == "focus" && pin.mode == WindowMode::Desktop {
+                continue;
+            }
+            // 平台不支持桌面模式时不再提供会必然失败的入口。
+            if action == "desktop" && !capabilities.desktop_mode {
                 continue;
             }
             submenu.append(&MenuItem::with_id(

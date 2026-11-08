@@ -57,6 +57,10 @@ pub fn run() {
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(AppState::load(path));
+            // 跨平台降级只在首次加载时提示；尽快落盘，避免每次启动重复提醒。
+            if app.state::<AppState>().platform_fallback {
+                state::schedule_save(app.handle());
+            }
             let update_path = app.path().app_config_dir()?.join("updates.json");
             app.manage(updates::UpdateState::load(app.handle(), update_path));
             updates::start_background(app.handle());

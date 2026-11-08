@@ -209,5 +209,22 @@ fn snapshot_reports_locale_and_gesture_modifier() {
     assert_eq!(value["settings"]["locale"], "zh-CN");
     assert_eq!(value["settings"]["gestureModifier"], "shift");
     assert_eq!(value["resolvedLocale"], "zh-CN");
+    // 直接断言序列化后的能力值，避免只比较同一个函数而漏掉错误声明。
+    let capabilities = &value["capabilities"];
+    if cfg!(windows) {
+        assert_eq!(capabilities["desktopMode"], true);
+        assert_eq!(capabilities["rounded"], true);
+        assert_eq!(capabilities["positionLock"], true);
+        assert_eq!(capabilities["sizeLock"], true);
+        assert_eq!(capabilities["windowGestures"], true);
+        assert_eq!(capabilities["dragModifier"], "alt");
+    } else {
+        assert_eq!(capabilities["desktopMode"], false);
+        assert_eq!(capabilities["rounded"], false);
+        assert_eq!(capabilities["positionLock"], false);
+        assert_eq!(capabilities["sizeLock"], false);
+        assert_eq!(capabilities["windowGestures"], false);
+        assert!(capabilities["dragModifier"].is_null());
+    }
     let _ = std::fs::remove_dir_all(&directory);
 }

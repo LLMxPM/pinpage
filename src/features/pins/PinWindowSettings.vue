@@ -5,11 +5,12 @@ import { useI18n } from 'vue-i18n';
 import WindowFields from './WindowFields.vue';
 import PinPresetPicker from './PinPresetPicker.vue';
 import { useLiveWindow } from './useLiveWindow';
-import type { PinConfig, WindowPatch, WindowPreset } from '../../types';
+import type { PinConfig, PlatformCapabilities, WindowPatch, WindowPreset } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
   presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
   open: boolean;
   apply: (patch: WindowPatch) => Promise<PinConfig | null>;
   applyPreset: (id: string) => Promise<boolean>;
@@ -67,12 +68,18 @@ defineExpose({ resetInput: () => live.reset() });
     <PinPresetPicker
       :pin="pin"
       :presets="presets"
+      :capabilities="capabilities"
       :apply="applyPreset"
       :save="savePreset"
       @manage="emit('manage')"
       @dirty="presetDirty = $event"
       @pending="presetPending = $event"
     />
-    <WindowFields :values="live.input" :position="live.input" @commit="live.commit" />
+    <WindowFields
+      :values="live.input"
+      :position="live.input"
+      :capabilities="capabilities"
+      @commit="live.commit"
+    />
   </div>
 </template>

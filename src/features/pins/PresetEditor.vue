@@ -3,15 +3,24 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import WindowFields from './WindowFields.vue';
+import { fallbackWindowFields } from './platform';
 import { presetLabel } from './presets';
-import type { PresetInput, WindowPreset } from '../../types';
+import type { PlatformCapabilities, PresetInput, WindowPreset } from '../../types';
 
-const props = defineProps<{ preset: WindowPreset; copy: boolean; formId: string; busy: boolean }>();
+const props = defineProps<{
+  preset: WindowPreset;
+  capabilities: PlatformCapabilities;
+  copy: boolean;
+  formId: string;
+  busy: boolean;
+}>();
 const emit = defineEmits<{ save: [input: PresetInput]; dirty: [value: boolean] }>();
 const { t } = useI18n();
 const { id: _id, builtin: _builtin, ...fields } = props.preset;
+// 旧平台预设先回退到当前能力组合；只有显式保存后才替换原模板。
+const supported = fallbackWindowFields(fields, props.capabilities);
 const input = reactive<PresetInput>({
-  ...fields,
+  ...supported,
   name: props.copy
     ? Array.from(t('ui.presets.copyName', { name: presetLabel(props.preset) }))
         .slice(0, 40)
@@ -70,13 +79,25 @@ function save() {
       <label class="check-row preset-fullscreen"
         ><input v-model="input.fullscreen" type="checkbox" />{{ t('ui.presets.fullscreen') }}</label
       >
-      <WindowFields :values="input" :fullscreen="input.fullscreen" :disabled="busy" />
+      <WindowFields
+        :values="input"
+        :fullscreen="input.fullscreen"
+        :capabilities="capabilities"
+        :disabled="busy"
+      />
       <div class="form-section">
         <div class="section-head">
           <h3>{{ t('ui.presets.relativePosition') }}</h3>
-          <label class="setting-toggle"
+          <label
+            class="setting-toggle"
+            :title="!capabilities.positionLock ? t('ui.pinSettings.platformLimited') : undefined"
             ><strong>{{ t('ui.pinSettings.lockPosition') }}</strong
-            ><input v-model="input.positionLocked" class="switch" type="checkbox" role="switch"
+            ><input
+              v-model="input.positionLocked"
+              class="switch"
+              type="checkbox"
+              role="switch"
+              :disabled="!capabilities.positionLock"
           /></label>
         </div>
         <fieldset class="form-fields" :disabled="input.fullscreen">

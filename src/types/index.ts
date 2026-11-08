@@ -103,6 +103,21 @@ export interface WindowPreset extends PresetFields {
   builtin: boolean;
 }
 
+/// 无边框窗口的默认或固定拖动修饰键，与 Rust `PlatformDragModifier` 一致。
+export type PlatformDragModifier = 'alt' | 'option';
+
+/// 当前构建实际支持的窗口能力，与 Rust `PlatformCapabilities` 一致。
+export interface PlatformCapabilities {
+  desktopMode: boolean;
+  rounded: boolean;
+  positionLock: boolean;
+  sizeLock: boolean;
+  /// 是否允许配置手势修饰键；固定手势由 dragModifier 表达。
+  windowGestures: boolean;
+  /// null 表示没有原生修饰键手势，无边框窗口仍可通过托盘找回。
+  dragModifier: PlatformDragModifier | null;
+}
+
 export interface PinRuntime {
   open: boolean;
   visible: boolean;
@@ -131,6 +146,8 @@ export interface Snapshot {
   presets: WindowPreset[];
   /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
   resolvedLocale: AppLocale;
+  /// 当前构建支持的窗口能力，所有窗口入口共用同一来源。
+  capabilities: PlatformCapabilities;
 }
 
 export interface CreatePin {

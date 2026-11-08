@@ -69,6 +69,8 @@ pub async fn create_pin(
         size_locked: false,
         preset: None,
     };
+    // 前端已禁用不支持的模式，这里仍按原生能力拒绝伪造或旧版 IPC 输入。
+    crate::platform::validate_pin(crate::platform::capabilities(), &pin)?;
     state.settings.lock().unwrap().pins.push(pin.clone());
     state::schedule_save(&app);
     let result = windows::open_pin(&app, &pin);

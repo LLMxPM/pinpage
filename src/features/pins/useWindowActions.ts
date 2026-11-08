@@ -2,6 +2,7 @@
 import { ref, type Ref } from 'vue';
 import * as desktop from '../../services/desktop';
 import { message } from '../../i18n/messages';
+import { supportsWindow } from './platform';
 import { presetLabel } from './presets';
 import { windowValues } from './usePinSettingsForm';
 import { isAppMessage } from '../../types/messages';
@@ -78,7 +79,7 @@ export function useWindowActions(
   /// 预设切换一次提交整套窗口参数；它不进入单字段撤销，避免模式或锁定变化后旧快照失效。
   async function applyPreset(id: string, presetId: string) {
     const preset = snapshot.value.presets.find((entry) => entry.id === presetId);
-    if (!preset) return false;
+    if (!preset || !supportsWindow(preset, snapshot.value.capabilities)) return false;
     const applied = await run(async () => {
       if (!find(id)) throw { code: 'errors.pinNotFound', args: {} };
       await desktop.pinAction(id, `preset:${presetId}`);

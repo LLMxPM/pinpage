@@ -7,11 +7,12 @@ import PinMenu from './PinMenu.vue';
 import { canBringToFront, primaryAction } from './pinActions';
 import { presetLabel } from './presets';
 import { fromAppMessage, text } from '../../i18n/messages';
-import type { PinConfig, PinRuntime, WindowPreset } from '../../types';
+import type { PinConfig, PinRuntime, PlatformCapabilities, WindowPreset } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
   presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
   runtime?: PinRuntime;
   busy: boolean;
   working: boolean;
@@ -67,6 +68,7 @@ const activePreset = computed(() => {
       ><PinMenu
         :pin="pin"
         :presets="presets"
+        :capabilities="capabilities"
         :runtime="runtime"
         :busy="busy"
         @action="emit('action', pin.id, $event)"

@@ -1,14 +1,23 @@
 <!-- 功能：收纳页面低频操作，支持外部点击和 Escape 收起，并把删除交给确认流程。 -->
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
+import { supportedPresets } from './platform';
 import { presetLabel } from './presets';
-import type { PinConfig, PinRuntime, WindowPreset } from '../../types';
+import type { PinConfig, PinRuntime, PlatformCapabilities, WindowPreset } from '../../types';
 
-defineProps<{ pin: PinConfig; presets: WindowPreset[]; runtime?: PinRuntime; busy: boolean }>();
+const props = defineProps<{
+  pin: PinConfig;
+  presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
+  runtime?: PinRuntime;
+  busy: boolean;
+}>();
 const emit = defineEmits<{ action: [operation: string]; export: [] }>();
 const { t } = useI18n();
+/// 卡片菜单与设置页使用同一过滤规则，避免从快捷入口应用不可支持的预设。
+const visiblePresets = computed(() => supportedPresets(props.presets, props.capabilities));
 const menu = ref<HTMLDetailsElement>();
 const opensUp = ref(false);
 const menuHeight = ref('');
@@ -111,7 +120,7 @@ onUnmounted(() => {
       <div class="menu-divider" />
       <p class="menu-label">{{ t('ui.pinSettings.presets') }}</p>
       <button
-        v-for="preset in presets"
+        v-for="preset in visiblePresets"
         :key="preset.id"
         class="preset-item"
         :class="{ active: pin.preset === preset.id }"

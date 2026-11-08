@@ -23,6 +23,7 @@ fn validate(input: &mut PresetInput) -> Result<(), AppMessage> {
         return Err(AppMessage::new("errors.presetFieldsInvalid"));
     }
     normalize(fields);
+    crate::platform::validate_preset(crate::platform::capabilities(), fields)?;
     Ok(())
 }
 

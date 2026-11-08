@@ -539,6 +539,34 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 - 测试：边界断言改用常量表达式；Rust 80 项单元测试与 3 项原生窗口集成测试通过；`pnpm check:limits`、`pnpm check`、`pnpm check:i18n`、`pnpm test:ui`、`pnpm build` 通过。
 - 尚未在真实桌面验证 80 宽窗口的鼠标缩放下限（Windows 最小跟踪尺寸可能大于该值）与 5120 超宽屏下全屏预设是否真正铺满。
 
+## 平台能力层与 macOS 回退（2026-11-08）
+
+### 实现行为
+
+- Rust 快照新增 `capabilities`，统一声明 `desktopMode`、`rounded`、`positionLock`、`sizeLock`、`windowGestures` 和 `dragModifier`；前端全部窗口入口使用同一份数据，不再按操作系统的 `userAgent` 或 `cfg` 自行推断。
+- Windows 开放全部能力；macOS 与其他平台当前只支持标准浮动窗口及通用置顶、边框、尺寸属性，`dragModifier` 为 `null`，不会声明尚未实现的 Option 拖动。
+- 加载配置时，旧页面若使用桌面模式、圆角、位置锁或大小锁，自动回退为带系统边框的浮动窗口；名称、来源、尺寸、位置、开启状态保留，失效预设标记清除，并在工作台显示一次说明。显式 IPC 提交不支持能力时返回 `errors.platformUnsupported`，不静默保存。
+- 页面设置、新建页、卡片预设菜单按能力禁用模式、圆角、锁定与预设；原生托盘不再显示桌面模式入口。预设管理器保留跨平台旧模板，编辑前转换为当前可保存组合。
+
+### 自动检查
+
+| 检查 | 结果 |
+| --- | --- |
+| `pnpm test:ui` | 24 项通过，其中 5 项覆盖能力预设过滤、逐项能力判断、旧配置回退和拖动提示 |
+| `pnpm test:rust` | 85 项单元测试及 3 项原生窗口集成测试通过；新增 5 项能力声明、回退与预设校验测试 |
+| `pnpm check` | Vue/TypeScript 类型检查通过 |
+| `pnpm check:i18n` | 通过：ui 217 键、native 169 键，中英文一致 |
+| `pnpm format:check` | 通过 |
+| `cargo fmt --check` | 通过 |
+| `cargo clippy --all-targets -- -D clippy::all` | 通过 |
+| `pnpm build` | 通过：尺寸限制、文案、类型检查与 Vite 生产构建均成功 |
+
+### 尚未验收
+
+- 没有 macOS 构建机或真实桌面，未验证窗口创建、标准浮动属性应用、托盘找回、DPI 和多显示器行为；自动测试只验证能力判断与回退数据，不能替代 macOS 实机结果。
+- 未验证从 Windows 用户目录复制配置到 macOS 后的实际首次启动通知与窗口恢复；回退逻辑和序列化契约已由单元测试覆盖。
+- 当前 macOS 没有原生无边框拖动手势；界面会提示通过托盘或管理界面找回窗口，尚未评估替代的标题栏拖动方案。
+
 ## 待目标环境验收
 
 - 多语言：设置弹层保存语言后的托盘与通知重渲染、管理页重建 / 重启 / `--tray` 语言一致性、切换不重载内容页、英文最小窗口与 DPI 排版、中英文安装与卸载界面文案。明细见上方多语言章节。

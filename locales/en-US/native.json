@@ -57,6 +57,7 @@
     "hint": "Restoring page data…"
   },
   "errors": {
+    "platformFallback": "Some pages used window features unavailable on this platform. They now use standard floating windows; content and size are unchanged",
     "unknown": "The action did not complete. Please try again",
     "localeInvalid": "The language setting is invalid",
     "gestureModifierInvalid": "The window gesture modifier is invalid",
@@ -138,7 +139,7 @@
     "rollbackFailed": "Rolling back the window settings failed",
     "trayRefreshFailed": "The tray menu could not be updated",
     "settingsSavedTrayFailed": "Settings were saved, but the tray menu could not be updated. The next window action retries it",
-    "platformUnsupported": "Window mode settings are only supported on Windows in this build",
+    "platformUnsupported": "This window feature is not supported on this platform. The existing window settings were kept",
     "readPosition": "The window position could not be read",
     "taskInterrupted": "The window configuration task was interrupted",
     "desktopUnavailable": "The desktop is not available right now. Try desktop mode again later",

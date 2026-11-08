@@ -1,7 +1,6 @@
 // 功能：验证内置预设、归一化约束与跨屏相对位置换算。
 use super::*;
 use crate::models::{PresetFields, PresetInput, Settings, WindowMode, WindowPreset};
-use crate::windows::limits;
 
 /// 构造独立的编辑输入，不依赖真实显示器或用户配置。
 fn editor_input(name: &str) -> PresetInput {

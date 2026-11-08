@@ -5,6 +5,7 @@ import { fromAppMessage, message, toUiMessage } from '../../i18n/messages';
 import * as desktop from '../../services/desktop';
 import { formatBytes } from '../../services/format';
 import { createOperationQueue } from './operationQueue';
+import { disabledCapabilities, hasNativeDrag } from './platform';
 import { useWindowActions } from './useWindowActions';
 import type {
   CreatePin,
@@ -29,6 +30,8 @@ function emptySnapshot(): Snapshot {
     notices: [],
     presets: [],
     resolvedLocale: 'zh-CN',
+    // 浏览器预览没有原生能力，按最保守的平台裁剪入口。
+    capabilities: disabledCapabilities,
   };
 }
 
@@ -141,11 +144,12 @@ export function useWorkspace() {
     return run(async () => {
       const preview = await desktop.importPage('example', example);
       if (!preview) return;
+      // 示例页与新建页遵循同一平台回退：没有原生手势时保留系统边框。
       await desktop.createPin({
         name: preview.label,
         source: { kind: 'import', ticket: preview.ticket, entry: preview.candidates[0] },
         alwaysOnTop: true,
-        decorations: false,
+        decorations: !hasNativeDrag(snapshot.value.capabilities),
       });
     }, `example:${example}`);
   }

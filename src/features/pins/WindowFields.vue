@@ -4,7 +4,8 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import HintTip from '../../components/HintTip.vue';
 import { MAX_HEIGHT, MAX_WIDTH, MIN_HEIGHT, MIN_WIDTH } from './geometryLimits';
-import type { WindowValues } from '../../types';
+import { dragHintKey, hasLimitedWindowFeatures } from './platform';
+import type { PlatformCapabilities, WindowValues } from '../../types';
 
 /// 预设编辑没有绝对坐标，只有页面设置传入 position，用于合并“尺寸与位置”分组。
 interface PositionValues {
@@ -15,11 +16,14 @@ interface PositionValues {
 const props = defineProps<{
   values: Omit<WindowValues, 'x' | 'y' | 'positionLocked'>;
   position?: PositionValues;
+  capabilities: PlatformCapabilities;
   fullscreen?: boolean;
   disabled?: boolean;
 }>();
 const emit = defineEmits<{ commit: [key: keyof WindowValues] }>();
 const { t } = useI18n();
+const dragHint = computed(() => t(dragHintKey(props.capabilities)));
+const limited = computed(() => hasLimitedWindowFeatures(props.capabilities));
 const borderless = computed(() => props.values.mode === 'desktop' || !props.values.decorations);
 const showBorder = computed({
   get: () => props.values.mode === 'floating' && props.values.decorations,
@@ -57,11 +61,17 @@ function blurField(event: Event) {
           v-for="mode in ['floating', 'desktop'] as const"
           :key="mode"
           :class="{ active: values.mode === mode }"
+          :title="
+            mode === 'desktop' && !capabilities.desktopMode
+              ? t('ui.pinSettings.platformLimited')
+              : undefined
+          "
         >
           <input
             v-model="values.mode"
             type="radio"
             :value="mode"
+            :disabled="mode === 'desktop' && !capabilities.desktopMode"
             @change="emit('commit', 'mode')"
           />
           <strong>{{
@@ -87,38 +97,48 @@ function blurField(event: Event) {
           />{{ t('ui.pinSettings.border') }}</label
         >
         <span class="check-with-tip">
-          <label class="check-row"
+          <label
+            class="check-row"
+            :title="!capabilities.rounded ? t('ui.pinSettings.platformLimited') : undefined"
             ><input
               v-model="values.rounded"
               type="checkbox"
-              :disabled="!borderless"
+              :disabled="!borderless || !capabilities.rounded"
               @change="emit('commit', 'rounded')"
             />{{ t('ui.pinSettings.rounded') }}</label
           >
-          <HintTip :text="t('ui.pinSettings.dragHint')" />
+          <HintTip :text="dragHint" />
         </span>
       </div>
+      <p v-if="limited" class="settings-hint">{{ t('ui.pinSettings.platformLimited') }}</p>
     </div>
     <div class="form-section">
       <div class="section-head">
         <h3>{{ t(position ? 'ui.pinSettings.geometry' : 'ui.pinSettings.size') }}</h3>
         <div class="lock-toggles">
-          <label class="setting-toggle"
+          <label
+            class="setting-toggle"
+            :title="!capabilities.sizeLock ? t('ui.pinSettings.platformLimited') : undefined"
             ><strong>{{ t('ui.pinSettings.lockSize') }}</strong
             ><input
               v-model="values.sizeLocked"
               class="switch"
               type="checkbox"
               role="switch"
+              :disabled="!capabilities.sizeLock"
               @change="emit('commit', 'sizeLocked')"
           /></label>
-          <label v-if="position" class="setting-toggle"
+          <label
+            v-if="position"
+            class="setting-toggle"
+            :title="!capabilities.positionLock ? t('ui.pinSettings.platformLimited') : undefined"
             ><strong>{{ t('ui.pinSettings.lockPosition') }}</strong
             ><input
               v-model="position.positionLocked"
               class="switch"
               type="checkbox"
               role="switch"
+              :disabled="!capabilities.positionLock"
               @change="emit('commit', 'positionLocked')"
           /></label>
         </div>

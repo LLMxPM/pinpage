@@ -32,6 +32,8 @@ pub struct AppState {
     /// 安装期间冻结配置；失败后可恢复，退出标记只在 installer 真正启动前设置。
     pub installing: AtomicBool,
     pub read_only: bool,
+    /// 本次加载是否发生过平台能力回退，用于启动后持久化降级结果。
+    pub platform_fallback: bool,
     revision: AtomicU64,
     saving: AtomicBool,
     writer: Mutex<()>,
@@ -43,7 +45,7 @@ impl AppState {
     pub fn load(path: PathBuf) -> Self {
         let mut notices = Vec::new();
         let mut read_only = false;
-        let settings = match std::fs::read(&path) {
+        let mut settings = match std::fs::read(&path) {
             Ok(bytes)
                 if serde_json::from_slice::<serde_json::Value>(&bytes)
                     .ok()
@@ -77,6 +79,14 @@ impl AppState {
                 Settings::default()
             }
         };
+        // 配置可能来自 Windows：加载时先降级到当前平台可用的组合，避免恢复会话反复失败。
+        let mut fallback = false;
+        for pin in &mut settings.pins {
+            fallback |= crate::platform::fallback_pin(crate::platform::capabilities(), pin);
+        }
+        if fallback {
+            notices.push(AppMessage::new("errors.platformFallback"));
+        }
         let locale = i18n::resolve(settings.locale);
         Self {
             operation: Mutex::new(()),
@@ -90,6 +100,7 @@ impl AppState {
             exiting: AtomicBool::new(false),
             installing: AtomicBool::new(false),
             read_only,
+            platform_fallback: fallback,
             revision: AtomicU64::new(0),
             saving: AtomicBool::new(false),
             writer: Mutex::new(()),
@@ -106,6 +117,7 @@ impl AppState {
             runtime: self.runtime.lock().unwrap().clone(),
             notices: self.notices.lock().unwrap().clone(),
             resolved_locale: *self.locale.lock().unwrap(),
+            capabilities: crate::platform::capabilities(),
         }
     }
 

@@ -8,11 +8,12 @@ import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import AboutSettings from '../features/updates/AboutSettings.vue';
 import { text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
-import type { SettingsInput, UiMessage, WindowPreset } from '../types';
+import type { PlatformCapabilities, SettingsInput, UiMessage, WindowPreset } from '../types';
 
 const props = defineProps<{
   settings: SettingsInput;
   presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
   busy: boolean;
   error: UiMessage | null;
   updateAvailable: boolean;
@@ -203,13 +204,15 @@ function save() {
             class="settings-section"
             :aria-label="t('ui.settings.navControls')"
           >
-            <AppSelect
-              v-model="input.gestureModifier"
-              :label="t('ui.settings.gestureModifier')"
-              :options="gestureModifierOptions"
-              :disabled="busy"
-            />
-            <p class="settings-hint">{{ t('ui.settings.gestureHint') }}</p>
+            <template v-if="capabilities.windowGestures">
+              <AppSelect
+                v-model="input.gestureModifier"
+                :label="t('ui.settings.gestureModifier')"
+                :options="gestureModifierOptions"
+                :disabled="busy"
+              />
+              <p class="settings-hint">{{ t('ui.settings.gestureHint') }}</p>
+            </template>
             <div class="form-section">
               <h3>{{ t('ui.settings.windowPresets') }}</h3>
               <p v-if="!customPresets.length" class="settings-hint">

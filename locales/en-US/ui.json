@@ -47,7 +47,8 @@
     "borderless": "Borderless mode",
     "needDesktop": "Import pages from the desktop app",
     "optional": "Optional",
-    "windowOptions": "Window options"
+    "windowOptions": "Window options",
+    "platformLimited": "This platform supports standard floating windows only; desktop mode and native drag gestures are unavailable"
   },
   "pins": {
     "title": "My pages",
@@ -101,6 +102,9 @@
     "border": "Show system frame",
     "rounded": "Rounded borderless corners",
     "dragHint": "Hold the gesture modifier to drag borderless windows; a locked position cannot be moved",
+    "dragHintOption": "Hold Option and left-drag borderless windows; a locked position cannot be moved",
+    "dragHintFallback": "Native drag gestures are unavailable on this platform. Borderless windows can be recovered from the tray or manager",
+    "platformLimited": "Some window features are unavailable on this platform; those options are disabled",
     "size": "Size",
     "width": "Width",
     "height": "Height",
@@ -227,6 +231,7 @@
     "save": "Save preset",
     "back": "Back to list",
     "builtin": "Built-in · Read-only",
+    "platformLimited": "Not fully supported here",
     "snapshotHint": "Presets save window appearance, size, and relative position. Editing a preset only affects future applications.",
     "updateFromWindow": "Update “{name}”",
     "overwriteConfirm": "Replace preset “{name}” with the current window settings?",

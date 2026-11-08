@@ -35,7 +35,7 @@ src-tauri/src/
   windows/                窗口生命周期、事件与几何
   windows/editor.rs       窗口局部事务与内容独立保存
   windows/presets/         内置定义、相对几何、预设读写及测试
-  platform/               Windows 专用适配
+  platform.rs / platform/ 跨平台能力声明、回退校验与 Windows 专用适配
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
   import.rs               导入复制与站点副本
@@ -62,7 +62,7 @@ docs/                     用户、架构、开发与验证文档
 | `pnpm check:limits` | 前端与原生窗口尺寸上下限是否一致 |
 | `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
 | `pnpm build` | 文案与尺寸限制检查、类型检查及 Vite 生产构建 |
-| `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待和操作队列，不连接真实配置 |
+| `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待、操作队列及平台能力过滤与回退，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
 | `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
 | `pnpm test:release` | 版本同步、标签约束与 GitHub 更新清单 |

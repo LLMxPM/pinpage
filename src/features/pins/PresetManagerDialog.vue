@@ -4,12 +4,14 @@ import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppDialog from '../../components/AppDialog.vue';
 import PresetEditor from './PresetEditor.vue';
+import { supportsWindow } from './platform';
 import { presetLabel } from './presets';
 import { text } from '../../i18n/messages';
-import type { PresetInput, UiMessage, WindowPreset } from '../../types';
+import type { PlatformCapabilities, PresetInput, UiMessage, WindowPreset } from '../../types';
 
 const props = defineProps<{
   presets: WindowPreset[];
+  capabilities: PlatformCapabilities;
   busy: boolean;
   error: UiMessage | null;
   write: (input: PresetInput, presetId?: string) => Promise<boolean>;
@@ -95,6 +97,7 @@ function discard() {
       v-show="!discarding"
       :key="`${editing.id}:${copying}`"
       :preset="editing"
+      :capabilities="capabilities"
       :copy="copying"
       :form-id="formId"
       :busy="busy"
@@ -107,7 +110,10 @@ function discard() {
         <li v-for="preset in presets" :key="preset.id">
           <div class="preset-summary">
             <strong>{{ presetLabel(preset) }}</strong
-            ><span v-if="preset.builtin" class="preset-badge">{{ t('ui.presets.builtin') }}</span>
+            ><span v-if="preset.builtin" class="preset-badge">{{ t('ui.presets.builtin') }}</span
+            ><span v-if="!supportsWindow(preset, capabilities)" class="preset-badge">{{
+              t('ui.presets.platformLimited')
+            }}</span>
             <p>
               {{
                 t(preset.mode === 'desktop' ? 'ui.pinSettings.desktop' : 'ui.pinSettings.floating')

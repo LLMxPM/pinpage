@@ -47,7 +47,8 @@
     "borderless": "无边框模式",
     "needDesktop": "请在桌面应用中导入页面",
     "optional": "选填",
-    "windowOptions": "窗口选项"
+    "windowOptions": "窗口选项",
+    "platformLimited": "当前平台仅支持标准浮动窗口；桌面模式和原生拖动手势暂不可用"
   },
   "pins": {
     "title": "我的页面",
@@ -101,6 +102,9 @@
     "border": "显示系统边框",
     "rounded": "无边框圆角",
     "dragHint": "无边框窗口需按住手势修饰键拖动；锁定位置后不可拖动",
+    "dragHintOption": "无边框窗口按住 Option 后用左键拖动；锁定位置后不可拖动",
+    "dragHintFallback": "当前平台没有原生拖动手势；无边框窗口可通过托盘或管理界面找回",
+    "platformLimited": "部分窗口能力当前平台不支持，不可用选项已禁用",
     "size": "尺寸",
     "width": "宽度",
     "height": "高度",
@@ -227,6 +231,7 @@
     "save": "保存预设",
     "back": "返回列表",
     "builtin": "内置 · 只读",
+    "platformLimited": "当前平台不可完整应用",
     "snapshotHint": "预设保存窗口外观、尺寸和相对位置。修改预设只影响以后应用它的结果。",
     "updateFromWindow": "更新“{name}”",
     "overwriteConfirm": "将当前窗口配置覆盖到预设“{name}”？",
