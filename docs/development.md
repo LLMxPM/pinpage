@@ -97,7 +97,7 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm test:ui` | 24 项通过：设置表单回传合并、连续输入、失败保留、另存前等待、操作队列、平台能力过滤与回退 |
 | `pnpm test:rust` | 85 项单元测试与 3 项隐藏原生窗口集成测试通过 |
 | `pnpm check` / `pnpm check:i18n` / `pnpm check:limits` | 通过；类型检查、中英文键与参数、前后端尺寸上下限一致 |
-| `pnpm test:release` | 3 项通过：版本同步、标签约束与更新清单边界 |
+| `pnpm test:release` | 5 项通过：版本同步、标签约束、更新清单边界、草稿分页查询与 API 错误中止 |
 | `pnpm release:build` | 本地 NSIS 安装包与 `.sig` 生成成功；Windows 代码签名未配置 |
 | `pnpm format:check` / `cargo fmt --check` | 通过 |
 | `cargo clippy --all-targets -- -D clippy::all` | 通过 |
@@ -153,6 +153,8 @@ pnpm release:build
 3. 工作流校验版本、签名构建并离线验签，准备草稿，上传 NSIS 安装包、`.sig`、`.sha256` 和 `latest.json`，全部就绪才正式发布。预发布和旧版补发不会覆盖 Latest。
 
 也可在 Actions 页面手动运行 Release 并输入已存在的标签。已发布版本禁止覆盖，操作细节见[版本与升级](releases.md)。当前安装包未进行 Windows 代码签名，Windows SmartScreen 可能提示未知发布者。
+
+标签推送后的发布脚本修复不移动标签：修复提交进入 `main` 后，从该提交手动运行 Release 工作流，仍构建指定标签的应用，只从工作流 SHA 加载修复后的发布脚本。草稿查询使用完整 Release 列表，覆盖尚未公开的版本。
 
 ## 独立验证实例
 
