@@ -13,6 +13,8 @@ mod shortcuts;
 mod source;
 mod state;
 mod tray;
+#[cfg(windows)]
+mod window_menu;
 mod windows;
 
 use state::AppState;
@@ -86,6 +88,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("PinPage 启动失败")
         .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                platform::stop();
+            }
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
                 if !app
                     .state::<AppState>()

@@ -98,7 +98,7 @@
     "top": "始终置顶",
     "border": "显示系统边框",
     "rounded": "无边框圆角",
-    "dragHint": "无边框窗口按住 Alt + 左键拖动；锁定位置后不可拖动",
+    "dragHint": "无边框窗口先按住工作台设置中的手势修饰键，再用左键拖动；关闭手势或锁定位置后不可拖动",
     "size": "尺寸",
     "width": "宽度",
     "height": "高度",
@@ -129,7 +129,14 @@
     "managerPlaceholder": "Ctrl+Alt+P",
     "recoverPlaceholder": "Ctrl+Alt+B",
     "save": "保存设置",
-    "shortcuts": "全局快捷键"
+    "shortcuts": "全局快捷键",
+    "windowOperations": "窗口操作",
+    "gestureModifier": "手势修饰键（左右鼠标共用）",
+    "gestureAlt": "Alt（仅左 Alt）",
+    "gestureCtrl": "Ctrl（左右均可）",
+    "gestureShift": "Shift（左右均可）",
+    "gestureDisabled": "关闭",
+    "gestureHint": "先按住修饰键，再用左键拖动无边框且未锁定位置的窗口，或用右键打开窗口菜单。启用后将占用网页中的同组合鼠标操作；选择关闭可禁用这两种手势。使用 Alt 时，右键松开后也请松开 Alt，菜单会在修饰键释放后出现；按住 Alt 的自动重复会关闭系统菜单。"
   },
   "toast": {
     "exportedWithData": "已导出 {count} 个文件，页面数据 {size}：{path}",

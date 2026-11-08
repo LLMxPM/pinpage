@@ -1,4 +1,4 @@
-<!-- 功能：编辑启动恢复、语言与快捷键，在独立区域提供退出应用入口并展示操作错误。 -->
+<!-- 功能：编辑启动恢复、语言、窗口手势与快捷键，提供退出入口并展示操作错误。 -->
 <script setup lang="ts">
 import { computed, reactive, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -23,10 +23,21 @@ const languageOptions = computed(
     ] as const,
 );
 
+const gestureModifierOptions = computed(
+  () =>
+    [
+      { value: 'alt', label: t('ui.settings.gestureAlt') },
+      { value: 'ctrl', label: t('ui.settings.gestureCtrl') },
+      { value: 'shift', label: t('ui.settings.gestureShift') },
+      { value: 'disabled', label: t('ui.settings.gestureDisabled') },
+    ] as const,
+);
+
 /// 仅提交可编辑字段，快捷键冲突时保持弹窗和原有输入。
 function save() {
   emit('save', {
     locale: input.locale,
+    gestureModifier: input.gestureModifier,
     restoreSession: input.restoreSession,
     managerShortcut: input.managerShortcut.trim(),
     recoverShortcut: input.recoverShortcut.trim(),
@@ -51,6 +62,16 @@ function save() {
           :disabled="busy"
           autofocus
         />
+        <div class="form-section">
+          <h3>{{ t('ui.settings.windowOperations') }}</h3>
+          <AppSelect
+            v-model="input.gestureModifier"
+            :label="t('ui.settings.gestureModifier')"
+            :options="gestureModifierOptions"
+            :disabled="busy"
+          />
+          <p class="gesture-hint">{{ t('ui.settings.gestureHint') }}</p>
+        </div>
         <div class="form-section">
           <h3>{{ t('ui.settings.shortcuts') }}</h3>
           <label class="field-label"
@@ -90,3 +111,13 @@ function save() {
     </template>
   </AppDialog>
 </template>
+
+<style scoped>
+/* 手势说明采用弱化正文，不改变其他设置弹窗的布局。 */
+.gesture-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+</style>

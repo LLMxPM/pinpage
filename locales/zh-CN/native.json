@@ -17,7 +17,16 @@
   },
   "window": {
     "managerTitle": "PinPage · 网页悬浮工作台",
-    "titleSuffix": "{title} · PinPage"
+    "titleSuffix": "{title} · PinPage",
+    "menu": {
+      "top": "始终置顶",
+      "desktop": "桌面模式",
+      "border": "显示系统边框",
+      "rounded": "无边框圆角",
+      "positionLock": "锁定位置",
+      "sizeLock": "锁定大小",
+      "hide": "隐藏页面"
+    }
   },
   "picker": {
     "folderTitle": "选择网页目录，入口取根目录下的 HTML",
@@ -43,6 +52,9 @@
   "errors": {
     "unknown": "操作未完成，请重试",
     "localeInvalid": "语言设置无效",
+    "gestureModifierInvalid": "窗口手势修饰键无效",
+    "gestureUnavailable": "窗口鼠标手势不可用，请使用托盘或管理界面操作",
+    "windowMenuFailed": "窗口快捷菜单打开失败，请使用托盘或管理界面操作",
     "notManager": "此页面无权管理应用",
     "invalidUrl": "请输入有效的网址",
     "urlInvalid": "网址格式无效",

@@ -1,11 +1,11 @@
-// 功能：串行保存工作台设置，处理语言解析、快捷键回滚与原生界面刷新。
+// 功能：串行保存工作台设置，处理手势发布、语言解析、快捷键回滚与原生界面刷新。
 use crate::{
     errors::AppMessage, i18n, models, models::WorkspaceSettings, shortcuts, state, state::AppState,
     tray, windows,
 };
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-/// 修改语言、会话恢复与快捷键；持久化失败时整体回滚，不留下半套设置。
+/// 修改语言、窗口手势、会话恢复与快捷键；持久化失败时整体回滚，不留下半套设置。
 #[tauri::command]
 pub async fn update_settings(
     window: WebviewWindow,
@@ -50,6 +50,8 @@ pub async fn update_settings(
         }
         return Err(error);
     }
+    // 仅保存成功后发布手势，且在操作锁内发布，避免并发保存使原生状态次序反转。
+    crate::platform::set_gesture_modifier(candidate.gesture_modifier);
     drop(_operation);
 
     // 持久化成功后才发布新语言，回滚时界面继续显示原语言。
@@ -63,6 +65,7 @@ pub async fn update_settings(
 fn apply(state: &AppState, values: &WorkspaceSettings) {
     let mut settings = state.settings.lock().unwrap();
     settings.locale = values.locale;
+    settings.gesture_modifier = values.gesture_modifier;
     settings.restore_session = values.restore_session;
     settings.manager_shortcut = values.manager_shortcut.clone();
     settings.recover_shortcut = values.recover_shortcut.clone();
@@ -81,5 +84,70 @@ fn refresh_native_ui(app: &AppHandle) {
                 &error,
             ),
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{GestureModifier, Settings, SettingsInput};
+    use serde_json::json;
+
+    #[test]
+    /// 编辑快照、应用及失败回滚覆盖全部设置字段，且始终保留页面配置。
+    fn apply_and_rollback_preserve_all_workspace_fields() {
+        let path = std::env::temp_dir()
+            .join(format!("pinpage-settings-{}", uuid::Uuid::new_v4()))
+            .join("settings.json");
+        let state = AppState::load(path);
+        for (before, after) in [
+            (GestureModifier::Alt, "ctrl"),
+            (GestureModifier::Ctrl, "shift"),
+            (GestureModifier::Shift, "disabled"),
+            (GestureModifier::Disabled, "alt"),
+        ] {
+            let original: Settings = serde_json::from_value(json!({
+                "locale": "system", "gestureModifier": before, "restoreSession": true,
+                "managerShortcut": "Ctrl+Alt+P", "recoverShortcut": "Ctrl+Alt+B",
+                "pins": [{
+                    "id": "p-keep", "name": "保留页面",
+                    "source": {"kind": "bundled", "entry": "index.html"},
+                    "width": 420, "height": 360, "x": 10, "y": 20, "scale": 1.0,
+                    "alwaysOnTop": true, "decorations": false, "enabled": false
+                }]
+            }))
+            .unwrap();
+            let baseline = serde_json::to_value(&original).unwrap();
+            *state.settings.lock().unwrap() = original;
+            let previous = WorkspaceSettings::from_settings(&state.settings.lock().unwrap());
+            assert_eq!(previous.gesture_modifier, before);
+
+            let input = SettingsInput {
+                locale: "en-US".into(),
+                gesture_modifier: after.into(),
+                restore_session: false,
+                manager_shortcut: "Ctrl+Alt+J".into(),
+                recover_shortcut: "Ctrl+Alt+K".into(),
+            };
+            let candidate = WorkspaceSettings::from_input(&input).unwrap();
+            apply(&state, &candidate);
+            let mut expected = baseline.clone();
+            expected["locale"] = json!("en-US");
+            expected["gestureModifier"] = json!(after);
+            expected["restoreSession"] = json!(false);
+            expected["managerShortcut"] = json!("Ctrl+Alt+J");
+            expected["recoverShortcut"] = json!("Ctrl+Alt+K");
+            assert_eq!(
+                serde_json::to_value(state.snapshot().settings).unwrap(),
+                expected
+            );
+
+            // 与保存失败分支使用同一个 apply 入口，回滚后包括手势在内的字段必须完全复原。
+            apply(&state, &previous);
+            assert_eq!(
+                serde_json::to_value(state.snapshot().settings).unwrap(),
+                baseline
+            );
+        }
     }
 }

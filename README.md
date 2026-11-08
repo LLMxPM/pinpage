@@ -22,7 +22,7 @@ English | [简体中文](README.zh-CN.md)
 - **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and borderless rounded corners per page.
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, and IndexedDB as a `.pinpage` package and restore it elsewhere.
-- **Precise window control** — logical size and physical position, independent position and size locks, `Alt + left-drag` for borderless windows, and DPI/monitor correction when restoring windows.
+- **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; tray and global shortcuts keep windows recoverable.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the Windows UI language; switching does not reload open pages.
@@ -34,7 +34,7 @@ English | [简体中文](README.zh-CN.md)
 1. Download the Windows installer from [GitHub Releases](../../releases/latest) and install it.
 2. Click "Add page" and enter a web address, import a local page, or add a sample.
 3. Choose Floating window or Pinned to desktop under "Window options", then create the page.
-4. Reopen the workspace with `Ctrl+Alt+P`, recover all windows with `Ctrl+Alt+B`, and drag borderless windows with `Alt + left-drag`.
+4. Reopen the workspace with `Ctrl+Alt+P` and recover all windows with `Ctrl+Alt+B`. By default, hold left Alt before left-dragging a borderless window or right-clicking a page to open its window menu; release Alt after the click, because the menu opens on release so Alt auto-repeat cannot dismiss it. Change or disable this modifier in Settings → Window operations.
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 

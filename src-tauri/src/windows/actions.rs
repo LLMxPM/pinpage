@@ -75,7 +75,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 runtime.error = None;
             }
         }
-        "top" | "border" | "desktop" | "recover" => {
+        "top" | "border" | "desktop" | "recover" | "rounded" | "positionLock" | "sizeLock" => {
             let mut next = previous.clone();
             match action {
                 "top" => {
@@ -94,6 +94,9 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                         WindowMode::Desktop
                     };
                 }
+                "rounded" => next.rounded = !next.rounded,
+                "positionLock" => next.position_locked = !next.position_locked,
+                "sizeLock" => next.size_locked = !next.size_locked,
                 "recover" => {
                     next.mode = WindowMode::Floating;
                     next.decorations = true;
@@ -132,6 +135,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                     .map_err(window_failed)?;
                 }
                 "minimize" => window.minimize().map_err(window_failed)?,
+                "hide" => window.hide().map_err(window_failed)?,
                 "reload" => {
                     window.reload().map_err(window_failed)?;
                     super::events::watch_load(app, id);

@@ -9,6 +9,9 @@ export type LocalePreference = 'zh-CN' | 'en-US' | 'system';
 /// Rust 已解析的有效语言。
 export type AppLocale = 'zh-CN' | 'en-US';
 
+/// 窗口左右鼠标手势共用的修饰键，与 Rust `GestureModifier` 一致。
+export type GestureModifier = 'alt' | 'ctrl' | 'shift' | 'disabled';
+
 /// 内置示例来源，与 Rust 的 ExampleId 白名单一致，不接受任意资源路径。
 export type ExampleId = 'timer' | 'notes' | 'checklist' | 'clock';
 
@@ -62,6 +65,7 @@ export interface PinRuntime {
 
 export interface SettingsInput {
   locale: LocalePreference;
+  gestureModifier: GestureModifier;
   restoreSession: boolean;
   managerShortcut: string;
   recoverShortcut: string;

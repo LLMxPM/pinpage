@@ -1,5 +1,5 @@
-// 功能：为 Windows 无边框网页窗口提供 Alt + 左键原生拖动。
-use crate::errors::AppMessage;
+// 功能：提供 Windows 窗口策略、统一修饰键鼠标手势及桌面恢复入口。
+use crate::{errors::AppMessage, models::GestureModifier};
 use tauri::AppHandle;
 #[cfg(windows)]
 mod caption;
@@ -7,6 +7,10 @@ mod caption;
 mod corners;
 #[cfg(windows)]
 mod desktop;
+#[cfg(windows)]
+mod gestures;
+#[cfg(windows)]
+pub(crate) use gestures::MenuRequest;
 pub mod locale;
 #[cfg(windows)]
 mod recovery;
@@ -56,84 +60,27 @@ pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition
         .map_err(|error| AppMessage::new("errors.readPosition").detail(error))
 }
 
-/// 只在组合键按下沿检查本应用前台窗口，无需向网页注入管理脚本。
+/// 启动桌面恢复与唯一鼠标输入线程，不再轮询 Alt + 左键。
 #[cfg(windows)]
 pub fn start(app: &AppHandle) {
     recovery::start(app);
-    use tauri::Manager;
-    use windows_sys::Win32::{
-        Foundation::{POINT, RECT},
-        UI::{
-            Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_MENU},
-            WindowsAndMessaging::{
-                GetCursorPos, GetForegroundWindow, GetWindowRect, IsChild, WindowFromPoint,
-            },
-        },
-    };
-    let app = app.clone();
-    std::thread::spawn(move || {
-        let mut pressed = false;
-        loop {
-            if app
-                .state::<crate::state::AppState>()
-                .exiting
-                .load(std::sync::atomic::Ordering::SeqCst)
-            {
-                break;
-            }
-            let down = unsafe {
-                GetAsyncKeyState(VK_MENU as i32) < 0 && GetAsyncKeyState(VK_LBUTTON as i32) < 0
-            };
-            if down && !pressed {
-                let mut point = POINT { x: 0, y: 0 };
-                unsafe {
-                    GetCursorPos(&mut point);
-                }
-                let root = unsafe { GetForegroundWindow() };
-                for (label, window) in app.webview_windows() {
-                    let locked = app
-                        .state::<crate::state::AppState>()
-                        .settings
-                        .lock()
-                        .unwrap()
-                        .pins
-                        .iter()
-                        .find(|pin| pin.id == label)
-                        .is_some_and(|pin| pin.position_locked);
-                    if locked {
-                        continue;
-                    }
-                    if label == "main" || window.is_decorated().unwrap_or(true) {
-                        continue;
-                    }
-                    if let Ok(handle) = window.hwnd() {
-                        let under_pointer = unsafe { WindowFromPoint(point) };
-                        if handle.0 == root
-                            || handle.0 == under_pointer
-                            || unsafe { IsChild(handle.0, under_pointer) } != 0
-                        {
-                            let mut rect = RECT::default();
-                            unsafe {
-                                GetWindowRect(handle.0, &mut rect);
-                            }
-                            if point.x >= rect.left
-                                && point.x < rect.right
-                                && point.y >= rect.top
-                                && point.y < rect.bottom
-                            {
-                                let _ = window.start_dragging();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            pressed = down;
-            std::thread::sleep(std::time::Duration::from_millis(25));
-        }
-    });
+    gestures::start(app);
 }
 
 /// 其他平台保留标准边框移动和托盘恢复入口。
 #[cfg(not(windows))]
 pub fn start(_app: &AppHandle) {}
+
+/// 全局设置持久化成功后更新两种手势共用的修饰键。
+pub fn set_gesture_modifier(modifier: GestureModifier) {
+    #[cfg(windows)]
+    gestures::set_modifier(modifier);
+    #[cfg(not(windows))]
+    let _ = modifier;
+}
+
+/// 应用退出时释放原生输入钩子。
+pub fn stop() {
+    #[cfg(windows)]
+    gestures::stop();
+}

@@ -98,7 +98,7 @@
     "top": "Always on top",
     "border": "Show system frame",
     "rounded": "Rounded borderless corners",
-    "dragHint": "Borderless windows move with Alt + left-drag; locking position disables dragging",
+    "dragHint": "For borderless windows, hold the gesture modifier from Workspace settings before left-dragging; disabled gestures or a locked position prevent dragging",
     "size": "Size",
     "width": "Width",
     "height": "Height",
@@ -129,7 +129,14 @@
     "managerPlaceholder": "Ctrl+Alt+P",
     "recoverPlaceholder": "Ctrl+Alt+B",
     "save": "Save settings",
-    "shortcuts": "Global shortcuts"
+    "shortcuts": "Global shortcuts",
+    "windowOperations": "Window operations",
+    "gestureModifier": "Gesture modifier (shared by both mouse buttons)",
+    "gestureAlt": "Alt (left Alt only)",
+    "gestureCtrl": "Ctrl (either side)",
+    "gestureShift": "Shift (either side)",
+    "gestureDisabled": "Off",
+    "gestureHint": "Hold the modifier first, then left-drag a borderless window with an unlocked position, or right-click to open its window menu. These gestures override the same mouse combinations in web pages. Select Off to disable both gestures. With Alt, release it after the right-click; the menu appears once Alt is released, because Alt auto-repeat dismisses native menus."
   },
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",

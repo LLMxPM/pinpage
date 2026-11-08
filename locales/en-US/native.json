@@ -17,7 +17,16 @@
   },
   "window": {
     "managerTitle": "PinPage · floating web workspace",
-    "titleSuffix": "{title} · PinPage"
+    "titleSuffix": "{title} · PinPage",
+    "menu": {
+      "top": "Always on top",
+      "desktop": "Desktop mode",
+      "border": "Show system frame",
+      "rounded": "Rounded borderless corners",
+      "positionLock": "Lock position",
+      "sizeLock": "Lock size",
+      "hide": "Hide page"
+    }
   },
   "picker": {
     "folderTitle": "Pick a web folder; the entry is an HTML file in its root",
@@ -43,6 +52,9 @@
   "errors": {
     "unknown": "The action did not complete. Please try again",
     "localeInvalid": "The language setting is invalid",
+    "gestureModifierInvalid": "The window gesture modifier is invalid",
+    "gestureUnavailable": "Window mouse gestures are unavailable. Use the tray or manager instead",
+    "windowMenuFailed": "The window menu could not open. Use the tray or manager instead",
     "notManager": "This page is not allowed to manage the app",
     "invalidUrl": "Enter a valid web address",
     "urlInvalid": "The address is not a valid URL",

@@ -78,5 +78,6 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
         Ok(())
     })();
     rules.configuring.set(false);
-    result
+    result?;
+    super::gestures::register(window, pin)
 }

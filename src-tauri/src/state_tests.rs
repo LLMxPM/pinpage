@@ -1,6 +1,6 @@
-// 功能：验证语言偏好的配置容错、快照契约与消息序列化形状。
+// 功能：验证语言与窗口手势的配置容错、快照契约与消息序列化形状。
 use super::*;
-use crate::models::{LocalePreference, Settings};
+use crate::models::{GestureModifier, LocalePreference, Settings};
 
 /// 读取指定 JSON 文本中的配置，模拟不同版本的磁盘文件。
 fn settings_from(json: &str) -> Settings {
@@ -67,6 +67,84 @@ fn locale_round_trips_as_bcp47() {
 }
 
 #[test]
+/// 新配置与空配置均使用 Alt，序列化字段保持前后端约定的驼峰命名。
+fn gesture_modifier_defaults_to_alt() {
+    assert_eq!(GestureModifier::default(), GestureModifier::Alt);
+    for settings in [Settings::default(), settings_from("{}")] {
+        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(
+            serde_json::to_value(settings).unwrap()["gestureModifier"],
+            "alt"
+        );
+    }
+}
+
+#[test]
+/// 缺少手势字段的旧配置只补默认值，不改变页面、语言、会话与快捷键。
+fn missing_gesture_modifier_keeps_legacy_settings() {
+    let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
+    legacy["locale"] = serde_json::json!("en-US");
+    let settings: Settings = serde_json::from_value(legacy).unwrap();
+    assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+    assert_eq!(settings.locale, LocalePreference::EnUs);
+    assert!(!settings.restore_session);
+    assert_eq!(settings.manager_shortcut, "Ctrl+Alt+J");
+    assert_eq!(settings.recover_shortcut, "Ctrl+Alt+K");
+    assert_eq!(settings.pins.len(), 1);
+    assert_eq!(settings.pins[0].id, "p-old");
+    assert!(!settings.pins[0].enabled);
+}
+
+#[test]
+/// 坏手势值只回退该字段，全部页面属性及其他全局设置保持原样。
+fn invalid_gesture_modifier_keeps_other_settings() {
+    let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
+    legacy["locale"] = serde_json::json!("en-US");
+    let expected: Settings = serde_json::from_value(legacy.clone()).unwrap();
+    let expected = serde_json::to_value(expected).unwrap();
+    for value in [
+        "\"meta\"",
+        "\"Alt\"",
+        "\" ctrl\"",
+        "123",
+        "null",
+        "true",
+        "[]",
+        "{}",
+    ] {
+        legacy["gestureModifier"] = serde_json::from_str(value).unwrap();
+        let settings: Settings = serde_json::from_value(legacy.clone()).unwrap();
+        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(
+            serde_json::to_value(settings).unwrap(),
+            expected,
+            "取值 {value}"
+        );
+    }
+}
+
+#[test]
+/// 四个修饰键值都按稳定字面量在配置中往返，包括显式关闭。
+fn gesture_modifiers_round_trip() {
+    for (modifier, text) in [
+        (GestureModifier::Alt, "alt"),
+        (GestureModifier::Ctrl, "ctrl"),
+        (GestureModifier::Shift, "shift"),
+        (GestureModifier::Disabled, "disabled"),
+    ] {
+        let settings = Settings {
+            gesture_modifier: modifier,
+            ..Settings::default()
+        };
+        let value = serde_json::to_value(settings).unwrap();
+        assert_eq!(value["gestureModifier"], text);
+        let restored: Settings = serde_json::from_value(value).unwrap();
+        assert_eq!(restored.gesture_modifier, modifier);
+        assert_eq!(serde_json::to_value(modifier).unwrap(), text);
+    }
+}
+
+#[test]
 /// 消息只带必要字段，空参数与缺失详情不参与序列化。
 fn message_serializes_minimally() {
     let plain = AppMessage::new("errors.invalidUrl");
@@ -119,15 +197,20 @@ fn broken_config_is_backed_up_with_notice() {
 }
 
 #[test]
-/// 快照同时携带偏好与有效语言，管理界面重建后可直接恢复。
-fn snapshot_reports_preferred_and_effective_locale() {
+/// 快照携带语言偏好、有效语言与手势修饰键，管理界面重建后可直接恢复。
+fn snapshot_reports_locale_and_gesture_modifier() {
     let directory = std::env::temp_dir().join(format!("pinpage-i18n-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join("settings.json");
-    std::fs::write(&path, serde_json::to_string(&Settings::default()).unwrap()).unwrap();
+    let settings = Settings {
+        gesture_modifier: GestureModifier::Shift,
+        ..Settings::default()
+    };
+    std::fs::write(&path, serde_json::to_string(&settings).unwrap()).unwrap();
     let state = AppState::load(path.clone());
     let value: serde_json::Value = serde_json::to_value(state.snapshot()).unwrap();
     assert_eq!(value["settings"]["locale"], "zh-CN");
+    assert_eq!(value["settings"]["gestureModifier"], "shift");
     assert_eq!(value["resolvedLocale"], "zh-CN");
     let _ = std::fs::remove_dir_all(&directory);
 }
