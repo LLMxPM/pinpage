@@ -6,7 +6,7 @@ PinPage 以 Windows x64 为完整支持与发布平台。macOS 为社区协助�
 
 | 能力 | Windows x64 | macOS | 其他平台 |
 | --- | --- | --- | --- |
-| 标准浮动窗口、置顶、系统边框、尺寸与位置 | 支持 | 代码已接入，新增 CI 验证任务；尚无本分支构建与实机结论 | 使用同一回退分支，未构建验收 |
+| 标准浮动窗口、置顶、系统边框、尺寸与位置 | 支持 | ARM64 CI 编译、测试与打包通过；窗口交互待实机验收 | 使用同一回退分支，未构建验收 |
 | 桌面模式（嵌入 Explorer 桌面层） | 支持 | 不支持 | 不支持 |
 | 无边框圆角（原生区域裁剪） | 支持 | 不支持 | 不支持 |
 | 位置锁、大小锁 | 支持 | 不支持 | 不支持 |
@@ -46,7 +46,7 @@ Rust 在快照中下发 `capabilities`，前端所有窗口入口只使用这一
 
 ## macOS 当前范围
 
-本分支以下能力已接入，但尚未在 macOS 构建或实机中验证：
+以下实现已通过 macOS ARM64 CI 编译、测试与打包，但交互行为仍待实机验收：
 
 - 标准浮动窗口，包含置顶、系统边框、尺寸与位置。
 - 工作台、托盘、页面导入、内置示例、页面包与手动语言切换。
@@ -68,7 +68,8 @@ Rust 在快照中下发 `capabilities`，前端所有窗口入口只使用这一
 ## 构建与验收状态
 
 - 通用配置保留 Windows NSIS 与签名更新；`tauri.macos.conf.json` 覆盖为 `.app`、禁用 updater 产物并使用 ad-hoc 签名。
-- CI 新增 macOS 默认／Option 实验两个任务，运行 Rust 检查、测试、独立标识的 Debug 应用构建并上传 ZIP 与构建信息；当前分支尚未在远端运行，不能记为通过。
+- 2026-11-08，[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 全部通过：macOS 默认／Option 实验构建分别通过 Clippy、73 项单元测试、独立标识的 Debug `.app` 打包及 ZIP 上传；Windows 与前端任务也通过。
+- 本次 runner 为 macOS 26.7.2、ARM64，Rust 1.99.1；对应构建产物与提交 SHA 可从运行页面核对，详见[构建证据](macos-development.md#已记录的构建证据)。
 - CI 按 runner 原生架构构建，不宣称 Intel 与 Apple Silicon 均已验收；维护者仍使用 Windows 开发环境。
 - 自动测试覆盖能力值、配置回退、预设过滤和界面提示；CI 通过也不代表 macOS 窗口交互已通过。
 - macOS 仅提供开发验证流程，不加入正式 Release、`latest.json` 或 Windows 签名发布任务。

@@ -41,7 +41,7 @@ English | [简体中文](README.zh-CN.md)
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
-Windows is the fully supported platform. macOS is experimental: default builds expose standard floating windows, while `experimental-macos-drag` enables a fixed Option-drag implementation for community testing. Desktop mode, rounded corners, window locks, and configurable gestures remain unavailable. macOS CI and verification bundles are configured, but this branch has no macOS build or hardware acceptance results yet. See [Platform support](docs/platforms.md) and [macOS development and verification](docs/macos-development.md) (Chinese).
+Windows is the fully supported platform. macOS is experimental: default builds expose standard floating windows, while `experimental-macos-drag` enables a fixed Option-drag implementation for community testing. Desktop mode, rounded corners, window locks, and configurable gestures remain unavailable. Both macOS variants passed ARM64 CI checks, tests, and verification bundle builds; interactive hardware acceptance and Intel validation are still pending. See [Platform support](docs/platforms.md) and [macOS development and verification](docs/macos-development.md) (Chinese).
 
 ## Documentation
 

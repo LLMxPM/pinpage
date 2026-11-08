@@ -41,7 +41,7 @@ PinPage 适合需要随时瞥一眼的内容：计时器、看板、便签、监
 
 完整操作见[用户指南](docs/user-guide.md)。从源码构建见[开发与构建](docs/development.md)。
 
-Windows 为完整支持平台；macOS 为实验性平台，默认只声明标准浮动窗口，`experimental-macos-drag` 可显式启用固定 Option 拖动供社区验证。桌面模式、圆角、窗口锁与可配置手势仍不可用。已配置 macOS CI 与独立验证包，但当前分支尚无 macOS 构建或实机验收结果，详见[平台支持](docs/platforms.md)和[macOS 开发与社区验收](docs/macos-development.md)。
+Windows 为完整支持平台；macOS 为实验性平台，默认只声明标准浮动窗口，`experimental-macos-drag` 可显式启用固定 Option 拖动供社区验证。桌面模式、圆角、窗口锁与可配置手势仍不可用。两种 macOS 构建均通过 ARM64 CI 检查、测试与验证包构建；窗口交互及 Intel 实机验收仍待完成，详见[平台支持](docs/platforms.md)和[macOS 开发与社区验收](docs/macos-development.md)。
 
 ## 文档
 

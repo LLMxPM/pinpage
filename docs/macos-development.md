@@ -90,6 +90,12 @@ open target/macos-option/debug/bundle/macos/PinPage.app
 
 CI 提供的是独立标识的 Debug 验证包，不上传 GitHub Release，不生成 `latest.json`，也不能用于运行内存结论。只有对应 SHA 的任务实际通过后，才能记录“CI 已构建通过”。
 
+### 已记录的构建证据
+
+2026-11-08，提交 `f113fc8e8cc8c0d538d70a2b5a04cae7d26893ee` 的 [CI 运行](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 四个任务全部通过。macOS runner 为 26.7.2、ARM64，Rust 1.99.1；默认和 `experimental-macos-drag` 各通过 73 项 Rust 单元测试、Clippy 及 Debug `.app` 打包。两种验证包已上传至该运行的 Artifacts，记录保留期为 14 天。
+
+该记录证明上述提交可在 macOS ARM64 环境编译、测试与打包；尚未执行人工启动、窗口拖动、页面数据、Retina 或多显示器验收，也没有 Intel 实机结论。下载时优先使用待验证提交对应的最新成功运行，不将不同提交或架构的结果混用。
+
 ## 实机验收清单
 
 每次验收记录：提交 SHA、构建变体、来源（本地命令或 CI 链接）、macOS 版本、芯片、显示器数量与缩放。每一项填写“通过／失败／未测”，失败附最短复现步骤、预期与实际结果；日志中的个人路径、URL 和页面数据先脱敏。

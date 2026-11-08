@@ -78,7 +78,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 为完整支持平台；macOS 默认声明标准浮动窗口，新增显式 Option 拖动实验构建、CI 任务与开发验收流程，但当前分支尚无 macOS 构建或实机结果，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 为完整支持平台；macOS 默认与显式 Option 拖动实验构建均通过 ARM64 CI 检查、测试和验证包构建，窗口交互与 Intel 验收仍待完成，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
@@ -86,7 +86,7 @@ docs/                     用户、架构、开发、平台与发布文档
 - **窗口**：浮动与桌面模式、置顶、系统边框、无边框圆角、独立位置锁和大小锁、窗口预设、修饰键拖动与右键菜单、会话恢复。
 - **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
 - **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新。
-- **macOS 协作基线**：默认与 `experimental-macos-drag` 能力声明、原生拖动监视器生命周期、平台无关能力测试、独立 `.app` 配置和 CI 验证包；以上仍待 macOS 编译与实机验证，不代表已正式支持。
+- **macOS 协作基线**：默认与 `experimental-macos-drag` 能力声明、原生拖动监视器生命周期、平台无关能力测试、独立 `.app` 配置和 CI 验证包；两种 ARM64 构建已通过 CI，仍待窗口交互实机验证，不代表已正式支持。
 
 ### 最近自动检查
 
@@ -103,7 +103,7 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm format:check` / `cargo fmt --check` | 通过 |
 | `cargo clippy --all-targets -- -D clippy::all` | 通过 |
 
-本次 macOS 协作基线改动在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、3 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。启用 `experimental-macos-drag` 的 Windows 构建也通过能力测试，未开放 macOS 手势。macOS 两种 CI 构建及实机验收仍待运行；上述 Windows 结果不能替代它们。
+本次 macOS 协作基线改动在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、3 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。启用 `experimental-macos-drag` 的 Windows 构建也通过能力测试，未开放 macOS 手势。[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 进一步验证了 Windows 和前端任务，以及 macOS 默认／Option 实验构建：两种 ARM64 构建各通过 73 项单元测试、Clippy、Debug `.app` 打包和验证包上传。CI 不替代真实窗口交互、Intel 或多显示器验收。
 
 ### 已完成桌面验收
 
