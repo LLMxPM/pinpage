@@ -20,6 +20,30 @@ const hooks = registerHooks({
 const { useLiveWindow } = await import('../src/features/pins/useLiveWindow.ts');
 hooks.deregister();
 
+test('透明开关只提交自身，失败保留草稿，重试不覆盖页面几何与开关状态', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    if (calls.length === 1) return null;
+    actual.value = { ...actual.value, ...patch };
+    return actual.value;
+  });
+  live.input.transparentBackground = true;
+  await live.commit('transparentBackground');
+  assert.equal(live.failed, true);
+  assert.equal(live.input.transparentBackground, true);
+  assert.equal(pin.value.transparentBackground, false);
+  pin.value.x = -900;
+  pin.value.enabled = false;
+  await nextTick();
+  await live.commit('transparentBackground');
+  assert.equal(live.failed, false);
+  assert.equal(pin.value.transparentBackground, true);
+  assert.equal(pin.value.x, -900);
+  assert.equal(pin.value.enabled, false);
+  assert.deepEqual(calls, [{ transparentBackground: true }, { transparentBackground: true }]);
+});
+
 /// 创建不连接 IPC 的真实字段模型，原生状态通过响应式快照模拟。
 function setup(t, apply) {
   const pin = ref({
@@ -36,6 +60,7 @@ function setup(t, apply) {
     enabled: true,
     mode: 'floating',
     rounded: true,
+    transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
     preset: null,

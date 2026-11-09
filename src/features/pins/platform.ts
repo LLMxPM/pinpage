@@ -6,6 +6,7 @@ import type { PlatformCapabilities, PresetFields, WindowPreset } from '../../typ
 export const disabledCapabilities: PlatformCapabilities = {
   desktopMode: false,
   rounded: false,
+  transparentBackground: false,
   positionLock: false,
   sizeLock: false,
   windowGestures: false,
@@ -15,7 +16,7 @@ export const disabledCapabilities: PlatformCapabilities = {
 /// 能力判断只需要这些窗口字段，页面与预设可共用同一实现。
 type CapabilityFields = Pick<
   PresetFields,
-  'mode' | 'decorations' | 'rounded' | 'positionLocked' | 'sizeLocked'
+  'mode' | 'decorations' | 'rounded' | 'transparentBackground' | 'positionLocked' | 'sizeLocked'
 >;
 
 /// 页面或预设是否只使用当前平台实际支持的能力。
@@ -26,6 +27,7 @@ export function supportsWindow(
   return (
     (fields.mode === 'floating' || capabilities.desktopMode) &&
     (!fields.rounded || capabilities.rounded) &&
+    (!fields.transparentBackground || capabilities.transparentBackground) &&
     (!fields.positionLocked || capabilities.positionLock) &&
     (!fields.sizeLocked || capabilities.sizeLock)
   );
@@ -53,6 +55,7 @@ export function fallbackWindowFields<T extends CapabilityFields>(
     next.positionLocked = false;
     next.sizeLocked = false;
   }
+  if (!capabilities.transparentBackground) next.transparentBackground = false;
   if (!capabilities.rounded) next.rounded = false;
   if (!capabilities.positionLock) next.positionLocked = false;
   if (!capabilities.sizeLock) next.sizeLocked = false;
@@ -76,6 +79,7 @@ export function hasLimitedWindowFeatures(capabilities: PlatformCapabilities): bo
   return (
     !capabilities.desktopMode ||
     !capabilities.rounded ||
+    !capabilities.transparentBackground ||
     !capabilities.positionLock ||
     !capabilities.sizeLock ||
     !capabilities.windowGestures

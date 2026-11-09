@@ -19,6 +19,7 @@ pub fn merge(pin: &PinConfig, input: &PinSettingsInput) -> Result<PinConfig, App
     next.always_on_top = input.always_on_top;
     next.decorations = input.decorations;
     next.rounded = input.rounded;
+    next.transparent_background = input.transparent_background;
     next.position_locked = input.position_locked;
     next.size_locked = input.size_locked;
     next.width = input.width;

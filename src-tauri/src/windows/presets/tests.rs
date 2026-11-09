@@ -76,6 +76,22 @@ fn builtins_are_named_by_i18n() {
         .all(|preset| preset.builtin && preset.name.is_none()));
 }
 
+#[test]
+/// 旧模板缺失透明字段时保留不透明外观，新模板的透明偏好可往返持久化。
+fn old_presets_default_to_opaque() {
+    let mut value = serde_json::to_value(editor_input("旧模板").fields).unwrap();
+    value
+        .as_object_mut()
+        .unwrap()
+        .remove("transparentBackground");
+    let mut fields: PresetFields = serde_json::from_value(value).unwrap();
+    assert!(!fields.transparent_background);
+    fields.transparent_background = true;
+    let restored: PresetFields =
+        serde_json::from_str(&serde_json::to_string(&fields).unwrap()).unwrap();
+    assert!(restored.transparent_background);
+}
+
 /// 新内置预设顺序固定：全屏、标准窗口、右上角、右下角；两角统一 320×480。
 #[test]
 fn builtin_order_and_geometry() {
@@ -122,6 +138,7 @@ fn normalize_removes_conflicting_appearance() {
         always_on_top: true,
         decorations: true,
         rounded: true,
+        transparent_background: false,
         position_locked: false,
         size_locked: false,
         width: 10.,
@@ -141,6 +158,7 @@ fn normalize_removes_conflicting_appearance() {
         mode: WindowMode::Floating,
         decorations: true,
         rounded: true,
+        transparent_background: false,
         ..desktop.clone()
     };
     normalize(&mut bordered);
@@ -158,6 +176,7 @@ fn custom_presets_follow_builtins() {
             always_on_top: false,
             decorations: false,
             rounded: true,
+            transparent_background: false,
             position_locked: false,
             size_locked: false,
             width: 300.,

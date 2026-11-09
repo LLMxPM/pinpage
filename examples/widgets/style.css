@@ -2,7 +2,7 @@
 :root {
   font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
   color: #354138;
-  background: #fafbf8;
+  background: rgb(250 251 248 / var(--pinpage-background-opacity, 1));
   font-synthesis: none;
 }
 * {
@@ -103,7 +103,7 @@ input:focus-visible {
   white-space: nowrap;
 }
 .notes-page {
-  background: #fbf6e6;
+  background: rgb(251 246 230 / var(--pinpage-background-opacity, 1));
   color: #5b5137;
 }
 .notes-page .eyebrow,
@@ -197,7 +197,7 @@ input:focus-visible {
   margin: 30px 0;
 }
 .clock-page {
-  background: #eff3f9;
+  background: rgb(239 243 249 / var(--pinpage-background-opacity, 1));
   color: #435a79;
 }
 .clock-page .eyebrow,

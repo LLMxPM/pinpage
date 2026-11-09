@@ -85,7 +85,7 @@
   margin-top: 14px;
   flex-wrap: wrap;
 }
-/* 无边框圆角旁的说明入口：气泡样式在 HintTip 组件内。 */
+/* 窗口外观选项旁的说明入口：气泡样式在 HintTip 组件内。 */
 .check-with-tip {
   display: inline-flex;
   align-items: center;

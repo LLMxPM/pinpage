@@ -7,6 +7,8 @@ use crate::{
 };
 use tauri::AppHandle;
 #[cfg(windows)]
+mod appearance;
+#[cfg(windows)]
 mod caption;
 #[cfg(windows)]
 mod corners;
@@ -30,6 +32,7 @@ pub fn capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: true,
         rounded: true,
+        transparent_background: true,
         position_lock: true,
         size_lock: true,
         window_gestures: true,
@@ -43,6 +46,7 @@ pub fn capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: false,
         rounded: false,
+        transparent_background: false,
         position_lock: false,
         size_lock: false,
         window_gestures: false,
@@ -54,6 +58,7 @@ pub fn capabilities() -> PlatformCapabilities {
 fn supports_pin(capabilities: PlatformCapabilities, pin: &PinConfig) -> bool {
     (pin.mode == WindowMode::Floating || capabilities.desktop_mode)
         && (!pin.rounded || capabilities.rounded)
+        && (!pin.transparent_background || capabilities.transparent_background)
         && (!pin.position_locked || capabilities.position_lock)
         && (!pin.size_locked || capabilities.size_lock)
 }
@@ -62,6 +67,7 @@ fn supports_pin(capabilities: PlatformCapabilities, pin: &PinConfig) -> bool {
 fn supports_preset(capabilities: PlatformCapabilities, fields: &PresetFields) -> bool {
     (fields.mode == WindowMode::Floating || capabilities.desktop_mode)
         && (!fields.rounded || capabilities.rounded)
+        && (!fields.transparent_background || capabilities.transparent_background)
         && (!fields.position_locked || capabilities.position_lock)
         && (!fields.size_locked || capabilities.size_lock)
 }
@@ -93,6 +99,7 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
         pin.mode,
         pin.decorations,
         pin.rounded,
+        pin.transparent_background,
         pin.position_locked,
         pin.size_locked,
     );
@@ -103,6 +110,9 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
         pin.rounded = false;
         pin.position_locked = false;
         pin.size_locked = false;
+    }
+    if !capabilities.transparent_background {
+        pin.transparent_background = false;
     }
     if !capabilities.rounded {
         pin.rounded = false;
@@ -118,6 +128,7 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
             pin.mode,
             pin.decorations,
             pin.rounded,
+            pin.transparent_background,
             pin.position_locked,
             pin.size_locked,
         );
@@ -137,7 +148,8 @@ pub fn apply(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(), AppMe
 /// Windows 使用完整窗口策略，包括桌面宿主、圆角与几何锁。
 #[cfg(windows)]
 fn apply_supported(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage> {
-    window_policy::apply(window, pin)
+    window_policy::apply(window, pin)?;
+    appearance::apply(window, pin)
 }
 
 /// 其他平台只应用 Tauri 通用的浮动窗口属性，不支持项已在上层校验。

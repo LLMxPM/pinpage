@@ -11,6 +11,7 @@ export function pinToInput(pin: PinConfig): PinSettingsInput {
     alwaysOnTop: pin.alwaysOnTop,
     decorations: pin.decorations,
     rounded: pin.rounded,
+    transparentBackground: pin.transparentBackground,
     positionLocked: pin.positionLocked,
     sizeLocked: pin.sizeLocked,
     width: Math.round(pin.width),

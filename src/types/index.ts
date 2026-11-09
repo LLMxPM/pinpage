@@ -34,6 +34,7 @@ export interface PinConfig {
   enabled: boolean;
   mode: 'floating' | 'desktop';
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
   /// 当前匹配的预设 ID；窗口参数调整后清空，修改内容不影响它。
@@ -46,6 +47,7 @@ export interface PinSettingsInput {
   alwaysOnTop: boolean;
   decorations: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
   width: number;
@@ -85,6 +87,7 @@ export interface PresetFields {
   alwaysOnTop: boolean;
   decorations: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
   width: number;
@@ -110,6 +113,7 @@ export type PlatformDragModifier = 'alt' | 'option';
 export interface PlatformCapabilities {
   desktopMode: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLock: boolean;
   sizeLock: boolean;
   /// 是否允许配置手势修饰键；固定手势由 dragModifier 表达。

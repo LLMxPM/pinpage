@@ -139,7 +139,9 @@
     },
     "geometry": "尺寸与位置",
     "footerWindow": "更改即时生效并自动保存",
-    "unappliedGeometry": "未生效 · 实际：{width} × {height} · X {x} / Y {y}"
+    "unappliedGeometry": "未生效 · 实际：{width} × {height} · X {x} / Y {y}",
+    "transparentBackground": "页面背景透明",
+    "transparentHint": "允许透明区域透出桌面，文字与控件保持原样。网页自身的不透明背景仍会遮挡；内置示例已适配。"
   },
   "settings": {
     "title": "设置",

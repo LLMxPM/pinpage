@@ -19,6 +19,9 @@ pub struct AppState {
     pub operation: Mutex<()>,
     pub settings: Mutex<Settings>,
     pub runtime: Mutex<HashMap<String, PinRuntime>>,
+    /// WebView2 外观脚本的注册 ID；关闭窗口后清理，不写入配置。
+    #[cfg(windows)]
+    pub appearances: Mutex<HashMap<String, (bool, crate::models::WindowMode, String)>>,
     /// 原生选择器签发的一次性导入授权，创建成功后不再复用。
     pub grants: Mutex<HashMap<String, ImportGrant>>,
     /// 正在导出的页面 ID，只有这些页面可以回传数据。
@@ -90,6 +93,8 @@ impl AppState {
         let locale = i18n::resolve(settings.locale);
         Self {
             operation: Mutex::new(()),
+            #[cfg(windows)]
+            appearances: Mutex::new(HashMap::new()),
             settings: Mutex::new(settings),
             runtime: Mutex::new(HashMap::new()),
             grants: Mutex::new(HashMap::new()),

@@ -117,6 +117,8 @@ pub fn attach(window: &WebviewWindow) {
             | WindowEvent::ScaleFactorChanged { .. } => capture(&handle),
             WindowEvent::Destroyed => {
                 let state = app.state::<AppState>();
+                #[cfg(windows)]
+                state.appearances.lock().unwrap().remove(handle.label());
                 let expected = state
                     .settings
                     .lock()

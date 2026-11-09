@@ -39,6 +39,7 @@ pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppM
     next.always_on_top = preset.fields.always_on_top;
     next.decorations = preset.fields.decorations;
     next.rounded = preset.fields.rounded;
+    next.transparent_background = preset.fields.transparent_background;
     next.position_locked = preset.fields.position_locked;
     next.size_locked = preset.fields.size_locked;
     next.width = preset.fields.width;
@@ -104,6 +105,7 @@ pub fn matching_id(app: &AppHandle, pin: &PinConfig) -> Option<String> {
             if fields.mode != pin.mode
                 || (floating && fields.always_on_top) != (floating && pin.always_on_top)
                 || decorations != pin.effective_decorations()
+                || fields.transparent_background != pin.transparent_background
                 || (!decorations && fields.rounded) != (!pin.effective_decorations() && pin.rounded)
                 || fields.position_locked != pin.position_locked
                 || fields.size_locked != pin.size_locked

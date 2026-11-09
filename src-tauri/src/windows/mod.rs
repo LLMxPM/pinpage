@@ -172,6 +172,8 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         return Ok(());
     }
     let url = initial_url(app, pin)?;
+    #[cfg(windows)]
+    state.appearances.lock().unwrap().remove(&pin.id);
     let navigation_id = pin.id.clone();
     let navigation_app = app.clone();
     let popup_app = app.clone();
@@ -196,6 +198,11 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         .always_on_top(pin.mode == crate::models::WindowMode::Floating && pin.always_on_top)
         .decorations(pin.effective_decorations())
         .shadow(pin.effective_decorations())
+        // 透明能力在创建时准备好；之后仅切换 WebView2 底色，不销毁页面运行态。
+        .transparent(cfg!(windows))
+        // 桌面挂载后成为子窗口，不能依赖顶层窗口的 DWM 透明；避免宿主位图铺出黑底。
+        .no_redirection_bitmap(cfg!(windows))
+        .visible(false)
         .disable_drag_drop_handler()
         .on_navigation(move |url| {
             let allowed = navigation_allowed_now(&navigation_app, &navigation_id, url);
@@ -239,13 +246,21 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
             return Err(message);
         }
     };
-    geometry::restore(&window, pin)?;
-    let mut positioned = pin.clone();
-    let position = crate::platform::position(&window)?;
-    positioned.x = Some(position.x);
-    positioned.y = Some(position.y);
-    if let Err(error) = crate::platform::apply(&window, &positioned) {
+    let setup = (|| {
+        geometry::restore(&window, pin)?;
+        let mut positioned = pin.clone();
+        let position = crate::platform::position(&window)?;
+        positioned.x = Some(position.x);
+        positioned.y = Some(position.y);
+        crate::platform::apply(&window, &positioned)?;
+        window
+            .show()
+            .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))
+    })();
+    if let Err(error) = setup {
         let _ = window.destroy();
+        #[cfg(windows)]
+        state.appearances.lock().unwrap().remove(&pin.id);
         events::set_error(app, &pin.id, error.clone());
         if let Some(runtime) = state.runtime.lock().unwrap().get_mut(&pin.id) {
             runtime.open = false;

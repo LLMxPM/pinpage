@@ -2,7 +2,7 @@
 :root {
   font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
   color: #574d44;
-  background: #fcf8f1;
+  background: rgb(252 248 241 / var(--pinpage-background-opacity, 1));
 }
 * {
   box-sizing: border-box;

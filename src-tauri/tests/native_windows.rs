@@ -25,9 +25,14 @@ struct TestWindow(HWND);
 impl TestWindow {
     /// 创建测试线程独占的隐藏原生窗口，完全独立于用户现有页面。
     fn new() -> Self {
+        Self::with_extended_style(0)
+    }
+
+    /// 扩展样式在创建时确定，模拟真实内容窗口的合成表面初始化。
+    fn with_extended_style(extended: u32) -> Self {
         let handle = unsafe {
             CreateWindowExW(
-                0,
+                extended,
                 w!("STATIC"),
                 w!("PinPage native test"),
                 WS_POPUP | WS_THICKFRAME,
@@ -165,5 +170,97 @@ fn desktop_parent_and_styles_can_be_restored() {
         assert!(GetParent(window.0).is_null());
         assert_eq!(GetWindowLongPtrW(window.0, GWL_STYLE) as u32 & WS_CHILD, 0);
         assert_ne!(GetWindowLongPtrW(window.0, GWL_STYLE) as u32 & WS_POPUP, 0);
+    }
+}
+
+#[test]
+/// 显示或隐藏时重写缓存样式，不得清除桌面子窗口身份、透明合成和常规鼠标命中。
+fn desktop_composition_survives_cached_style_updates() {
+    let window = TestWindow::with_extended_style(WS_EX_NOREDIRECTIONBITMAP);
+    let policy = unsafe { &*rules::install(window.0).unwrap() };
+    let host = desktop::host().expect("当前测试环境需要 Windows Explorer 桌面宿主");
+    for parent in [host, null_mut(), host, null_mut()] {
+        policy.desktop_child.set(!parent.is_null());
+        desktop::set_parent(window.0, parent).unwrap();
+        if !parent.is_null() {
+            // Tao 的 show/hide 会按创建时的顶层身份重写整组窗口样式。
+            unsafe {
+                SetWindowLongPtrW(
+                    window.0,
+                    GWL_STYLE,
+                    (WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS) as isize,
+                );
+            }
+        }
+        corners::apply(window.0, true, false, 1.25).unwrap();
+        desktop::place(window.0, 100, 100).unwrap();
+        unsafe {
+            let extended = GetWindowLongPtrW(window.0, GWL_EXSTYLE) as u32;
+            assert_ne!(extended & WS_EX_NOREDIRECTIONBITMAP, 0);
+            assert_eq!(extended & (WS_EX_LAYERED | WS_EX_TRANSPARENT), 0);
+            assert_eq!(GetParent(window.0), parent);
+            assert_eq!(
+                GetWindowLongPtrW(window.0, GWL_STYLE) as u32 & WS_CHILD != 0,
+                !parent.is_null()
+            );
+        }
+    }
+}
+
+#[test]
+/// 透明桌面页保持顶层合成与屏幕坐标，桌面拥有关系不能被误当成子窗口父级。
+fn transparent_desktop_owner_preserves_screen_coordinates() {
+    let owner = TestWindow::new();
+    let window = TestWindow::with_extended_style(WS_EX_NOREDIRECTIONBITMAP);
+    desktop::set_owner(window.0, owner.0).unwrap();
+    assert!(desktop::child_parent(window.0).is_null());
+    desktop::place(window.0, -200, 260).unwrap();
+    unsafe {
+        assert_eq!(GetWindow(window.0, GW_OWNER), owner.0);
+        assert_eq!(GetWindowLongPtrW(window.0, GWL_STYLE) as u32 & WS_CHILD, 0);
+        assert_eq!(
+            GetWindowLongPtrW(window.0, GWL_EXSTYLE) as u32 & WS_EX_TOPMOST,
+            0
+        );
+        let rect = desktop::parent_rect(window.0);
+        assert_eq!((rect.left, rect.top), (-200, 260));
+        assert_eq!((window.rect().left, window.rect().top), (-200, 260));
+    }
+    desktop::set_owner(window.0, null_mut()).unwrap();
+    let host = desktop::host().unwrap();
+    desktop::set_parent(window.0, host).unwrap();
+    assert_eq!(desktop::child_parent(window.0), host);
+    assert!(desktop::set_owner(window.0, owner.0).is_err());
+    desktop::set_parent(window.0, null_mut()).unwrap();
+    unsafe {
+        assert!(GetWindow(window.0, GW_OWNER).is_null());
+    }
+}
+
+#[test]
+/// 首次显示或缓存样式重写后，透明桌面页仍为桌面拥有的弹出窗口；切回浮动时解除保护。
+fn transparent_desktop_popup_survives_visibility_style_updates() {
+    let owner = TestWindow::new();
+    let window = TestWindow::with_extended_style(WS_EX_NOREDIRECTIONBITMAP);
+    let policy = unsafe { &*rules::install(window.0).unwrap() };
+    policy.desktop_popup.set(true);
+    desktop::set_owner(window.0, owner.0).unwrap();
+    for _ in 0..3 {
+        unsafe {
+            SetWindowLongPtrW(window.0, GWL_STYLE, WS_OVERLAPPEDWINDOW as isize);
+            let style = GetWindowLongPtrW(window.0, GWL_STYLE) as u32;
+            assert_ne!(style & WS_POPUP, 0);
+            assert_eq!(style & WS_CHILD, 0);
+            assert_eq!(GetWindow(window.0, GW_OWNER), owner.0);
+        }
+    }
+    policy.desktop_popup.set(false);
+    desktop::set_owner(window.0, null_mut()).unwrap();
+    unsafe {
+        SetWindowLongPtrW(window.0, GWL_STYLE, WS_OVERLAPPEDWINDOW as isize);
+        assert_eq!(
+            GetWindowLongPtrW(window.0, GWL_STYLE) as u32 & (WS_POPUP | WS_CHILD),
+            0
+        );
     }
 }

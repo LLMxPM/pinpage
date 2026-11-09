@@ -8,6 +8,10 @@ use windows_sys::Win32::{
 
 pub struct Rules {
     pub configuring: Cell<bool>,
+    /// 普通桌面页保留子窗口身份；透明桌面页使用独立的顶层合成窗口。
+    pub desktop_child: Cell<bool>,
+    /// 透明桌面页必须保留弹出窗口身份，避免首次显示与模式切换后的 Shell 分类不同。
+    pub desktop_popup: Cell<bool>,
     pub position_locked: Cell<bool>,
     pub size_locked: Cell<bool>,
     pub rounded: Cell<bool>,
@@ -26,6 +30,8 @@ pub unsafe fn install(window: HWND) -> Result<*const Rules, String> {
     }
     let rules = Box::new(Rules {
         configuring: Cell::new(true),
+        desktop_child: Cell::new(false),
+        desktop_popup: Cell::new(false),
         position_locked: Cell::new(false),
         size_locked: Cell::new(false),
         rounded: Cell::new(false),
@@ -52,6 +58,15 @@ unsafe extern "system" fn procedure(
     data: usize,
 ) -> LRESULT {
     let rules = &*(data as *const Rules);
+    if message == WM_STYLECHANGING && wparam as i32 == GWL_STYLE && lparam != 0 {
+        let styles = &mut *(lparam as *mut STYLESTRUCT);
+        // Tao 会按创建时的顶层身份重写整组样式，必须保留当前桌面路径的窗口类型。
+        if rules.desktop_child.get() {
+            styles.styleNew = (styles.styleNew & !WS_POPUP) | WS_CHILD;
+        } else if rules.desktop_popup.get() {
+            styles.styleNew = (styles.styleNew & !WS_CHILD) | WS_POPUP;
+        }
+    }
     if message == WM_DPICHANGED {
         let dpi = wparam as u32 & 0xffff;
         if dpi > 0 {

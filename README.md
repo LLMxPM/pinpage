@@ -20,6 +20,7 @@ English | [简体中文](README.zh-CN.md)
 ## Highlights
 
 - **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and borderless rounded corners per page.
+- **Transparent backgrounds** — allow transparency per page in floating and desktop modes on Windows without reloading its running state. Built-in examples are adapted; other pages must provide transparent backgrounds. See [verification status](docs/development.md#当前状态与验收).
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, and IndexedDB as a `.pinpage` package and restore it elsewhere.
 - **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
@@ -43,7 +44,7 @@ Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To bui
 
 The current Windows x64 release is [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0), the first version with in-app updates. Users on v0.1.0 need to install this version manually once.
 
-Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
+Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, transparent backgrounds, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
 
 ## Documentation
 

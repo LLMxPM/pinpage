@@ -17,6 +17,7 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
         always_on_top,
         decorations,
         rounded,
+        transparent_background,
         position_locked,
         size_locked,
         width,
@@ -33,6 +34,7 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
         || next.always_on_top != previous.always_on_top
         || next.decorations != previous.decorations
         || next.rounded != previous.rounded
+        || next.transparent_background != previous.transparent_background
         || next.position_locked != previous.position_locked
         || next.size_locked != previous.size_locked
         || next.width != previous.width
@@ -53,6 +55,7 @@ pub fn matches_expected(pin: &PinConfig, expected: &WindowPatch) -> bool {
         always_on_top,
         decorations,
         rounded,
+        transparent_background,
         position_locked,
         size_locked
     ) && expected

@@ -84,6 +84,9 @@ pub struct PinConfig {
     pub mode: WindowMode,
     #[serde(default)]
     pub rounded: bool,
+    /// 允许网页透明像素透出桌面；旧配置保持不透明。
+    #[serde(default)]
+    pub transparent_background: bool,
     #[serde(default)]
     pub position_locked: bool,
     #[serde(default)]
@@ -111,6 +114,8 @@ pub struct PresetFields {
     pub always_on_top: bool,
     pub decorations: bool,
     pub rounded: bool,
+    #[serde(default)]
+    pub transparent_background: bool,
     pub position_locked: bool,
     pub size_locked: bool,
     pub width: f64,
@@ -153,6 +158,8 @@ pub struct PinSettingsInput {
     pub always_on_top: bool,
     pub decorations: bool,
     pub rounded: bool,
+    #[serde(default)]
+    pub transparent_background: bool,
     pub position_locked: bool,
     pub size_locked: bool,
     pub width: f64,
@@ -194,6 +201,7 @@ pub enum PlatformDragModifier {
 pub struct PlatformCapabilities {
     pub desktop_mode: bool,
     pub rounded: bool,
+    pub transparent_background: bool,
     pub position_lock: bool,
     pub size_lock: bool,
     /// 是否允许配置手势修饰键；固定手势只通过 drag_modifier 表达。

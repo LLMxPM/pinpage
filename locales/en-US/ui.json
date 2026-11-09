@@ -139,7 +139,9 @@
     },
     "geometry": "Size & position",
     "footerWindow": "Changes apply and save instantly",
-    "unappliedGeometry": "Not applied · Actual: {width} × {height} · X {x} / Y {y}"
+    "unappliedGeometry": "Not applied · Actual: {width} × {height} · X {x} / Y {y}",
+    "transparentBackground": "Transparent page background",
+    "transparentHint": "Let transparent areas reveal the desktop while keeping text and controls unchanged. Opaque backgrounds inside the page still cover the desktop; built-in examples are adapted."
   },
   "settings": {
     "title": "Settings",

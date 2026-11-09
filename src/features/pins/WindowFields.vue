@@ -99,6 +99,21 @@ function blurField(event: Event) {
         <span class="check-with-tip">
           <label
             class="check-row"
+            :title="
+              !capabilities.transparentBackground ? t('ui.pinSettings.platformLimited') : undefined
+            "
+            ><input
+              v-model="values.transparentBackground"
+              type="checkbox"
+              :disabled="!capabilities.transparentBackground"
+              @change="emit('commit', 'transparentBackground')"
+            />{{ t('ui.pinSettings.transparentBackground') }}</label
+          >
+          <HintTip :text="t('ui.pinSettings.transparentHint')" />
+        </span>
+        <span class="check-with-tip">
+          <label
+            class="check-row"
             :title="!capabilities.rounded ? t('ui.pinSettings.platformLimited') : undefined"
             ><input
               v-model="values.rounded"

@@ -17,6 +17,7 @@ pub struct WindowPatch {
     pub always_on_top: Option<bool>,
     pub decorations: Option<bool>,
     pub rounded: Option<bool>,
+    pub transparent_background: Option<bool>,
     pub position_locked: Option<bool>,
     pub size_locked: Option<bool>,
     pub width: Option<f64>,

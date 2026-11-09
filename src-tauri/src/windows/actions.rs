@@ -105,6 +105,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 "recover" => {
                     next.mode = WindowMode::Floating;
                     next.decorations = true;
+                    next.transparent_background = false;
                     next.position_locked = false;
                 }
                 _ => unreachable!(),

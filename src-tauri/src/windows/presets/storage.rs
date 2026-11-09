@@ -205,6 +205,7 @@ fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields, App
         always_on_top: pin.always_on_top,
         decorations: pin.decorations,
         rounded: pin.rounded,
+        transparent_background: pin.transparent_background,
         position_locked: pin.position_locked,
         size_locked: pin.size_locked,
         width: logical_width,

@@ -65,6 +65,7 @@ pub async fn create_pin(
         enabled: true,
         mode: input.mode,
         rounded: false,
+        transparent_background: false,
         position_locked: false,
         size_locked: false,
         preset: None,
