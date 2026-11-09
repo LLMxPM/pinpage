@@ -98,6 +98,16 @@
   font-weight: 600;
   color: #364253;
 }
+.setting-toggle small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.setting-toggle .switch {
+  flex-shrink: 0;
+}
 .delete-description {
   color: var(--muted);
   font-size: 12px;

@@ -1,16 +1,17 @@
-// 功能：串行保存工作台设置，处理手势发布、语言解析与原生界面刷新。
+// 功能：串行保存工作台设置，协调系统自启注册、失败回滚与原生界面刷新。
 use crate::{
     errors::AppMessage, i18n, models, models::WorkspaceSettings, state, state::AppState, tray,
     windows,
 };
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-/// 修改语言、窗口手势与会话恢复；持久化失败时整体回滚，不留下半套设置。
+/// 修改全局设置；自启参数为空表示未编辑开关，不覆盖系统外部的更改。
 #[tauri::command]
 pub async fn update_settings(
     window: WebviewWindow,
     app: AppHandle,
     input: models::SettingsInput,
+    autostart: Option<bool>,
 ) -> Result<(), AppMessage> {
     windows::ensure_manager(&window)?;
     let candidate = WorkspaceSettings::from_input(&input)?;
@@ -18,20 +19,14 @@ pub async fn update_settings(
     // 与管理窗口内的开关、样式切换共用操作锁，避免保存语言时覆盖并发窗口状态。
     let _operation = state_ref.operation.lock().unwrap();
     state_ref.ensure_mutable()?;
-    let previous = WorkspaceSettings::from_settings(&state_ref.settings.lock().unwrap());
-
-    apply(&state_ref, &candidate);
-    if let Err(error) = state_ref.save() {
-        apply(&state_ref, &previous);
-        let locale = state::locale(&app);
-        if let Err(rollback) = state_ref.save() {
-            state::report(
-                &app,
-                i18n::caused_by(AppMessage::new("errors.rollbackFailed"), locale, &rollback),
-            );
-        }
-        return Err(error);
-    }
+    save_transaction(
+        &state_ref,
+        &candidate,
+        autostart,
+        || crate::platform::autostart::is_enabled(&app),
+        |enabled| crate::platform::autostart::set_enabled(&app, enabled),
+        |error| state::report(&app, error),
+    )?;
     // 仅保存成功后发布手势，且在操作锁内发布，避免并发保存使原生状态次序反转。
     crate::platform::set_gesture_modifier(candidate.gesture_modifier);
     drop(_operation);
@@ -41,6 +36,59 @@ pub async fn update_settings(
     refresh_native_ui(&app);
     state::notify(&app);
     Ok(())
+}
+
+/// 调用者持有操作锁；系统注册与配置一起提交，任一失败都尝试恢复原值并报告回滚失败。
+fn save_transaction(
+    state: &AppState,
+    candidate: &WorkspaceSettings,
+    autostart: Option<bool>,
+    read_autostart: impl FnOnce() -> Result<bool, AppMessage>,
+    mut write_autostart: impl FnMut(bool) -> Result<(), AppMessage>,
+    mut report: impl FnMut(AppMessage),
+) -> Result<(), AppMessage> {
+    state.ensure_mutable()?;
+    let previous = WorkspaceSettings::from_settings(&state.settings.lock().unwrap());
+    let change = autostart
+        .map(|enabled| read_autostart().map(|before| (before, enabled)))
+        .transpose()?
+        .filter(|(before, enabled)| before != enabled);
+    if let Some((before, enabled)) = change {
+        if let Err(error) = write_autostart(enabled) {
+            // 原生操作可能部分成功；即使返回失败也尝试恢复系统注册。
+            if let Err(rollback) = write_autostart(before) {
+                report(autostart_rollback_error(state, &rollback));
+            }
+            return Err(error);
+        }
+    }
+    apply(state, candidate);
+    if let Err(error) = state.save() {
+        apply(state, &previous);
+        if let Some((before, _)) = change {
+            if let Err(rollback) = write_autostart(before) {
+                report(autostart_rollback_error(state, &rollback));
+            }
+        }
+        if let Err(rollback) = state.save() {
+            report(i18n::caused_by(
+                AppMessage::new("errors.rollbackFailed"),
+                *state.locale.lock().unwrap(),
+                &rollback,
+            ));
+        }
+        return Err(error);
+    }
+    Ok(())
+}
+
+/// 自启回滚失败与普通保存失败分开呈现，避免误报系统注册已恢复。
+fn autostart_rollback_error(state: &AppState, error: &AppMessage) -> AppMessage {
+    i18n::caused_by(
+        AppMessage::new("errors.autostartRollbackFailed"),
+        *state.locale.lock().unwrap(),
+        error,
+    )
 }
 
 /// 写入可编辑设置字段，保留页面列表与来源配置。
@@ -68,63 +116,9 @@ fn refresh_native_ui(app: &AppHandle) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::{GestureModifier, Settings, SettingsInput};
-    use serde_json::json;
+#[path = "settings_tests.rs"]
+mod tests;
 
-    #[test]
-    /// 编辑快照、应用及失败回滚覆盖全部设置字段，且始终保留页面配置。
-    fn apply_and_rollback_preserve_all_workspace_fields() {
-        let path = std::env::temp_dir()
-            .join(format!("pinpage-settings-{}", uuid::Uuid::new_v4()))
-            .join("settings.json");
-        let state = AppState::load(path);
-        for (before, after) in [
-            (GestureModifier::Alt, "ctrl"),
-            (GestureModifier::Ctrl, "shift"),
-            (GestureModifier::Shift, "disabled"),
-            (GestureModifier::Disabled, "alt"),
-        ] {
-            // 旧配置中的快捷键字段已经废弃，反序列化时应被忽略。
-            let original: Settings = serde_json::from_value(json!({
-                "locale": "system", "gestureModifier": before, "restoreSession": true,
-                "managerShortcut": "Ctrl+Alt+P", "recoverShortcut": "Ctrl+Alt+B",
-                "pins": [{
-                    "id": "p-keep", "name": "保留页面",
-                    "source": {"kind": "bundled", "entry": "index.html"},
-                    "width": 420, "height": 360, "x": 10, "y": 20, "scale": 1.0,
-                    "alwaysOnTop": true, "decorations": false, "enabled": false
-                }]
-            }))
-            .unwrap();
-            let baseline = serde_json::to_value(&original).unwrap();
-            *state.settings.lock().unwrap() = original;
-            let previous = WorkspaceSettings::from_settings(&state.settings.lock().unwrap());
-            assert_eq!(previous.gesture_modifier, before);
-
-            let input = SettingsInput {
-                locale: "en-US".into(),
-                gesture_modifier: after.into(),
-                restore_session: false,
-            };
-            let candidate = WorkspaceSettings::from_input(&input).unwrap();
-            apply(&state, &candidate);
-            let mut expected = baseline.clone();
-            expected["locale"] = json!("en-US");
-            expected["gestureModifier"] = json!(after);
-            expected["restoreSession"] = json!(false);
-            assert_eq!(
-                serde_json::to_value(state.snapshot().settings).unwrap(),
-                expected
-            );
-
-            // 与保存失败分支使用同一个 apply 入口，回滚后包括手势在内的字段必须完全复原。
-            apply(&state, &previous);
-            assert_eq!(
-                serde_json::to_value(state.snapshot().settings).unwrap(),
-                baseline
-            );
-        }
-    }
-}
+#[cfg(test)]
+#[path = "settings_autostart_tests.rs"]
+mod autostart_tests;

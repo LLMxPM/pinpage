@@ -48,6 +48,7 @@ const {
   undoState,
   dismissToast,
   saveSettings,
+  openSettings,
   quit,
 } = useWorkspace();
 const creatingOpen = ref(false);
@@ -135,12 +136,6 @@ async function confirmDelete() {
 function editPin(id: string) {
   error.value = null;
   editingPinId.value = id;
-}
-
-/// 应用设置只有一个入口，打开时清除其他任务遗留的错误。
-function openSettings() {
-  error.value = null;
-  settingsOpen.value = true;
 }
 </script>
 
@@ -289,6 +284,7 @@ function openSettings() {
     <SettingsDialog
       v-if="settingsOpen"
       :settings="snapshot.settings"
+      :autostart="snapshot.autostart"
       :presets="presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"

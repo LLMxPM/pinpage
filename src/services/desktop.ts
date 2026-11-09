@@ -79,9 +79,9 @@ export function deletePreset(presetId: string): Promise<void> {
   return invoke('delete_preset', { presetId });
 }
 
-/// 更新语言、启动恢复与窗口手势。
-export function updateSettings(input: SettingsInput): Promise<void> {
-  return invoke('update_settings', { input });
+/// 更新全局设置；仅明确编辑自启开关时才修改系统注册。
+export function updateSettings(input: SettingsInput, autostart: boolean | null): Promise<void> {
+  return invoke('update_settings', { input, autostart });
 }
 
 /// 退出应用并保留仍打开的会话。

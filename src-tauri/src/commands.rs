@@ -13,11 +13,27 @@ use crate::{
 };
 use tauri::{AppHandle, Manager, WebviewWindow};
 
+/// 系统自启注册独立于可迁移配置；合并到管理快照，但不写入 settings.json。
+#[derive(serde::Serialize)]
+pub struct ManagerSnapshot {
+    #[serde(flatten)]
+    workspace: Snapshot,
+    autostart: crate::platform::autostart::Status,
+}
+
 /// 读取管理快照，只向受信任的管理窗口返回路径及会话配置。
 #[tauri::command]
-pub async fn snapshot(window: WebviewWindow, app: AppHandle) -> Result<Snapshot, AppMessage> {
+pub async fn snapshot(
+    window: WebviewWindow,
+    app: AppHandle,
+) -> Result<ManagerSnapshot, AppMessage> {
     windows::ensure_manager(&window)?;
-    Ok(app.state::<AppState>().snapshot())
+    let state = app.state::<AppState>();
+    let _operation = state.operation.lock().unwrap();
+    Ok(ManagerSnapshot {
+        workspace: state.snapshot(),
+        autostart: crate::platform::autostart::status(&app),
+    })
 }
 
 /// 创建悬浮窗；导入来源必须来自原生选择器或内置来源签发的授权票据。

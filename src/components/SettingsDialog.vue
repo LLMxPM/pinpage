@@ -1,4 +1,4 @@
-<!-- 功能：以单页章节编辑启动恢复、语言与窗口手势，并提供更新和关于入口。 -->
+<!-- 功能：以单页章节编辑系统自启、启动恢复、语言与窗口手势，并提供更新和关于入口。 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -6,12 +6,19 @@ import AppDialog from './AppDialog.vue';
 import AppSelect from './AppSelect.vue';
 import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import AboutSettings from '../features/updates/AboutSettings.vue';
-import { text } from '../i18n/messages';
+import { fromAppMessage, text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
-import type { PlatformCapabilities, SettingsInput, UiMessage, WindowPreset } from '../types';
+import type {
+  AutostartStatus,
+  PlatformCapabilities,
+  SettingsInput,
+  UiMessage,
+  WindowPreset,
+} from '../types';
 
 const props = defineProps<{
   settings: SettingsInput;
+  autostart: AutostartStatus;
   presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   busy: boolean;
@@ -20,13 +27,24 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   close: [];
-  save: [input: SettingsInput];
+  save: [input: SettingsInput, autostart: boolean | null];
   managePresets: [];
   quit: [];
 }>();
 const { t } = useI18n();
 const input = reactive<SettingsInput>({ ...props.settings });
 const baseline = { ...props.settings };
+const launchAtStartup = ref(props.autostart.enabled);
+const startupBaseline = ref(props.autostart.enabled);
+const startupDirty = computed(() => launchAtStartup.value !== startupBaseline.value);
+/// 未编辑时跟随系统快照，已编辑的草稿在保存失败后继续保留。
+watch(
+  () => props.autostart.enabled,
+  (enabled) => {
+    if (!startupDirty.value) launchAtStartup.value = enabled;
+    startupBaseline.value = enabled;
+  },
+);
 const formId = useId();
 const baseId = useId();
 type Section = 'general' | 'controls' | 'about';
@@ -69,7 +87,8 @@ function normalized(value: SettingsInput): SettingsInput {
 }
 const current = computed(() => normalized(input));
 const dirty = computed(
-  () => JSON.stringify(current.value) !== JSON.stringify(normalized(baseline)),
+  () =>
+    startupDirty.value || JSON.stringify(current.value) !== JSON.stringify(normalized(baseline)),
 );
 const sectionId = (section: Section) => `${baseId}-section-${section}`;
 let scrollRoot: HTMLElement | null = null;
@@ -149,7 +168,7 @@ watch(
 /// 仅在没有改动时阻止重复提交。
 function save() {
   if (!dirty.value) return;
-  emit('save', { ...current.value });
+  emit('save', { ...current.value }, startupDirty.value ? launchAtStartup.value : null);
 }
 </script>
 
@@ -188,6 +207,23 @@ function save() {
               :disabled="busy"
               autofocus
             />
+            <label class="setting-toggle"
+              ><span
+                ><strong>{{ t('ui.settings.autostart') }}</strong>
+                <small>{{ t('ui.settings.autostartHint') }}</small></span
+              ><input
+                v-model="launchAtStartup"
+                class="switch"
+                type="checkbox"
+                role="switch"
+                :disabled="busy || !autostart.supported || !!autostart.error"
+            /></label>
+            <p v-if="!autostart.supported" class="settings-hint">
+              {{ t('ui.settings.autostartUnsupported') }}
+            </p>
+            <p v-else-if="autostart.error" class="notice error-notice" role="alert">
+              {{ text(fromAppMessage(autostart.error)) }}
+            </p>
             <label class="setting-toggle"
               ><span
                 ><strong>{{ t('ui.settings.restoreSession') }}</strong></span

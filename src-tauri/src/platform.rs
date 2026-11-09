@@ -8,6 +8,7 @@ use crate::{
 use tauri::AppHandle;
 #[cfg(windows)]
 mod appearance;
+pub mod autostart;
 #[cfg(windows)]
 mod caption;
 #[cfg(windows)]

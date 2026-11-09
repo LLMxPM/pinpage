@@ -23,8 +23,10 @@ use tauri::Manager;
 /// 启动应用；关闭所有窗口后由托盘继续管理，显式退出时保存会话。
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            windows::show_manager(app)
+        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            if !args.iter().any(|argument| argument == "--tray") {
+                windows::show_manager(app);
+            }
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())

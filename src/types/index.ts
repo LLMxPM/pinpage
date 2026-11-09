@@ -143,6 +143,8 @@ export interface Settings extends SettingsInput {
 }
 
 export interface Snapshot {
+  /// 系统登录自启注册的实际状态，不随页面配置迁移。
+  autostart: AutostartStatus;
   settings: Settings;
   runtime: Record<string, PinRuntime>;
   notices: AppMessage[];
@@ -152,6 +154,12 @@ export interface Snapshot {
   resolvedLocale: AppLocale;
   /// 当前构建支持的窗口能力，所有窗口入口共用同一来源。
   capabilities: PlatformCapabilities;
+}
+
+export interface AutostartStatus {
+  supported: boolean;
+  enabled: boolean;
+  error: AppMessage | null;
 }
 
 export interface CreatePin {

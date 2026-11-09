@@ -27,6 +27,7 @@ English | [简体中文](README.zh-CN.md)
 - **Immediate window settings** — appearance, size, position, and locks apply and save directly, with undo for the last adjustment. Names and sources are saved separately under Content.
 - **One-click window presets** — four built-ins (full-screen overlay without always-on-top, standard window, 320 × 480 top-right overlay, and 320 × 480 bottom-right desktop widget) switch appearance, size, and relative position together. Save adjustments as a new preset or update a custom one; a shared manager supports editing, renaming, copying, and deleting templates without changing existing pages.
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; the tray keeps windows recoverable.
+- **Optional launch at startup** — enable it in Settings → General; off by default. Start in the tray when signing in to Windows, with page restoration controlled separately.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the system UI language on Windows; switching does not reload open pages.
 - **GitHub Release updates** — check, download, verify, and install signed updates from this repository; installation requires confirmation. End-to-end Windows upgrade acceptance is pending; see [versioning and updates](docs/releases.md).

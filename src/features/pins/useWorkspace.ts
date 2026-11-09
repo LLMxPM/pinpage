@@ -19,6 +19,7 @@ import type {
 /// 空快照与 Rust 默认配置保持一致，浏览器预览按中文呈现。
 function emptySnapshot(): Snapshot {
   return {
+    autostart: { supported: false, enabled: false, error: null },
     settings: {
       schemaVersion: 1,
       locale: 'zh-CN',
@@ -155,11 +156,18 @@ export function useWorkspace() {
   }
 
   /// 保存设置成功后关闭弹层；失败时保留用户的输入和当前语言。
-  function saveSettings(input: SettingsInput) {
+  function saveSettings(input: SettingsInput, autostart: boolean | null) {
     return run(async () => {
-      await desktop.updateSettings(input);
+      await desktop.updateSettings(input, autostart);
       settingsOpen.value = false;
     });
+  }
+
+  /// 打开设置前刷新系统自启状态，反映任务管理器等外部入口的修改。
+  async function openSettings() {
+    error.value = null;
+    await refresh();
+    settingsOpen.value = true;
   }
 
   /// 内容保存成功后保持弹窗打开，失败时保留正在编辑的草稿。
@@ -216,6 +224,7 @@ export function useWorkspace() {
     ...windowActions,
     dismissToast,
     saveSettings,
+    openSettings,
     quit: () => run(desktop.quitApp),
     pins: computed(() => snapshot.value.settings.pins),
     presets: computed(() => snapshot.value.presets),
