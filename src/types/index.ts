@@ -168,6 +168,8 @@ export interface CreatePin {
   alwaysOnTop: boolean;
   decorations: boolean;
   mode?: PinConfig['mode'];
+  /// 仅在新建导入页时应用原生校验后的随包默认窗口布局。
+  usePackagePreset?: boolean;
 }
 
 /// 原生选择器扫描后的导入预览，用户确认入口后才真正复制文件。
@@ -178,6 +180,7 @@ export interface ImportPreview {
   candidates: string[];
   files: number;
   bytes: number;
+  windowPreset: PresetFields | null;
 }
 
 /// 导出结果；withData 为 false 表示只打包了站点副本。

@@ -129,12 +129,7 @@ pub fn save(
     name: &str,
     id: Option<&str>,
 ) -> Result<String, AppMessage> {
-    let mut fields = snapshot_fields(app, pin)?;
-    fields.fullscreen = pin
-        .preset
-        .as_deref()
-        .and_then(|id| super::find(app, id))
-        .is_some_and(|preset| preset.fields.fullscreen);
+    let fields = snapshot_fields(app, pin)?;
     transaction(app, |settings| {
         let id = write_settings(
             settings,
@@ -157,7 +152,7 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), AppMessage> {
 }
 
 /// 读取页面当前状态并折算为归一化位置；页面关闭时按保存的几何与缩放估算。
-fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields, AppMessage> {
+pub fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields, AppMessage> {
     let scale = if pin.scale > 0.1 { pin.scale } else { 1. };
     let (x, y, width, height, logical_width, logical_height) = match app.get_webview_window(&pin.id)
     {
@@ -212,6 +207,10 @@ fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields, App
         height: logical_height,
         fx: ((x - area.position.x) as f64 / room_width as f64).clamp(0., 1.),
         fy: ((y - area.position.y) as f64 / room_height as f64).clamp(0., 1.),
-        fullscreen: false,
+        fullscreen: pin
+            .preset
+            .as_deref()
+            .and_then(|id| super::find(app, id))
+            .is_some_and(|preset| preset.fields.fullscreen),
     })
 }

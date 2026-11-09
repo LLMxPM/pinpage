@@ -6,6 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "scripts": {
+    "examples:pack": "cargo run --manifest-path src-tauri/Cargo.toml --example pack-examples",
     "version:set": "node scripts/version.mjs",
     "version:check": "node scripts/version.mjs --check",
     "test:release": "node --test tests/release.test.mjs",

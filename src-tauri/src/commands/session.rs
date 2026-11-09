@@ -31,6 +31,7 @@ pub async fn import_page(
         let locale = state::locale(&app);
         let name = |key: &str| i18n::text(locale, key, &Default::default());
         let dialog = app.dialog().file();
+        let mut window_preset = None;
         let (path, candidates, label, files, bytes) = match mode {
             ImportMode::Directory => {
                 let Some(selected) = dialog
@@ -86,20 +87,22 @@ pub async fn import_page(
                     .into_path()
                     .map_err(|error| AppMessage::new("errors.filePathInvalid").detail(error))?;
                 let manifest = package::read_manifest(&file)?;
+                window_preset = manifest.window_preset;
                 let bytes = std::fs::metadata(&file)
                     .map_err(|_| AppMessage::new("errors.readFileFailed"))?
                     .len();
-                let label = file_label(&file, &name("picker.packageLabel"));
+                let label = manifest.name;
                 (file, vec![manifest.entry], label, manifest.files, bytes)
             }
             // 示例使用随包资源，不需要选择器，也不产生外部授权路径。
             ImportMode::Example => {
-                let (files, bytes) = examples::measure(example);
+                let (manifest, bytes) = examples::preview(example)?;
+                window_preset = manifest.window_preset;
                 (
                     std::path::PathBuf::new(),
-                    vec![examples::ENTRY.to_string()],
+                    vec![manifest.entry],
                     name(examples::label_key(example)),
-                    files,
+                    manifest.files,
                     bytes,
                 )
             }
@@ -124,6 +127,7 @@ pub async fn import_page(
             candidates,
             files,
             bytes,
+            window_preset,
         }))
     })
     .await

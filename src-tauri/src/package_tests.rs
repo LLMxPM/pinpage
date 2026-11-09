@@ -1,5 +1,6 @@
 // 功能：验证页面包的往返打包、数据快照与解包路径边界。
 use super::*;
+use std::io::Write;
 use std::path::PathBuf;
 
 struct Fixture(PathBuf);
@@ -53,13 +54,14 @@ fn round_trips_site_and_storage() {
     let site = fixture.0.join("site");
     let package = fixture.0.join("out/示例.pinpage");
     let storage = r#"{"localStorage":{"timer":"300"},"sessionStorage":{}}"#;
-    let files = write_dir(&site, "示例", "index.html", Some(storage), &package).unwrap();
+    let files = write_dir(&site, "示例", "index.html", Some(storage), None, &package).unwrap();
     assert_eq!(files, 2);
 
     let manifest = read_manifest(&package).unwrap();
     assert_eq!(manifest.name, "示例");
     assert_eq!(manifest.entry, "index.html");
     assert_eq!(manifest.schema_version, PACKAGE_VERSION);
+    assert!(manifest.window_preset.is_none());
 
     let target = fixture.0.join("out/restored");
     let extracted = extract(&package, &target).unwrap();
@@ -143,8 +145,67 @@ fn rejects_invalid_storage_json() {
         "bad",
         "index.html",
         Some("not json"),
+        None,
         &package,
     )
     .unwrap();
     assert!(extract(&package, &fixture.0.join("out/bad")).is_err());
+}
+
+#[test]
+/// 当前窗口布局与站点及数据一起往返；同一包的内存解包与磁盘解包结果一致。
+fn round_trips_optional_window_preset() {
+    let fixture = Fixture::new();
+    let package = fixture.0.join("out/window.pinpage");
+    let mut fields = crate::windows::presets::all(&[])[1].fields.clone();
+    fields.transparent_background = true;
+    write_dir(
+        &fixture.0.join("site"),
+        "布局",
+        "index.html",
+        None,
+        Some(&fields),
+        &package,
+    )
+    .unwrap();
+    let manifest = read_manifest(&package).unwrap();
+    assert_eq!(manifest.window_preset, Some(fields.clone()));
+    let extracted = extract_bytes(
+        &std::fs::read(&package).unwrap(),
+        &fixture.0.join("out/memory"),
+    )
+    .unwrap();
+    assert_eq!(extracted.window_preset, Some(fields));
+    assert!(fixture.0.join("out/memory/子目录/app.js").is_file());
+}
+
+#[test]
+/// 非法窗口字段在读取清单时拒绝，不夹到合法范围后悄悄应用。
+fn rejects_invalid_package_window_presets() {
+    let fixture = Fixture::new();
+    let fields = crate::windows::presets::all(&[])[1].fields.clone();
+    for (field, value) in [("width", 0.), ("height", 9000.), ("fx", -0.1), ("fy", 1.1)] {
+        let mut preset = serde_json::to_value(&fields).unwrap();
+        preset[field] = serde_json::json!(value);
+        let manifest = serde_json::json!({
+            "schemaVersion": 1, "name": "无效布局", "entry": "index.html", "exportedAt": 0,
+            "files": 1, "windowPreset": preset
+        })
+        .to_string();
+        let package = fixture.0.join(format!("out/invalid-{field}.pinpage"));
+        write_zip(
+            &package,
+            &[
+                ("manifest.json", manifest.as_bytes()),
+                ("site/index.html", b"<html></html>"),
+            ],
+        );
+        assert_eq!(
+            read_manifest(&package).unwrap_err().code,
+            "errors.presetFieldsInvalid"
+        );
+        let target = fixture.0.join(format!("out/invalid-{field}"));
+        assert!(extract(&package, &target).is_err());
+        assert!(!target.exists());
+    }
 }

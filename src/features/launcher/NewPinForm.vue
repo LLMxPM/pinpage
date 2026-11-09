@@ -27,11 +27,15 @@ const top = ref(true);
 // 有原生拖动手势时默认无边框；没有手势的平台默认保留系统边框，保证窗口可移动。
 const borderless = ref(hasNativeDrag(props.capabilities));
 const windowMode = ref<'floating' | 'desktop'>('floating');
+const usePackagePreset = ref(true);
 // 选择器的预览、入口候选与错误收敛由共用组合式函数负责，本组件只管名称与窗口偏好。
 const { preview, entry, choosing, entryOptions, choose } = useImportSource({
   onError: (reason) => emit('error', reason),
   onPicked: adoptName,
 });
+const usingPackagePreset = computed(
+  () => mode.value === 'import' && !!preview.value?.windowPreset && usePackagePreset.value,
+);
 const displayTop = computed({
   get: () => windowMode.value === 'floating' && top.value,
   set: (value: boolean) => {
@@ -47,6 +51,7 @@ const displayBorderless = computed({
 
 /// 来源确定后按来源推导名称；用户已手动命名时保留其输入。
 function adoptName(selected: ImportPreview) {
+  usePackagePreset.value = true;
   if (!nameAuto.value && name.value) return;
   name.value =
     selected.mode === 'directory' ? selected.label : selected.label.replace(/\.(html|htm)$/i, '');
@@ -57,12 +62,18 @@ function adoptName(selected: ImportPreview) {
 function submit() {
   if (props.busy || choosing.value) return;
   if (mode.value === 'import' && !preview.value) return;
-  if (windowMode.value === 'desktop' && !props.capabilities.desktopMode) return;
+  if (
+    !usingPackagePreset.value &&
+    windowMode.value === 'desktop' &&
+    !props.capabilities.desktopMode
+  )
+    return;
   emit('create', {
     name: name.value,
     alwaysOnTop: top.value,
     decorations: !borderless.value,
     mode: windowMode.value,
+    usePackagePreset: usingPackagePreset.value,
     source:
       mode.value === 'url'
         ? { kind: 'url', address: address.value }
@@ -119,6 +130,15 @@ function submit() {
           <p v-if="choosing" class="import-progress" role="status">{{ t('ui.common.working') }}</p>
           <div v-if="preview" class="import-summary">
             <p><AppIcon name="check" :size="16" />{{ preview.label }}</p>
+            <label v-if="preview.windowPreset" class="check-row">
+              <input v-model="usePackagePreset" type="checkbox" />
+              {{
+                t('ui.form.usePackagePreset', {
+                  width: preview.windowPreset.width,
+                  height: preview.windowPreset.height,
+                })
+              }}
+            </label>
             <AppSelect
               v-if="preview.candidates.length > 1"
               v-model="entry"
@@ -136,7 +156,7 @@ function submit() {
             :placeholder="t('ui.form.namePlaceholder')"
             @input="nameAuto = false"
         /></label>
-        <details class="advanced-options">
+        <details v-if="!usingPackagePreset" class="advanced-options">
           <summary>{{ t('ui.form.windowOptions') }}<AppIcon name="chevron" :size="16" /></summary>
           <fieldset class="mode-picker">
             <legend>{{ t('ui.form.mode') }}</legend>

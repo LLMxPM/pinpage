@@ -131,7 +131,50 @@ mod geometry;
 mod storage;
 pub use builtins::{all, normalize};
 use geometry::target_geometry;
-pub use storage::{delete, save, write};
+pub use storage::{delete, save, snapshot_fields, write};
+
+/// 随包默认布局只初始化新页面，不写入全局预设库；平台回退后再按主屏计算归一化位置。
+pub fn initialize(app: &AppHandle, pin: &mut PinConfig, mut fields: crate::models::PresetFields) {
+    initialize_fields(pin, &mut fields, crate::platform::capabilities());
+    if let Some(monitor) = app.primary_monitor().ok().flatten() {
+        pin.scale = monitor.scale_factor();
+    }
+    if let Some((width, height, x, y)) = target_geometry(app, pin, &fields) {
+        pin.width = width;
+        pin.height = height;
+        pin.x = Some(x);
+        pin.y = Some(y);
+    }
+}
+
+/// 把已校验包内布局合并为初始状态；不支持的能力安全回退，没有手势时保留系统边框。
+fn initialize_fields(
+    pin: &mut PinConfig,
+    fields: &mut crate::models::PresetFields,
+    capabilities: crate::models::PlatformCapabilities,
+) {
+    normalize(fields);
+    pin.mode = fields.mode;
+    pin.always_on_top = fields.always_on_top;
+    pin.decorations = fields.decorations;
+    pin.rounded = fields.rounded;
+    pin.transparent_background = fields.transparent_background;
+    pin.position_locked = fields.position_locked;
+    pin.size_locked = fields.size_locked;
+    pin.width = fields.width;
+    pin.height = fields.height;
+    pin.preset = None;
+    crate::platform::fallback_pin(capabilities, pin);
+    if capabilities.drag_modifier.is_none() {
+        pin.decorations = true;
+    }
+    fields.mode = pin.mode;
+    fields.decorations = pin.decorations;
+    fields.rounded = pin.rounded;
+    fields.transparent_background = pin.transparent_background;
+    fields.position_locked = pin.position_locked;
+    fields.size_locked = pin.size_locked;
+}
 
 #[cfg(test)]
 #[path = "presets/tests.rs"]

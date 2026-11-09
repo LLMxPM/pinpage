@@ -258,6 +258,9 @@ pub struct CreatePin {
     pub decorations: bool,
     #[serde(default)]
     pub mode: WindowMode,
+    /// 仅新建时按用户选择应用包内默认布局；字段来自原生解包结果，前端不直接提交布局。
+    #[serde(default)]
+    pub use_package_preset: bool,
 }
 
 /// 原生选择器完成扫描后返回的导入预览，前端确认入口后才真正复制文件。
@@ -272,4 +275,6 @@ pub struct ImportPreview {
     pub candidates: Vec<String>,
     pub files: u64,
     pub bytes: u64,
+    /// 预览用于提示与选择；创建时重新读取并校验实际页面包。
+    pub window_preset: Option<PresetFields>,
 }

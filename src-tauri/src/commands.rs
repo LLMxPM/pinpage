@@ -49,7 +49,7 @@ pub async fn create_pin(
     state.ensure_mutable()?;
     // 站点副本以页面 ID 命名，先分配 ID 再复制，避免复制完成后还要改名。
     let id = format!("p-{}", uuid::Uuid::new_v4().simple());
-    let source = crate::source::prepare(&app, &id, &input.source)?;
+    let (source, window_preset) = crate::source::prepare_with_window(&app, &id, &input.source)?;
     let name = match &source {
         PageSource::Url { url } => user_name(&input.name, || {
             url::Url::parse(url)
@@ -67,7 +67,7 @@ pub async fn create_pin(
                 .into()
         }),
     };
-    let pin = PinConfig {
+    let mut pin = PinConfig {
         id,
         name,
         source,
@@ -86,6 +86,11 @@ pub async fn create_pin(
         size_locked: false,
         preset: None,
     };
+    if input.use_package_preset {
+        if let Some(fields) = window_preset {
+            windows::presets::initialize(&app, &mut pin, fields);
+        }
+    }
     // 前端已禁用不支持的模式，这里仍按原生能力拒绝伪造或旧版 IPC 输入。
     crate::platform::validate_pin(crate::platform::capabilities(), &pin)?;
     state.settings.lock().unwrap().pins.push(pin.clone());

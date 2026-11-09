@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "name": "专注计时器",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": false,
+    "transparentBackground": false,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 420,
+    "height": 360,
+    "fx": 0.5,
+    "fy": 0.5,
+    "fullscreen": false
+  }
+}

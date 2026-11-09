@@ -62,12 +62,14 @@ PinPage 把在线网页和本地 HTML 变成常驻桌面的小工具，适合需
 
 | 示例 | 功能 | 独立预览 |
 | --- | --- | --- |
-| 专注计时器 | 预设时长、暂停和基于截止时间的计时；localStorage 保存状态，IndexedDB 记录完成轮次 | [计时器](../examples/timer/index.html) |
-| 随手便签 | 标题与正文随输入自动保存到 localStorage | [便签](../examples/widgets/notes.html) |
-| 今日待办 | 添加、勾选和删除任务，最多 100 项，localStorage 保存清单 | [待办](../examples/widgets/checklist.html) |
-| 数字时钟 | 当前本地日期、星期与时间，记忆显示秒数的偏好 | [时钟](../examples/widgets/clock.html) |
+| 专注计时器 | 预设时长、暂停和基于截止时间的计时；localStorage 保存状态，IndexedDB 记录完成轮次 | [计时器](../examples/timer/site/index.html) |
+| 随手便签 | 标题与正文随输入自动保存到 localStorage | [便签](../examples/notes/site/index.html) |
+| 今日待办 | 添加、勾选和删除任务，最多 100 项，localStorage 保存清单 | [待办](../examples/checklist/site/index.html) |
+| 数字时钟 | 当前本地日期、星期与时间，记忆显示秒数的偏好 | [时钟](../examples/clock/site/index.html) |
 
 示例页内容使用中文，不随工作台语言切换。计时器包含 ES 模块和 JSON 请求，建议通过开发服务预览或导入后使用；便签和待办可以直接打开。
+
+内置示例采用标准 `.pinpage` 页面包，附带适合各工具的默认窗口布局。开发者可运行 `pnpm examples:pack` 生成可独立导入和分享的文件，详见[页面包与示例制作](page-packages.md)。
 
 ![示例库](screenshots/guide-examples.png)
 *示例库：四个可独立添加的离线工具。*
@@ -170,7 +172,7 @@ body {
 
 页面也可以始终使用 `background: transparent`，或自行绘制带 alpha 的半透明面板。需要同时检查 `html`、`body` 及铺满页面的容器；嵌套容器、图片、Canvas 和 iframe 中的不透明内容仍会遮挡桌面。应用不提供任意网页通用的背景透明度滑块。
 
-新添加的四个内置示例已适配。此前导入的示例是独立副本，不会被升级覆盖；需要重新添加新版示例，或在原副本中适配 CSS。透明偏好随页面配置和窗口预设保存；`.pinpage` 页面包沿用现有范围，仅包含站点及可选页面数据，不包含窗口外观设置。
+新添加的四个内置示例已适配。此前导入的示例是独立副本，不会被升级覆盖；需要重新添加新版示例，或在原副本中适配 CSS。透明偏好随页面配置和窗口预设保存，也会随导出的 `.pinpage` 默认窗口布局携带；新建导入时可选择应用该布局。
 
 窗口难以找到时，可使用托盘的恢复入口：恢复系统边框与位置，并关闭背景透明；页面运行状态继续保留。跨平台加载到暂不支持透明的平台时，该偏好会回退为关闭。
 
@@ -201,6 +203,7 @@ body {
 
 - 导入页的站点副本保存在 `%APPDATA%\com.pinpage.desktop\pages\{页面 ID}\site`。
 - 「更多 → 导出页面包」把已开启的导入页与页面数据打包为 `.pinpage`；新建页面时用「导入页面包」恢复。
+- 导出包携带当前窗口的外观、尺寸与相对位置；新建时可勾选「使用随包窗口预设」，取消后可手动设置。旧包没有布局时按原有方式创建；更换已有页面的来源保持窗口设置。
 - 页面数据覆盖 localStorage、sessionStorage 与 IndexedDB，不包含 Cookie 和 HTTP 缓存；跨机器恢复登录态并不完整。
 - 导出要求页面处于开启状态；页面未开启或数据读取超时，只打包站点副本并在结果中说明。
 - 随包数据只在页面首次打开时写入一次，之后不再覆盖用户改动。

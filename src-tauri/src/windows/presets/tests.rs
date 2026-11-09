@@ -2,6 +2,39 @@
 use super::*;
 use crate::models::{PresetFields, PresetInput, Settings, WindowMode, WindowPreset};
 
+#[test]
+/// 包内布局跨平台回退只改变新页的外观几何，不带入包作者的 ID 或全局预设引用。
+fn package_window_preset_falls_back_without_mutating_content() {
+    let mut pin: PinConfig = serde_json::from_value(serde_json::json!({
+        "id": "p-new", "name": "独立副本", "source": {"kind": "bundled", "entry": "index.html"},
+        "width": 420, "height": 360, "x": null, "y": null, "scale": 1.,
+        "alwaysOnTop": true, "decorations": false
+    }))
+    .unwrap();
+    let mut fields = all(&[])[1].fields.clone();
+    fields.mode = WindowMode::Desktop;
+    fields.transparent_background = true;
+    fields.position_locked = true;
+    fields.size_locked = true;
+    fields.width = 300.;
+    fields.height = 240.;
+    let mut capabilities = crate::platform::capabilities();
+    capabilities.desktop_mode = false;
+    capabilities.rounded = false;
+    capabilities.transparent_background = false;
+    capabilities.position_lock = false;
+    capabilities.size_lock = false;
+    capabilities.drag_modifier = None;
+    initialize_fields(&mut pin, &mut fields, capabilities);
+    assert_eq!(pin.id, "p-new");
+    assert_eq!(pin.name, "独立副本");
+    assert_eq!(pin.mode, WindowMode::Floating);
+    assert!(pin.decorations);
+    assert!(!pin.transparent_background && !pin.position_locked && !pin.size_locked);
+    assert_eq!((pin.width, pin.height), (300., 240.));
+    assert!(pin.preset.is_none() && pin.enabled);
+}
+
 /// 构造独立的编辑输入，不依赖真实显示器或用户配置。
 fn editor_input(name: &str) -> PresetInput {
     PresetInput {

@@ -151,6 +151,7 @@ export function useWorkspace() {
         source: { kind: 'import', ticket: preview.ticket, entry: preview.candidates[0] },
         alwaysOnTop: true,
         decorations: !hasNativeDrag(snapshot.value.capabilities),
+        usePackagePreset: true,
       });
     }, `example:${example}`);
   }

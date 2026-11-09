@@ -7,7 +7,7 @@ use crate::{
     content,
     errors::AppMessage,
     examples, import,
-    models::{ImportMode, PageSource, SourceInput},
+    models::{ImportMode, PageSource, PresetFields, SourceInput},
     package,
     state::AppState,
 };
@@ -19,16 +19,33 @@ use tauri::{AppHandle, Manager};
 /// `id` 决定站点副本的位置。更新已有页面时旧副本整体作废，新目录不会残留上次导入的文件，
 /// 入口相对路径也重新按新来源确认；创建时目录尚不存在，暂存与交换同样适用。
 pub fn prepare(app: &AppHandle, id: &str, input: &SourceInput) -> Result<PageSource, AppMessage> {
+    prepare_with_window(app, id, input).map(|(source, _)| source)
+}
+
+/// 新建时同时取得随包布局；更换既有来源的入口主动忽略布局，保留用户窗口设置。
+pub fn prepare_with_window(
+    app: &AppHandle,
+    id: &str,
+    input: &SourceInput,
+) -> Result<(PageSource, Option<PresetFields>), AppMessage> {
     match input {
-        SourceInput::Url { address } => Ok(PageSource::Url {
-            url: content::normalize_url(address)?,
-        }),
+        SourceInput::Url { address } => Ok((
+            PageSource::Url {
+                url: content::normalize_url(address)?,
+            },
+            None,
+        )),
         SourceInput::Import { ticket, entry } => redeem(app, id, ticket, entry),
     }
 }
 
 /// 用票据把选中的本地来源换成页面副本，返回导入来源的入口相对路径。
-fn redeem(app: &AppHandle, id: &str, ticket: &str, entry: &str) -> Result<PageSource, AppMessage> {
+fn redeem(
+    app: &AppHandle,
+    id: &str,
+    ticket: &str,
+    entry: &str,
+) -> Result<(PageSource, Option<PresetFields>), AppMessage> {
     let state_ref = app.state::<AppState>();
     let grant = state_ref
         .grants
@@ -43,16 +60,17 @@ fn redeem(app: &AppHandle, id: &str, ticket: &str, entry: &str) -> Result<PageSo
     let _ = std::fs::remove_dir_all(&incoming);
     let prepared = match grant.mode {
         ImportMode::Directory => {
-            import::copy_site(&grant.path, &incoming).map(|_| (entry.to_string(), None))
+            import::copy_site(&grant.path, &incoming).map(|_| (entry.to_string(), None, None))
         }
-        ImportMode::File => import::copy_entry(&grant.path, &incoming).map(|name| (name, None)),
+        ImportMode::File => {
+            import::copy_entry(&grant.path, &incoming).map(|name| (name, None, None))
+        }
         ImportMode::Package => package::extract(&grant.path, &incoming)
-            .map(|extracted| (extracted.entry, extracted.storage)),
-        ImportMode::Example => {
-            examples::write_site(&incoming, grant.example).map(|name| (name, None))
-        }
+            .map(|extracted| (extracted.entry, extracted.storage, extracted.window_preset)),
+        ImportMode::Example => examples::extract(&incoming, grant.example)
+            .map(|extracted| (extracted.entry, extracted.storage, extracted.window_preset)),
     };
-    let (entry, storage) = match prepared {
+    let (entry, storage, window_preset) = match prepared {
         Ok(prepared) => prepared,
         Err(error) => {
             discard(app, id, &incoming);
@@ -72,7 +90,7 @@ fn redeem(app: &AppHandle, id: &str, ticket: &str, entry: &str) -> Result<PageSo
     }
     // 成功后作废票据，重复提交同一预览会被拒绝而不是再复制一份。
     state_ref.grants.lock().unwrap().remove(ticket);
-    Ok(PageSource::Bundled { entry })
+    Ok((PageSource::Bundled { entry }, window_preset))
 }
 
 /// 校验入口确实是票据签发时记录的候选之一，防止前端伪造路径。
