@@ -1,24 +1,167 @@
-<!-- 功能：显示当前本地时间、日期与星期，支持记忆秒数显示偏好。 -->
+<!-- 功能：提供可切换数字、翻页与指针外观的离线桌面时钟及轻量偏好面板。 -->
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-style="digital" data-theme="light" data-surface="bare" data-seconds="false">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>数字时钟</title>
+    <title>桌面时钟</title>
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./faces.css" />
+    <link rel="stylesheet" href="./settings.css" />
+    <link rel="stylesheet" href="./responsive.css" />
   </head>
-  <body class="clock-page">
-    <main class="widget">
-      <header>
-        <span class="eyebrow">此时此刻</span
-        ><label class="seconds-toggle"><input id="show-seconds" type="checkbox" />显示秒数</label>
-      </header>
-      <div class="clock-face">
-        <p id="clock-date"></p>
-        <time id="clock-time" aria-live="off">--:--</time>
-        <p id="clock-weekday"></p>
-      </div>
+  <body>
+    <main class="clock-stage" aria-label="桌面时钟">
+      <section class="widget">
+        <button
+          id="open-settings"
+          class="icon-button settings-trigger"
+          aria-label="时钟设置"
+          title="时钟设置"
+          aria-haspopup="dialog"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 17h16" />
+            <circle cx="9" cy="7" r="2.5" />
+            <circle cx="15" cy="17" r="2.5" />
+          </svg>
+        </button>
+        <div class="clock-content">
+          <p class="clock-caption">
+            <span class="status-dot"></span>此时此刻<span class="local-label"> / 本地时间</span>
+          </p>
+          <time id="clock-accessible" class="sr-only" aria-live="off">正在读取本地时间</time>
+          <div class="digital-face" aria-hidden="true">
+            <span class="time-unit" id="digital-hour">00</span><span class="time-colon">:</span
+            ><span class="time-unit" id="digital-minute">00</span>
+            <span class="digital-seconds seconds-detail"
+              ><span id="digital-second">00</span><span class="seconds-label">秒</span></span
+            >
+          </div>
+          <div class="flip-face" aria-hidden="true">
+            <div class="flip-tile">
+              <span id="flip-hour">00</span><span class="tile-label">时</span>
+            </div>
+            <span class="flip-colon">:</span>
+            <div class="flip-tile">
+              <span id="flip-minute">00</span><span class="tile-label">分</span>
+            </div>
+            <div class="flip-tile flip-second seconds-detail">
+              <span id="flip-second">00</span><span class="tile-label">秒</span>
+            </div>
+          </div>
+          <div class="analog-face" aria-hidden="true">
+            <svg id="dial" viewBox="0 0 240 240">
+              <circle class="dial-rim" cx="120" cy="120" r="116" />
+              <g id="dial-ticks"></g>
+              <g class="dial-numbers">
+                <text x="120" y="43">12</text>
+                <text x="202" y="125">3</text>
+                <text x="120" y="207">6</text>
+                <text x="38" y="125">9</text>
+              </g>
+              <text class="dial-signature" x="120" y="88">此时此刻</text>
+              <line id="hour-hand" class="hand hour-hand" x1="120" y1="128" x2="120" y2="66" />
+              <line id="minute-hand" class="hand minute-hand" x1="120" y1="131" x2="120" y2="40" />
+              <line
+                id="second-hand"
+                class="hand second-hand seconds-detail"
+                x1="120"
+                y1="140"
+                x2="120"
+                y2="31"
+              />
+              <circle class="dial-pin" cx="120" cy="120" r="4" />
+            </svg>
+          </div>
+          <div class="clock-calendar">
+            <span id="clock-date" class="date-detail"></span
+            ><span class="calendar-divider date-detail"></span
+            ><span id="clock-weekday" class="date-detail"></span
+            ><span id="clock-period" hidden></span>
+          </div>
+        </div>
+      </section>
     </main>
-    <script src="./clock.js" defer></script>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-heading">
+        <div>
+          <p class="settings-eyebrow">让时间融入桌面</p>
+          <h1 id="settings-title">时钟外观</h1>
+        </div>
+        <button id="close-settings" class="icon-button" aria-label="关闭设置" autofocus>×</button>
+      </div>
+      <form id="clock-settings">
+        <fieldset>
+          <legend>样式</legend>
+          <div class="choice-grid style-choices">
+            <label
+              ><input type="radio" name="style" value="digital" /><span
+                ><b class="style-sample sample-digital" aria-hidden="true">09:41</b>简约</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="style" value="flip" /><span
+                ><b class="style-sample sample-flip" aria-hidden="true"><i>09</i><i>41</i></b
+                >翻页</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="style" value="analog" /><span
+                ><b class="style-sample sample-analog" aria-hidden="true"><i></i></b>表盘</span
+              ></label
+            >
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>配色</legend>
+          <div class="choice-grid theme-choices">
+            <label
+              ><input type="radio" name="theme" value="light" /><span
+                ><i class="swatch swatch-light"></i>浅色</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="theme" value="dark" /><span
+                ><i class="swatch swatch-dark"></i>深色</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="theme" value="sage" /><span
+                ><i class="swatch swatch-sage"></i>苔绿</span
+              ></label
+            >
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>底板</legend>
+          <div class="choice-grid surface-choices">
+            <label><input type="radio" name="surface" value="bare" /><span>无底板</span></label>
+            <label><input type="radio" name="surface" value="card" /><span>柔光卡片</span></label>
+          </div>
+          <p class="field-hint">搭配 PinPage「背景透明」可露出桌面；深色配色适合深色壁纸。</p>
+        </fieldset>
+        <div class="toggle-row">
+          <label for="show-seconds">显示秒数</label
+          ><input id="show-seconds" name="seconds" type="checkbox" role="switch" />
+        </div>
+        <div class="toggle-row">
+          <label for="show-date">显示日期与星期</label
+          ><input id="show-date" name="date" type="checkbox" role="switch" />
+        </div>
+        <div class="toggle-row">
+          <label for="hour12">12 小时制</label
+          ><input id="hour12" name="hour12" type="checkbox" role="switch" />
+        </div>
+        <p id="save-status" class="field-hint" role="status">自动保存 · 随窗口大小调整布局</p>
+      </form>
+    </dialog>
+    <script type="module" src="./clock.js"></script>
   </body>
 </html>

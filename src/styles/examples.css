@@ -115,8 +115,17 @@
   width: 45%;
 }
 .example-preview.clock {
-  background: #edf1f8;
-  color: #637da0;
+  background: #f6f5f0;
+  color: #303630;
+}
+.example-preview.clock strong {
+  font-family: 'Bahnschrift', 'Segoe UI', sans-serif;
+  font-weight: 300;
+  letter-spacing: -1px;
+}
+.example-preview.clock strong span {
+  color: #7c8b66;
+  opacity: 1;
 }
 
 .example-details {

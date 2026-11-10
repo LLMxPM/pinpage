@@ -31,7 +31,7 @@ English | [简体中文](README.zh-CN.md)
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no filesystem, shell, or window-management permissions for untrusted pages.
 - **Bilingual UI** — Simplified Chinese and English, or follow the system UI language on Windows; switching does not reload open pages.
 - **GitHub Release updates** — check, download, verify, and install signed updates from this repository; installation requires confirmation. End-to-end Windows upgrade acceptance is pending; see [versioning and updates](docs/releases.md).
-- **Four offline tools built in** — focus timer, quick notes, daily checklist, and digital clock, each added as an independent imported page.
+- **Four offline tools built in** — focus timer, quick notes, daily checklist, and digital clock, each added as an independent imported page. The clock offers minimal, flip-style, and analog faces, color themes, and responsive transparent layouts.
 - **Measured footprint** — first-round Release sampling measured about 205 / 291 / 377 MiB of private commit memory for 1 / 3 / 5 idle timers across the whole process group. Details are in the [architecture notes](docs/architecture.md).
 
 ## Quick start

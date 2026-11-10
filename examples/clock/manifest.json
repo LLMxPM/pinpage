@@ -7,11 +7,11 @@
     "alwaysOnTop": true,
     "decorations": false,
     "rounded": false,
-    "transparentBackground": false,
+    "transparentBackground": true,
     "positionLocked": false,
     "sizeLocked": false,
     "width": 360,
-    "height": 240,
+    "height": 220,
     "fx": 0.5,
     "fy": 0.5,
     "fullscreen": false
