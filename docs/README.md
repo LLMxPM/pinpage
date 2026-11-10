@@ -6,6 +6,7 @@
 | [架构与数据](architecture.md) | 模块组成、窗口生命周期、权限与安全边界、本地副本、页面包、配置模型、多语言与性能 |
 | [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量、当前状态与验收 |
 | [平台支持](platforms.md) | Windows 与 macOS／其他平台的能力矩阵、配置回退、macOS 当前范围与验收状态 |
+| [macOS 开发与社区验收](macos-development.md) | 默认／Option 实验构建、环境与打包、CI 验证包、实机报告和协作门槛 |
 | [版本与升级](releases.md) | 统一版本号、本地签名构建、GitHub Release 发布与升级数据保护 |
 
 项目概览见英文 [README](../README.md) 或中文 [README](../README.zh-CN.md)。

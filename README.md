@@ -43,7 +43,7 @@ Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To bui
 
 The current Windows x64 release is [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0), the first version with in-app updates. Users on v0.1.0 need to install this version manually once.
 
-Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
+Windows is the fully supported platform. macOS is experimental: default builds expose standard floating windows, while `experimental-macos-drag` enables a fixed Option-drag implementation for community testing. Desktop mode, rounded corners, window locks, and configurable gestures remain unavailable. Both macOS variants passed ARM64 CI checks, tests, and verification bundle builds, and core window flows have been verified on one Apple Silicon Mac; Intel, Retina, multi-display, import/page-package, and gesture-boundary acceptance are still pending. See [Platform support](docs/platforms.md) and [macOS development and verification](docs/macos-development.md) (Chinese).
 
 ## Documentation
 
@@ -51,6 +51,7 @@ Windows is the fully supported platform. macOS currently covers standard floatin
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and current acceptance status.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
+- [macOS development and verification](docs/macos-development.md) (Chinese) — setup, default and experimental builds, CI artifacts, and community test reports.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
 
 ## License

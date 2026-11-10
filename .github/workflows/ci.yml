@@ -1,10 +1,10 @@
-# 功能：在 main 提交和合并请求上校验前端构建与 Windows 原生代码。
+# 功能：校验前端与 Windows / macOS 原生代码，并提供默认与实验拖动的 macOS 验证包。
 
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/macos-*']
   pull_request:
   workflow_dispatch:
 
@@ -55,8 +55,21 @@ jobs:
         run: pnpm build
 
   rust:
-    name: Rust 检查与测试
-    runs-on: windows-latest
+    name: Rust 检查与测试 (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            features: ''
+          - name: macos-default
+            os: macos-latest
+            features: ''
+          - name: macos-option
+            os: macos-latest
+            features: --features experimental-macos-drag
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - name: 检出代码
@@ -91,7 +104,36 @@ jobs:
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
       - name: Rust 静态检查
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all
+        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets ${{ matrix.features }} -- -D clippy::all
 
       - name: 运行 Rust 测试
-        run: pnpm test:rust
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml ${{ matrix.features }}
+
+      - name: 构建 macOS 独立验证应用
+        if: runner.os == 'macOS'
+        run: pnpm tauri build --debug --bundles app --config src-tauri/tauri.verification.conf.json ${{ matrix.features }}
+
+      - name: 归档 macOS 应用与构建信息
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/macos-verify
+          ditto -c -k --sequesterRsrc --keepParent \
+            src-tauri/target/debug/bundle/macos/PinPage.app \
+            tmp/macos-verify/PinPage-${{ matrix.name }}.zip
+          {
+            git rev-parse HEAD
+            sw_vers
+            uname -m
+            printf 'variant=%s\nidentifier=com.pinpage.verification\nbuild=debug\nsigning=ad-hoc\n' '${{ matrix.name }}'
+          } > tmp/macos-verify/build-info.txt
+
+      - name: 上传 macOS 验证包
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinpage-${{ matrix.name }}-${{ github.sha }}
+          path: tmp/macos-verify/*
+          if-no-files-found: error
+          retention-days: 14

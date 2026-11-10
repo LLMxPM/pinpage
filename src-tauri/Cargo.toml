@@ -11,6 +11,10 @@ rust-version = "1.90"
 name = "pinpage_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# macOS 原生拖动待社区实机验收，默认构建不开放该能力。
+experimental-macos-drag = ["dep:block2", "dep:objc2", "dep:objc2-app-kit"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -31,6 +35,11 @@ semver = "1.0.28"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_UI_Input_KeyboardAndMouse", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_System_Threading", "Win32_System_LibraryLoader"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = { version = "0.6", optional = true }
+objc2 = { version = "0.6", optional = true }
+objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["std", "block2", "NSEvent", "NSResponder", "NSWindow"] }
 
 [dev-dependencies]
 base64 = "0.22"

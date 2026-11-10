@@ -36,6 +36,18 @@ fn limited() -> PlatformCapabilities {
     }
 }
 
+/// 模拟完整平台，规则测试不能把当前测试机默认为 Windows。
+fn full() -> PlatformCapabilities {
+    PlatformCapabilities {
+        desktop_mode: true,
+        rounded: true,
+        position_lock: true,
+        size_lock: true,
+        window_gestures: true,
+        drag_modifier: Some(crate::models::PlatformDragModifier::Alt),
+    }
+}
+
 #[test]
 /// 当前构建的能力声明必须与实际实现一致：只有 Windows 开放完整能力。
 fn current_capabilities_match_platform() {
@@ -56,7 +68,15 @@ fn current_capabilities_match_platform() {
         assert!(!capabilities.position_lock);
         assert!(!capabilities.size_lock);
         assert!(!capabilities.window_gestures);
-        assert_eq!(capabilities.drag_modifier, None);
+        let expected_drag = if cfg!(all(
+            target_os = "macos",
+            feature = "experimental-macos-drag"
+        )) {
+            Some(crate::models::PlatformDragModifier::Option)
+        } else {
+            None
+        };
+        assert_eq!(capabilities.drag_modifier, expected_drag);
     }
 }
 
@@ -81,7 +101,7 @@ fn unsupported_pin_falls_back_without_losing_content() {
 /// 已符合能力的页面不会被重复改写；完整能力平台保留用户原组合。
 fn supported_pin_is_not_rewritten() {
     let mut pin = full_pin();
-    assert!(!fallback_pin(capabilities(), &mut pin));
+    assert!(!fallback_pin(full(), &mut pin));
     assert_eq!(pin.mode, WindowMode::Desktop);
     assert!(pin.rounded);
     assert_eq!(pin.preset.as_deref(), Some("bottomRight"));
@@ -100,7 +120,7 @@ fn supported_pin_is_not_rewritten() {
 /// 显式提交不支持的能力必须报错，回退只能发生在配置加载阶段。
 fn explicit_unsupported_requests_are_rejected() {
     let pin = full_pin();
-    assert!(validate_pin(capabilities(), &pin).is_ok());
+    assert!(validate_pin(full(), &pin).is_ok());
     let error = validate_pin(limited(), &pin).unwrap_err();
     assert_eq!(error.code, "errors.platformUnsupported");
 
@@ -141,7 +161,7 @@ fn preset_validation_checks_each_capability() {
         fy: 1.,
         fullscreen: false,
     };
-    assert!(validate_preset(capabilities(), &desktop).is_ok());
+    assert!(validate_preset(full(), &desktop).is_ok());
     assert_eq!(
         validate_preset(limited(), &desktop).unwrap_err().code,
         "errors.platformUnsupported"

@@ -224,7 +224,14 @@ fn snapshot_reports_locale_and_gesture_modifier() {
         assert_eq!(capabilities["positionLock"], false);
         assert_eq!(capabilities["sizeLock"], false);
         assert_eq!(capabilities["windowGestures"], false);
-        assert!(capabilities["dragModifier"].is_null());
+        if cfg!(all(
+            target_os = "macos",
+            feature = "experimental-macos-drag"
+        )) {
+            assert_eq!(capabilities["dragModifier"], "option");
+        } else {
+            assert!(capabilities["dragModifier"].is_null());
+        }
     }
     let _ = std::fs::remove_dir_all(&directory);
 }

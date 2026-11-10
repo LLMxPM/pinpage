@@ -80,6 +80,7 @@ pub fn source_url(id: &str, source: &PageSource) -> Result<Url, AppMessage> {
 /// 把入口相对路径拼成以窗口 ID 为主机的本地地址，中文与空格由 URL 层编码。
 fn entry_url(id: &str, relative: &Path) -> Result<Url, AppMessage> {
     if relative.as_os_str().is_empty()
+        || relative.to_string_lossy().contains(['\\', ':', '\0'])
         || relative
             .components()
             .any(|part| !matches!(part, Component::Normal(_) | Component::CurDir))

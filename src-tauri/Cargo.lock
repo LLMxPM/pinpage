@@ -2665,8 +2665,11 @@ name = "pinpage"
 version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
+ "block2",
  "mime_guess",
  "minisign-verify",
+ "objc2",
+ "objc2-app-kit",
  "percent-encoding",
  "semver",
  "serde",

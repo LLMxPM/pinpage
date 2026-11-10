@@ -43,7 +43,7 @@ PinPage 适合需要随时瞥一眼的内容：计时器、看板、便签、监
 
 当前 Windows x64 正式版为 [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，首次接入应用内更新；v0.1.0 用户需要先手动安装一次这一版。
 
-Windows 为完整支持平台；macOS 目前仅覆盖标准浮动窗口，桌面模式、圆角、窗口锁与手势不可用，且尚未实机验收，详见[平台支持](docs/platforms.md)。
+Windows 为完整支持平台；macOS 为实验性平台，默认只声明标准浮动窗口，`experimental-macos-drag` 可显式启用固定 Option 拖动供社区验证。桌面模式、圆角、窗口锁与可配置手势仍不可用。两种 macOS 构建均通过 ARM64 CI 检查、测试与验证包构建，核心窗口流程已在一台 Apple Silicon Mac 上实机通过；Intel、Retina、多显示器、导入与页面包及手势边界仍待验收，详见[平台支持](docs/platforms.md)和[macOS 开发与社区验收](docs/macos-development.md)。
 
 ## 文档
 
@@ -51,6 +51,7 @@ Windows 为完整支持平台；macOS 目前仅覆盖标准浮动窗口，桌面
 - [架构与数据](docs/architecture.md)：窗口生命周期、安全边界、本地副本、页面包、配置模型与性能。
 - [开发与构建](docs/development.md)：环境准备、检查与测试、打包、独立验证实例与当前验收状态。
 - [平台支持](docs/platforms.md)：Windows 完整能力、macOS 浮动窗口回退与待验收范围。
+- [macOS 开发与社区验收](docs/macos-development.md)：环境、默认与实验构建、CI 验证包和实机报告。
 - [版本与升级](docs/releases.md)：版本脚本、签名构建、GitHub Release 发布与客户端升级行为。
 
 ## 许可证

@@ -7,7 +7,7 @@
 - Visual Studio Build Tools，包含桌面 C++ 工作负载
 - WebView2 Runtime
 
-当前完整支持 Windows x64；macOS 与其他平台的能力边界见[平台支持](platforms.md)。
+以上为 Windows 环境。macOS 的前置环境、源码开发、打包和报告方式见[macOS 开发与社区验收](macos-development.md)。当前完整支持 Windows x64；平台能力边界见[平台支持](platforms.md)。
 
 ## 安装与启动
 
@@ -37,7 +37,7 @@ src-tauri/src/
   windows/                窗口生命周期、事件与几何
   windows/editor.rs       窗口局部事务与内容独立保存
   windows/presets/         内置定义、相对几何、预设读写及测试
-  platform.rs / platform/ 跨平台能力声明、回退校验与 Windows 专用适配
+  platform.rs / platform/ 跨平台能力、回退校验、Windows 适配与 macOS 实验拖动
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
   import.rs               导入复制与站点副本
@@ -78,7 +78,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 默认与显式 Option 拖动实验构建均通过 ARM64 CI 检查、测试和验证包构建，核心窗口流程已在一台 Apple Silicon Mac 上实机通过，Intel、Retina、多显示器与手势边界仍待验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
@@ -86,6 +86,7 @@ docs/                     用户、架构、开发、平台与发布文档
 - **窗口**：浮动与桌面模式、置顶、系统边框、无边框圆角、独立位置锁和大小锁、窗口预设、修饰键拖动与右键菜单、会话恢复。
 - **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
 - **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新。
+- **macOS 协作基线**：默认与 `experimental-macos-drag` 能力声明、原生拖动监视器生命周期、平台无关能力测试、独立 `.app` 配置和 CI 验证包；两种 ARM64 构建已通过 CI，核心窗口流程已在一台 Apple Silicon Mac 上实机通过，Intel 与其余场景仍待验收，不代表已正式支持。
 
 ### 最近自动检查
 
@@ -104,6 +105,8 @@ docs/                     用户、架构、开发、平台与发布文档
 
 2026-11-08，[主分支 CI](https://github.com/LLMxPM/pinpage/actions/runs/42462223685) 与 [v0.2.0 发布工作流](https://github.com/LLMxPM/pinpage/actions/runs/42462225046) 均通过。四项 Release 附件已公开，固定更新入口返回 `0.2.0`；重新下载的安装包通过 SHA-256、离线签名及版本绑定校验，篡改包与错误版本被拒绝。发布时修复了只查询已发布版本而读不到草稿的问题，保留原标签并使用工作流版本的发布脚本完成补发。安装交互、应用内升级与重启数据保留仍待验收。
 
+macOS 协作基线在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、5 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 与 [合并提交 `cf3baf3` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42460248653) 验证了 Windows、前端以及 macOS 默认／Option 实验构建：两种 ARM64 构建各通过 73 项单元测试、Clippy、Debug `.app` 打包和验证包上传。CI 不替代真实窗口交互、Intel 或多显示器验收。
+
 ### 已完成桌面验收
 
 使用独立标识的验证实例完成，未修改正常应用会话：
@@ -115,6 +118,12 @@ docs/                     用户、架构、开发、平台与发布文档
 
 以上结果来自 125% DPI 的 Windows 桌面；早期版本结果不能直接视为当前构建的完整回归。
 
+### 已完成 macOS 实机验收
+
+2026-11-08，一台 Apple M4 Pro、macOS 15.7.1 使用触控板验证了 `cf3baf3` 的默认与 Option 实验验证包：工作台／托盘启动、关闭重开与退出，页面创建／关闭／重开，置顶、边框、尺寸与 X/Y、撤销，托盘／卡片找回，以及系统边框拖动均通过；Option 构建的触控板按压拖动通过。
+
+未覆盖页面删除、隐藏后找回、重启读数一致性、导入与页面包、语言切换、配置回退、Retina、多显示器、Intel、物理鼠标与手势边界。完整记录见[macOS 开发与社区验收](macos-development.md#已记录的实机验收)。
+
 ### 待验收
 
 - **窗口手势**：真实鼠标的持续拖动、快速点击、越界松开、Esc、混合按键、捕获丢失、手势中关闭或重建窗口、系统菜单冲突；连续 Alt+右键、Alt 释放后的菜单时延与常驻；网页 pointer / mouse / contextmenu 事件隔离；有边框、无边框、锁定、桌面、遮挡、负坐标多屏与各 DPI 下的菜单定位。
@@ -124,7 +133,7 @@ docs/                     用户、架构、开发、平台与发布文档
 - **更新与安装**：从已发布 GitHub Release 完成旧版 → 下载 → 验签 → 安装 → 重启；安装取消、权限拒绝、installer 启动后失败；重启后的页面开关、几何、导入副本和登录数据；干净环境安装与卸载；Windows 代码签名。
 - **多语言**：真实设置保存语言后的托盘、tooltip 与通知重渲染；管理页重建、重启和 `--tray` 启动的一致性；切换语言不重载内容页；英文在 760 × 620 与 100% / 150% / 200% DPI 的排版；安装器语言选择。
 - **性能**：使用优化后的计时器按 Release 构建重采样 1 / 3 / 5 页；复杂看板、长时间运行和创建销毁循环的资源趋势。统计口径见[架构与数据](architecture.md#性能与资源)。
-- **平台**：macOS 的构建、窗口、托盘、DPI 与多显示器行为，详见[平台支持](platforms.md#macos-待验收)。
+- **平台**：macOS 的 Intel、Retina、多显示器、导入与页面包、语言切换及 Option 手势边界，详见[平台支持](platforms.md#macos-待验收)。
 - **常见场景**：真实看板的登录、断网重连、睡眠恢复；多显示器与 DPI 的组合切换。
 
 ## 打包
@@ -137,16 +146,17 @@ pnpm release:build
 - NSIS 安装包：`src-tauri/target/release/bundle/nsis/`
 - 构建产物不提交 Git。
 
-当前只配置 Windows NSIS 目标；本地签名构建与离线验签命令见[版本与升级](releases.md)，其他平台的构建限制见[平台支持](platforms.md#构建与验收状态)。Windows 安装包代码签名暂未配置。
+正式发布只提供 Windows NSIS 目标；本地签名构建与离线验签命令见[版本与升级](releases.md)。macOS 使用独立平台配置构建验证 `.app`，命令见[macOS 开发指南](macos-development.md#本地打包与独立实例)。Windows 安装包代码签名暂未配置。
 
 直接运行可执行文件时可追加 `--tray`，只创建托盘并按设置恢复悬浮窗，工作台按需打开。
 
 ## 持续集成与发布
 
-`.github/workflows/ci.yml` 在推送到 `main` 和合并请求时运行：
+`.github/workflows/ci.yml` 在推送到 `main`、`feature/macos-*` 和合并请求时运行，也可手动触发：
 
 - 前端（Ubuntu）：Prettier、文案检查、类型检查、UI 测试与生产构建。
 - Rust（Windows）：Rustfmt、Clippy、单元测试与原生窗口集成测试。
+- Rust（macOS 默认／Option 实验）：Rustfmt、Clippy、单元测试，构建 `com.pinpage.verification` 标识的 Debug `.app` 并归档上传。任务使用 runner 原生架构；未运行的分支不能记录为 CI 通过，构建成功不替代实机验收。
 
 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签时构造 Windows 安装包并创建 GitHub Release：
 
@@ -164,11 +174,11 @@ pnpm release:build
 
 ```powershell
 pnpm build
-$env:CARGO_TARGET_DIR = "target/i18n-verify"
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) "target/i18n-verify"
 pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 ```
 
-验证实例使用独立标识（`com.pinpage.verification`）与独立配置目录，产物写入自定义目标目录；验证结束后删除验证目录，不修改正常应用的配置。
+验证实例使用独立标识（`com.pinpage.verification`）与独立配置目录，产物写入自定义目标目录；验证结束后删除验证目录，不修改正常应用的配置。macOS 的对应命令见[开发指南](macos-development.md#本地打包与独立实例)。
 
 ## 性能测量
 

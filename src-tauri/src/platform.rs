@@ -14,6 +14,8 @@ mod corners;
 mod desktop;
 #[cfg(windows)]
 mod gestures;
+#[cfg(all(target_os = "macos", feature = "experimental-macos-drag"))]
+mod macos_drag;
 #[cfg(windows)]
 pub(crate) use gestures::MenuRequest;
 pub mod locale;
@@ -37,9 +39,25 @@ pub fn capabilities() -> PlatformCapabilities {
     }
 }
 
-/// macOS 与其他平台先提供标准浮动窗口；未实现的能力全部明确关闭。
-#[cfg(not(windows))]
+/// macOS 默认只提供标准浮动窗口，显式实验构建才声明固定 Option 拖动。
+#[cfg(target_os = "macos")]
 pub fn capabilities() -> PlatformCapabilities {
+    let mut capabilities = floating_capabilities();
+    if cfg!(feature = "experimental-macos-drag") {
+        capabilities.drag_modifier = Some(crate::models::PlatformDragModifier::Option);
+    }
+    capabilities
+}
+
+/// 其他平台保持最保守的浮动窗口组合，不继承 macOS 的实验能力。
+#[cfg(not(any(windows, target_os = "macos")))]
+pub fn capabilities() -> PlatformCapabilities {
+    floating_capabilities()
+}
+
+/// 标准浮动窗口的共同基线；所有未实现的原生能力明确关闭。
+#[cfg(not(windows))]
+fn floating_capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: false,
         rounded: false,
@@ -190,8 +208,14 @@ pub fn start(app: &AppHandle) {
 }
 
 /// 其他平台保留标准边框移动和托盘恢复入口。
-#[cfg(not(windows))]
+#[cfg(not(any(windows, all(target_os = "macos", feature = "experimental-macos-drag"))))]
 pub fn start(_app: &AppHandle) {}
+
+/// 实验构建在应用主线程安装 macOS 本地鼠标事件监视器。
+#[cfg(all(target_os = "macos", feature = "experimental-macos-drag"))]
+pub fn start(app: &AppHandle) {
+    macos_drag::start(app);
+}
 
 /// 全局设置持久化成功后更新两种手势共用的修饰键。
 pub fn set_gesture_modifier(modifier: GestureModifier) {
@@ -205,6 +229,8 @@ pub fn set_gesture_modifier(modifier: GestureModifier) {
 pub fn stop() {
     #[cfg(windows)]
     gestures::stop();
+    #[cfg(all(target_os = "macos", feature = "experimental-macos-drag"))]
+    macos_drag::stop();
 }
 
 #[cfg(test)]
