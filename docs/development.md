@@ -78,7 +78,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 为完整支持平台；macOS 默认与显式 Option 拖动实验构建均通过 ARM64 CI 检查、测试和验证包构建，窗口交互与 Intel 验收仍待完成，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 默认与显式 Option 拖动实验构建均通过 ARM64 CI 检查、测试和验证包构建，核心窗口流程已在一台 Apple Silicon Mac 上实机通过，Intel、Retina、多显示器与手势边界仍待验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
@@ -98,12 +98,14 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm test:ui` | 24 项通过：设置表单回传合并、连续输入、失败保留、另存前等待、操作队列、平台能力过滤与回退 |
 | `pnpm test:rust` | 85 项单元测试与 3 项隐藏原生窗口集成测试通过 |
 | `pnpm check` / `pnpm check:i18n` / `pnpm check:limits` | 通过；类型检查、中英文键与参数、前后端尺寸上下限一致 |
-| `pnpm test:release` | 3 项通过：版本同步、标签约束与更新清单边界 |
+| `pnpm test:release` | 5 项通过：版本同步、标签约束、更新清单边界、草稿分页查询与 API 错误中止 |
 | `pnpm release:build` | 本地 NSIS 安装包与 `.sig` 生成成功；Windows 代码签名未配置 |
 | `pnpm format:check` / `cargo fmt --check` | 通过 |
 | `cargo clippy --all-targets -- -D clippy::all` | 通过 |
 
-本次 macOS 协作基线改动在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、3 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。启用 `experimental-macos-drag` 的 Windows 构建也通过能力测试，未开放 macOS 手势。[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 进一步验证了 Windows 和前端任务，以及 macOS 默认／Option 实验构建：两种 ARM64 构建各通过 73 项单元测试、Clippy、Debug `.app` 打包和验证包上传。CI 不替代真实窗口交互、Intel 或多显示器验收。
+2026-11-08，[主分支 CI](https://github.com/LLMxPM/pinpage/actions/runs/42462223685) 与 [v0.2.0 发布工作流](https://github.com/LLMxPM/pinpage/actions/runs/42462225046) 均通过。四项 Release 附件已公开，固定更新入口返回 `0.2.0`；重新下载的安装包通过 SHA-256、离线签名及版本绑定校验，篡改包与错误版本被拒绝。发布时修复了只查询已发布版本而读不到草稿的问题，保留原标签并使用工作流版本的发布脚本完成补发。安装交互、应用内升级与重启数据保留仍待验收。
+
+macOS 协作基线在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、5 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 与 [合并提交 `cf3baf3` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42460248653) 验证了 Windows、前端以及 macOS 默认／Option 实验构建：两种 ARM64 构建各通过 73 项单元测试、Clippy、Debug `.app` 打包和验证包上传。CI 不替代真实窗口交互、Intel 或多显示器验收。
 
 ### 已完成桌面验收
 
@@ -157,6 +159,8 @@ pnpm release:build
 3. 工作流校验版本、签名构建并离线验签，准备草稿，上传 NSIS 安装包、`.sig`、`.sha256` 和 `latest.json`，全部就绪才正式发布。预发布和旧版补发不会覆盖 Latest。
 
 也可在 Actions 页面手动运行 Release 并输入已存在的标签。已发布版本禁止覆盖，操作细节见[版本与升级](releases.md)。当前安装包未进行 Windows 代码签名，Windows SmartScreen 可能提示未知发布者。
+
+标签推送后的发布脚本修复不移动标签：修复提交进入 `main` 后，从该提交手动运行 Release 工作流，仍构建指定标签的应用，只从工作流 SHA 加载修复后的发布脚本。草稿查询使用完整 Release 列表，覆盖尚未公开的版本。
 
 ## 独立验证实例
 

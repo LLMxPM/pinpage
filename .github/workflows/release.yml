@@ -84,6 +84,19 @@ jobs:
           $installer = Get-Item -LiteralPath "src-tauri/target/release/bundle/nsis/PinPage_$($env:VERSION)_x64-setup.exe"
           cargo run --locked --manifest-path src-tauri/Cargo.toml --example verify-update -- $installer.FullName
 
+      - name: 手动补发时加载本次工作流版本的发布脚本
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          RELEASE_TOOLING_SHA: ${{ github.workflow_sha }}
+        run: |
+          git fetch --no-tags origin $env:RELEASE_TOOLING_SHA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $publisher = git show "$($env:RELEASE_TOOLING_SHA):scripts/release/publish.mjs"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $path = Join-Path $PWD 'scripts/release/publish.mjs'
+          [System.IO.File]::WriteAllText($path, ($publisher -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+
       - name: 准备 Release 草稿
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,18 +1,17 @@
 // 功能：在 GitHub 草稿中准备全部升级附件，校验后发布，禁止覆盖已发布版本。
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import semver from 'semver';
 import { ROOT, REPOSITORY, command } from './shared.mjs';
 import { checkVersion } from '../version.mjs';
 
-/// 读取精确标签的 Release；仅 404 视为不存在，其余 API 错误直接中止。
-function findRelease(tag) {
-  try {
-    return JSON.parse(command('gh', ['api', `repos/${REPOSITORY}/releases/tags/${tag}`]));
-  } catch (error) {
-    if (error.message.includes('HTTP 404')) return null;
-    throw error;
-  }
+/// 从完整列表按标签查找草稿或正式版；按标签查询的 API 不返回草稿，查询失败必须中止。
+export function findRelease(tag, run = command) {
+  const pages = JSON.parse(
+    run('gh', ['api', '--paginate', '--slurp', `repos/${REPOSITORY}/releases?per_page=100`]),
+  );
+  return pages.flat().find((release) => release.tag_name === tag) ?? null;
 }
 
 /// 生成草稿与更新说明；重试只允许修改草稿，不移动已发布标签。
@@ -33,6 +32,7 @@ async function prepare(tag) {
       '--generate-notes',
     ]);
   const release = findRelease(tag);
+  if (!release?.draft) throw new Error('未找到可写的 Release 草稿，停止发布');
   const body = (release.body || '').split('<!-- pinpage-installation -->')[0].trimEnd();
   const notes = `${body}\n\n<!-- pinpage-installation -->\n---\n\n- 下载 Windows x64 的 \`*-setup.exe\` 安装包，或使用应用内更新\n- 更新仅通过本 GitHub Release 分发，升级包使用 updater 密钥签名\n- 安装包暂未进行 Windows 代码签名，系统可能提示未知发布者\n- 安装更新会关闭页面，网页尚未保存的状态可能丢失\n`;
   await writeFile(path.join(ROOT, 'release-notes.md'), notes);
@@ -87,13 +87,18 @@ async function publish(version, tag) {
   ]);
 }
 
-const version = await checkVersion(process.env.RELEASE_TAG);
-const tag = `v${version}`;
-try {
+/// 只在命令行直接执行时准备或发布；导入测试不会调用 GitHub 或修改 Release。
+async function main() {
+  const version = await checkVersion(process.env.RELEASE_TAG);
+  const tag = `v${version}`;
   if (process.argv[2] === 'prepare') await prepare(tag);
   else if (process.argv[2] === 'publish') await publish(version, tag);
   else throw new Error('需要 prepare 或 publish 动作');
-} catch (error) {
-  console.error(error.message);
-  process.exitCode = 1;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
 }

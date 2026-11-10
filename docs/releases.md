@@ -4,6 +4,15 @@ PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安�
 
 签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[开发与构建](development.md#当前状态与验收)。
 
+## v0.2.0 发布记录
+
+2026-11-08，[Windows x64 v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0) 已公开并设为 Latest，[发布工作流](https://github.com/LLMxPM/pinpage/actions/runs/42462225046) 成功。应用源码固定为标签提交 `0e51873`；草稿查询修复 `c48e43c` 仅用于发布工具，未移动标签。
+
+- 安装包、`.sig`、`.sha256` 与 `latest.json` 四项附件齐全。
+- 从公开 Release 重新下载后，安装包 SHA-256 与校验文件及 GitHub 附件记录一致；离线验签、签名版本绑定、篡改包与错误版本拒绝检查通过。
+- 固定更新入口实际返回 `0.2.0`，安装包 URL 与签名内容匹配公开附件。
+- v0.1.0 尚无 updater，需手动安装一次 v0.2.0；真实安装、应用内升级、重启及数据保留仍待实机验收。
+
 ## 版本规则
 
 - 应用版本采用 SemVer，例如 `0.2.0`、`0.2.1`、`0.3.0`；预发布可用 `0.3.0-beta.1`。
@@ -53,6 +62,10 @@ cargo run --locked --manifest-path src-tauri/Cargo.toml --example verify-update 
 | `latest.json` | 版本、说明、发布时间、平台、安装包 URL 和签名内容 |
 
 所有发布任务串行执行。只有高于当前 Latest 的正式版本才设为 Latest；补发旧版和预发布不会抢占。手动运行工作流时填写已存在且与代码版本一致的标签。
+
+草稿通过可分页的 Release 列表按标签定位，不能使用只返回已发布版本的按标签查询接口。权限或网络错误直接中止，不按“不存在”处理；接口行为见 [GitHub Release API](https://docs.github.com/en/rest/releases/releases#list-releases)。
+
+若标签已经推送但发布脚本需要修复，保持标签不动，在 `main` 修复并验证发布工具，然后手动运行最新 `main` 的 Release 工作流，输入原标签。应用仍检出并构建原标签源码；准备与发布步骤使用该次工作流 SHA 对应的 `publish.mjs`，只替换发布脚本，不更改安装包的应用源码。已公开的版本仍禁止覆盖；只有草稿可重试。
 
 GitHub Release 的更新清单固定入口为：
 

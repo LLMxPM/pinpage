@@ -7,6 +7,7 @@ import test from 'node:test';
 import { checkVersion, setVersion } from '../scripts/version.mjs';
 import { parseVersion } from '../scripts/release/shared.mjs';
 import { createManifest } from '../scripts/release/artifacts.mjs';
+import { findRelease } from '../scripts/release/publish.mjs';
 
 test('版本同步只修改应用字段，保持依赖版本；标签和锁文件不一致必须报错', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'pinpage-version-'));
@@ -68,4 +69,24 @@ test('更新清单固定仓库、平台和版本附件，签名必须是内容',
     assert.throws(() => createManifest('0.2.0', 'PinPage_0.2.0_x64-setup.exe', signature, ''));
   assert.throws(() => createManifest('0.2.0', 'PinPage_0.1.0_x64-setup.exe', 'c2ln', ''));
   assert.throws(() => createManifest('0.2.0', '../PinPage_0.2.0_x64-setup.exe', 'c2ln', ''));
+});
+
+test('Release 查询覆盖后续分页中的草稿，并保留正式版本的覆盖保护所需状态', () => {
+  const published = { id: 1, tag_name: 'v0.1.0', draft: false, assets: [] };
+  const draft = { id: 2, tag_name: 'v0.2.0', draft: true, body: '待发布', assets: [] };
+  const response = () => JSON.stringify([[published], [draft]]);
+  assert.deepEqual(findRelease('v0.2.0', response), draft);
+  assert.deepEqual(findRelease('v0.1.0', response), published);
+  assert.equal(findRelease('v0.3.0', response), null);
+});
+
+test('Release 列表的权限与网络错误直接中止，不被误判为可以新建草稿', () => {
+  const unavailable = new Error('HTTP 404: 无法读取仓库 Release');
+  assert.throws(
+    () =>
+      findRelease('v0.2.0', () => {
+        throw unavailable;
+      }),
+    (error) => error === unavailable,
+  );
 });
