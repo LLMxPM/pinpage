@@ -4,10 +4,13 @@ mod content;
 mod data;
 mod errors;
 mod examples;
+mod folder;
+mod host;
 mod i18n;
 mod import;
 mod models;
 mod package;
+mod pathguard;
 mod platform;
 mod source;
 mod state;
@@ -54,7 +57,13 @@ pub fn run() {
             commands::settings::update_settings,
             commands::updates::updates_snapshot,
             commands::updates::update_action,
-            commands::quit_app
+            commands::quit_app,
+            commands::host::host_info,
+            commands::host::system_stats,
+            commands::folder::folder_pick,
+            commands::folder::folder_list,
+            commands::folder::folder_open,
+            commands::folder::folder_reveal
         ])
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
@@ -70,6 +79,8 @@ pub fn run() {
             tray::create(app.handle())?;
             let settings = app.state::<AppState>().settings.lock().unwrap().clone();
             platform::start(app.handle());
+            // 系统监控共享采样器：所有页面读同一份缓存，退出标记置位后结束。
+            host::start_sampler(app.handle());
             // 托盘启动适用于已有会话，也便于独立采样内容窗口的资源开销。
             if !std::env::args().any(|argument| argument == "--tray") {
                 windows::show_manager(app.handle());

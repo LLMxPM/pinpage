@@ -1,6 +1,6 @@
 ---
 name: pinpage-examples
-description: 在 PinPage 仓库中创建、修改离线示例工具页，或将页面接入内置示例库。适用于 examples/ 下的 HTML、CSS、JavaScript 页面及其注册、资源打包和验证，不用于工作台 Vue 界面的普通开发。
+description: 在 PinPage 仓库中创建、修改离线示例工具页或接入宿主原生能力（文件夹只读、系统监控）的页面，或将页面接入内置示例库。适用于 examples/ 下的 HTML、CSS、JavaScript 页面及其注册、资源打包和验证，不用于工作台 Vue 界面的普通开发。
 ---
 
 # PinPage 示例页
@@ -11,7 +11,8 @@ description: 在 PinPage 仓库中创建、修改离线示例工具页，或将�
 
 - 以仓库根目录的 [AGENTS.md](../../../AGENTS.md) 为协作规范；本文中的代码路径均相对仓库根目录。
 - 先判断请求是制作独立页面、修改既有示例，还是新增内置示例。需要加入示例库时，按 [接入与验证](references/integration.md) 完成注册与内嵌资源；只要求页面原型时无需扩展示例枚举。
-- 参考最接近的实现：[计时器](../../../examples/timer/site/index.html) 演示 ES 模块、JSON、截止时间和 IndexedDB；[便签](../../../examples/notes/site/notes.js) 演示编辑即保存；[待办](../../../examples/checklist/site/checklist.js) 演示输入校验和安全渲染；[时钟](../../../examples/clock/site/clock.js) 演示基于真实时间刷新。
+- 参考最接近的实现：[计时器](../../../examples/timer/site/index.html) 演示 ES 模块、JSON、截止时间和 IndexedDB；[便签](../../../examples/notes/site/notes.js) 演示编辑即保存；[待办](../../../examples/checklist/site/checklist.js) 演示输入校验和安全渲染；[时钟](../../../examples/clock/site/clock.js) 演示基于真实时间刷新；[文件夹](../../../examples/folder/site/app.js) 演示逐页授权与只读浏览；[系统监控](../../../examples/system-monitor/site/app.js) 演示共享采样轮询与降级。
+- 页面需要宿主能力时先读 [原生能力契约](references/native-capabilities.md)：分级模型、命令与错误码、授权生命周期、出站 CSP 和可复制的薄封装；不要自行发明 IPC 通道或放宽边界。
 - 页面内容默认中文，现有示例不随工作台语言切换。示例库卡片标题和新建页面名称属于宿主文案，接入时维护中英文资源。
 
 ## 页面与资源边界
@@ -22,7 +23,7 @@ description: 在 PinPage 仓库中创建、修改离线示例工具页，或将�
 - 资源使用站点内相对路径，例如 `./style.css`、`./main.js`、`fetch('./data.json')`。避免绝对磁盘路径、`file://`、开发服务器地址和越出站点根目录的引用；不要写死页面 ID 或本地协议主机名。
 - `site/` 中的真实文件按相对目录自动打包，不维护 Rust 逐文件清单。检查 CSS 的 `url()`、JS 模块依赖和动态读取的数据都落在本工具站点内，不使用符号链接或目录联接。
 - 带外部资源文件的页面应按目录导入；单 HTML 导入只复制该 HTML。使用 ES 模块或 `fetch` 时，通过 HTTP 开发服务或 PinPage 导入预览，不能用 `file://` 打开失败推断本地协议不可用。
-- 内容页是不受信任页面，不调用宿主 IPC，不申请文件系统、Shell 或窗口管理权限，不放宽工作台 CSP 或资源协议边界来适配示例。
+- 内容页是不受信任页面，不获得 Shell 或窗口管理权限，不放宽工作台 CSP 或资源协议边界来适配示例。宿主能力分级提供：L0 环境信息（`host_info`、`system_stats`）只读默认可用；L1 文件夹只读（`folder_*`）经原生选择器逐页授权、以根目录为边界；写入、删除等更高权限暂不提供。契约见 [原生能力契约](references/native-capabilities.md)。
 
 ## 小窗口与透明背景
 
@@ -57,5 +58,6 @@ description: 在 PinPage 仓库中创建、修改离线示例工具页，或将�
 
 - 先检查并复用已有开发服务；静态预览用于页面交互，Rust 内嵌内容变更还需要对应的原生构建。不要反复启动应用，也不要直接修改用户应用数据目录中的示例副本。
 - 检查初次打开、核心操作、窄窗口、透明变量 `0/1`、刷新恢复，以及存储异常时的可用性；有持久化内容时覆盖关闭再开启，有计时功能时覆盖休眠后的校正。
+- 使用原生能力的页面额外检查：浏览器预览的演示降级明确标注；授权取消、根失效与越界路径有可用提示；不在页面保存完整本地路径。授权模态、CSP 与真实采样数值列入实机待验收。
 - 新增内置示例时，用 `pnpm examples:pack` 生成可独立导入的标准包，额外验证资源完整性、随包布局、独立副本、示例卡片和中英文名称，按 [接入与验证](references/integration.md) 选择相关检查；未实际执行的原生行为明确列为待验收。
 - 交付时说明页面位置、是否已接入示例库、预览或添加方法，以及检查结果与未验证项。功能或验收结论变化时同步相关文档，保持 README 中英文版本一致。

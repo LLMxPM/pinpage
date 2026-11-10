@@ -33,6 +33,21 @@ pub fn ensure_manager(window: &WebviewWindow) -> Result<(), AppMessage> {
     Ok(())
 }
 
+/// 内容页命令的身份校验：标签必须对应现存页面记录，并返回其配置。
+/// 逐页能力以此为第一道闸门；capability 匹配只决定命令是否可达。
+pub fn ensure_content(window: &WebviewWindow, app: &AppHandle) -> Result<PinConfig, AppMessage> {
+    let label = window.label();
+    app.state::<AppState>()
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .find(|pin| pin.id == label)
+        .cloned()
+        .ok_or_else(|| AppMessage::new("errors.windowNotAuthorized"))
+}
+
 /// 内容窗口与管理窗口的系统标题：用户名称或应用标题按当前语言加后缀。
 pub fn window_title(app: &AppHandle, title: &str) -> String {
     let args = BTreeMap::from([("title".to_string(), title.to_string())]);

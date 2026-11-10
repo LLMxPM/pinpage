@@ -6,4 +6,6 @@ export const examples = [
   { id: 'notes', title: 'ui.examples.notes' },
   { id: 'checklist', title: 'ui.examples.checklist' },
   { id: 'clock', title: 'ui.examples.clock' },
+  { id: 'folder', title: 'ui.examples.folder' },
+  { id: 'systemMonitor', title: 'ui.examples.systemMonitor' },
 ] as const;

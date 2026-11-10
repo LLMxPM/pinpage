@@ -55,6 +55,8 @@ fn examples_are_reproducible_standard_packages() {
         ExampleId::Notes,
         ExampleId::Checklist,
         ExampleId::Clock,
+        ExampleId::Folder,
+        ExampleId::SystemMonitor,
     ] {
         let bytes = package_bytes(example);
         let (manifest, size) = preview(example).unwrap();

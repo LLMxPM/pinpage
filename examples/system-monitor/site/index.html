@@ -1,0 +1,50 @@
+<!-- 功能：轻量系统监控面板，展示共享采样的 CPU、内存、网络、磁盘与电池。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>系统监控</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="monitor" aria-label="系统监控">
+      <header class="monitor-head">
+        <h1>系统监控</h1>
+        <span class="live" id="live-flag"
+          ><i class="live-dot" aria-hidden="true"></i><span id="live-text">实时</span></span
+        >
+      </header>
+      <p id="demo-banner" class="demo-banner" hidden>浏览器预览 · 演示数据</p>
+      <section class="cpu-row" aria-label="处理器">
+        <div class="cpu-value">
+          <strong id="cpu-percent">--</strong><span class="unit">%</span>
+          <span class="sub" id="cpu-cores"></span>
+        </div>
+        <canvas id="cpu-spark" width="120" height="34" aria-hidden="true"></canvas>
+      </section>
+      <section class="metric" aria-label="内存">
+        <div class="metric-line">
+          <span class="metric-label">内存</span>
+          <span class="metric-value" id="memory-text">--</span>
+        </div>
+        <div class="bar"><i id="memory-bar"></i></div>
+      </section>
+      <section class="net-row" aria-label="网络速率">
+        <span class="net-item"
+          ><b class="net-arrow down" aria-hidden="true">↓</b><span id="net-rx">--</span></span
+        >
+        <span class="net-item"
+          ><b class="net-arrow up" aria-hidden="true">↑</b><span id="net-tx">--</span></span
+        >
+        <span class="net-item disk" id="disk-text"></span>
+      </section>
+      <footer class="monitor-foot">
+        <span id="battery-text"></span>
+        <span id="uptime-text"></span>
+      </footer>
+      <p id="error-text" class="error-text" role="alert" hidden></p>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

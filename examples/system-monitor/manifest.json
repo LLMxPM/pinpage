@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "name": "系统监控",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": false,
+    "transparentBackground": true,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 320,
+    "height": 210,
+    "fx": 1,
+    "fy": 1,
+    "fullscreen": false
+  }
+}

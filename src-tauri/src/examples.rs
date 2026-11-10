@@ -14,6 +14,8 @@ pub enum ExampleId {
     Notes,
     Checklist,
     Clock,
+    Folder,
+    SystemMonitor,
 }
 
 /// 白名单标识映射到构建时生成的标准包，不从调用方输入拼接文件路径。
@@ -23,6 +25,8 @@ fn package_bytes(example: ExampleId) -> &'static [u8] {
         ExampleId::Notes => "notes",
         ExampleId::Checklist => "checklist",
         ExampleId::Clock => "clock",
+        ExampleId::Folder => "folder",
+        ExampleId::SystemMonitor => "system-monitor",
     };
     PACKAGES
         .iter()
@@ -38,6 +42,8 @@ pub fn label_key(example: ExampleId) -> &'static str {
         ExampleId::Notes => "names.notes",
         ExampleId::Checklist => "names.checklist",
         ExampleId::Clock => "names.clock",
+        ExampleId::Folder => "names.folder",
+        ExampleId::SystemMonitor => "names.systemMonitor",
     }
 }
 

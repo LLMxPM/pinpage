@@ -1,5 +1,7 @@
 // 功能：提供经过管理窗口身份校验的 IPC 命令入口，并协调窗口创建与状态通知。
 pub mod editor;
+pub mod folder;
+pub mod host;
 pub mod session;
 pub mod settings;
 pub mod updates;
@@ -85,6 +87,7 @@ pub async fn create_pin(
         position_locked: false,
         size_locked: false,
         preset: None,
+        folder_root: None,
     };
     if input.use_package_preset {
         if let Some(fields) = window_preset {

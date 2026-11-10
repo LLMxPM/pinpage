@@ -28,6 +28,8 @@ pub struct AppState {
     pub export_pending: Mutex<HashSet<String>>,
     /// 已回传的页面数据，导出命令取走后立即清空。
     pub export_data: Mutex<HashMap<String, String>>,
+    /// 共享系统采样器的最新快照；内容页监控命令只读缓存，不触发采样。
+    pub stats: Mutex<Option<crate::host::SystemStats>>,
     pub notices: Mutex<Vec<AppMessage>>,
     /// Rust 解析后的有效语言，是原生界面与快照的唯一来源。
     pub locale: Mutex<AppLocale>,
@@ -100,6 +102,7 @@ impl AppState {
             grants: Mutex::new(HashMap::new()),
             export_pending: Mutex::new(HashSet::new()),
             export_data: Mutex::new(HashMap::new()),
+            stats: Mutex::new(None),
             notices: Mutex::new(notices),
             locale: Mutex::new(locale),
             exiting: AtomicBool::new(false),

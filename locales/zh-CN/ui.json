@@ -194,6 +194,8 @@
     "notes": "随手便签",
     "checklist": "今日待办",
     "clock": "数字时钟",
+    "folder": "文件夹",
+    "systemMonitor": "系统监控",
     "add": "添加",
     "addAria": "添加{name}示例"
   },

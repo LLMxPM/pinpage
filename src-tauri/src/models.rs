@@ -94,6 +94,9 @@ pub struct PinConfig {
     /// 当前匹配的预设 ID；调整窗口参数后清空，内容修改不影响它。
     #[serde(default)]
     pub preset: Option<String>,
+    /// 内容页文件夹能力的授权根目录；仅 Rust 持有，不随页面包导出，更换来源时清除。
+    #[serde(default)]
+    pub folder_root: Option<String>,
 }
 
 impl PinConfig {

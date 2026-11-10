@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "page-folder",
+  "description": "内容页文件夹能力命令；实际访问以逐页授权与根目录边界校验为准，未授权页面调用一律拒绝。",
+  "webviews": ["p-*"],
+  "remote": {
+    "urls": ["http://pinpage.*"]
+  },
+  "permissions": [
+    "allow-folder-pick",
+    "allow-folder-list",
+    "allow-folder-open",
+    "allow-folder-reveal"
+  ]
+}

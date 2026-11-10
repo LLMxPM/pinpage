@@ -4,7 +4,7 @@
 }
 .example-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 .example-tile {
@@ -126,6 +126,59 @@
 .example-preview.clock strong span {
   color: #7c8b66;
   opacity: 1;
+}
+.example-preview.folder {
+  background: #f7f2e4;
+  color: #b59a4d;
+  gap: 10px;
+}
+.preview-folder-icon {
+  position: relative;
+  width: 34px;
+  height: 24px;
+  border-radius: 3px 4px 4px 4px;
+  background: #d9b45c;
+}
+.preview-folder-icon::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 15px;
+  height: 6px;
+  border-radius: 3px 3px 0 0;
+  background: #c9a44c;
+}
+.preview-files {
+  width: 70px;
+  display: grid;
+  gap: 6px;
+}
+.preview-files i {
+  display: block;
+  height: 3px;
+  border-radius: 3px;
+  background: #d8cda4;
+}
+.preview-files i:first-child {
+  width: 100%;
+}
+.preview-files i:last-child {
+  width: 62%;
+}
+.example-preview.systemMonitor {
+  background: #e9efec;
+  color: #4c6355;
+  gap: 8px;
+}
+.example-preview.systemMonitor strong span {
+  font-size: 16px;
+  opacity: 0.65;
+}
+.preview-spark {
+  width: 70px;
+  height: 20px;
+  color: #759b86;
 }
 
 .example-details {

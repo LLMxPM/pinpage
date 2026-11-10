@@ -1,4 +1,4 @@
-<!-- 功能：以统一的示例卡片展示四种本地工具，并反馈具体示例的创建状态。 -->
+<!-- 功能：以统一的示例卡片展示六种本地工具，并反馈具体示例的创建状态。 -->
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
@@ -32,7 +32,23 @@ const { t } = useI18n();
               ><i class="checked"><AppIcon name="check" :size="10" /></i><b /></span
             ><span><i /><b /></span><span><i /><b /></span
           ></template>
-          <template v-else><strong>09<span>:</span>41</strong></template>
+          <template v-else-if="example.id === 'folder'"
+            ><span class="preview-folder-icon"></span>
+            <div class="preview-files"><i /><i /></div
+          ></template>
+          <template v-else-if="example.id === 'systemMonitor'"
+            ><strong>37<span>%</span></strong>
+            <svg class="preview-spark" viewBox="0 0 70 20" aria-hidden="true">
+              <polyline
+                points="0,15 10,12 20,14 30,7 40,10 50,4 60,9 70,6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              /></svg
+          ></template>
+          <template v-else-if="example.id === 'clock'"
+            ><strong>09<span>:</span>41</strong></template
+          >
         </div>
         <div class="example-details">
           <h3>{{ t(example.title) }}</h3>

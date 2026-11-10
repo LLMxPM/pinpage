@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "name": "文件夹",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": true,
+    "transparentBackground": false,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 380,
+    "height": 460,
+    "fx": 1,
+    "fy": 0,
+    "fullscreen": false
+  }
+}

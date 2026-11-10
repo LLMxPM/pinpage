@@ -41,28 +41,18 @@ pub fn normalize_url(input: &str) -> Result<String, AppMessage> {
 }
 
 /// 从编码路径解析资源，拒绝目录穿越、盘符、ADS 和越界链接。
+/// 边界校验与文件夹能力共用 pathguard，此处只做解码与文件类型判定。
 pub fn resolve_path(root: &Path, encoded: &str) -> Result<PathBuf, AppMessage> {
     let decoded = percent_decode_str(encoded)
         .decode_utf8()
         .map_err(|_| AppMessage::new("errors.resourceEncoding"))?;
-    if decoded.contains(['\\', ':', '\0']) {
-        return Err(AppMessage::new("errors.resourceChars"));
-    }
-    let relative = Path::new(decoded.trim_start_matches('/'));
-    if relative
-        .components()
-        .any(|part| !matches!(part, Component::Normal(_) | Component::CurDir))
-    {
-        return Err(AppMessage::new("errors.resourceOutside"));
-    }
-    let root = root
-        .canonicalize()
-        .map_err(|_| AppMessage::new("errors.resourceRootMissing"))?;
-    let path = root
-        .join(relative)
-        .canonicalize()
-        .map_err(|_| AppMessage::new("errors.resourceNotFound"))?;
-    if !path.starts_with(&root) || !path.is_file() {
+    let path = crate::pathguard::resolve(root, &decoded).map_err(|error| match error {
+        crate::pathguard::GuardError::Chars => AppMessage::new("errors.resourceChars"),
+        crate::pathguard::GuardError::Outside => AppMessage::new("errors.resourceOutside"),
+        crate::pathguard::GuardError::RootMissing => AppMessage::new("errors.resourceRootMissing"),
+        crate::pathguard::GuardError::NotFound => AppMessage::new("errors.resourceNotFound"),
+    })?;
+    if !path.is_file() {
         return Err(AppMessage::new("errors.resourceNotAuthorized"));
     }
     Ok(path)
@@ -109,6 +99,16 @@ pub fn navigation_allowed(id: &str, source: &PageSource, url: &Url) -> bool {
     }
 }
 
+/// 内容页独立 CSP：允许同源、IPC 与 https 出站，脚本默认仅同源。
+/// 引导页由应用生成且含内联脚本，单独放行；管理界面 CSP 不受影响。
+fn content_csp(restore: bool) -> &'static str {
+    if restore {
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https:; object-src 'none'; base-uri 'self'; frame-src 'none'"
+    } else {
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https:; object-src 'none'; base-uri 'self'; frame-src 'none'"
+    }
+}
+
 /// 按请求所属 WebView 再次校验来源，禁止远程窗口读取本地资源。
 pub fn respond(app: &AppHandle, label: &str, request: Request<Vec<u8>>) -> Response<Vec<u8>> {
     let result = (|| {
@@ -138,21 +138,27 @@ pub fn respond(app: &AppHandle, label: &str, request: Request<Vec<u8>>) -> Respo
                     crate::data::restore_page(state::locale(app))
                         .as_bytes()
                         .to_vec(),
+                    content_csp(true),
                 ))
             }
-            crate::data::RESTORE_DATA => return crate::data::take_pending(app, label),
+            crate::data::RESTORE_DATA => {
+                let (mime, bytes) = crate::data::take_pending(app, label)?;
+                return Ok((mime, bytes, content_csp(false)));
+            }
             _ => {}
         }
         // 导入页只读取站点副本，原始目录已不再参与加载。
         let root = crate::import::site_root(app, label)?;
-        read_static(&root, url.path())
+        let (mime, bytes) = read_static(&root, url.path())?;
+        Ok((mime, bytes, content_csp(false)))
     })();
     match result {
-        Ok((mime, bytes)) => Response::builder()
+        Ok((mime, bytes, csp)) => Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", mime)
             .header("X-Content-Type-Options", "nosniff")
             .header("Cache-Control", "no-cache")
+            .header("Content-Security-Policy", csp)
             .body(if request.method() == "HEAD" {
                 Vec::new()
             } else {

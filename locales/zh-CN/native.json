@@ -43,14 +43,17 @@
     "filterWeb": "网页文件",
     "filterPackage": "PinPage 页面包",
     "folderLabel": "网页目录",
-    "packageLabel": "页面包"
+    "packageLabel": "页面包",
+    "folderAccessTitle": "选择要授权给此页面的文件夹"
   },
   "names": {
     "example": "专注计时器",
     "webPage": "网页",
     "notes": "随手便签",
     "checklist": "今日待办",
-    "clock": "数字时钟"
+    "clock": "数字时钟",
+    "folder": "文件夹",
+    "systemMonitor": "系统监控"
   },
   "restore": {
     "title": "正在恢复页面数据",
@@ -102,6 +105,14 @@
     "noRootHtml": "所选目录根目录下没有 HTML 文件，请改用导入单文件",
     "measureFailed": "导入统计失败，也可以改用导入单文件",
     "pinNotFound": "页面不存在",
+    "folderNoGrant": "此页面尚未获得文件夹访问授权，请先选择文件夹",
+    "folderRootMissing": "授权的文件夹已失效，请重新选择",
+    "folderOutside": "目标路径超出授权文件夹范围",
+    "folderNotFound": "文件或文件夹不存在",
+    "folderReadFailed": "读取文件夹内容失败",
+    "folderOpenFailed": "打开文件失败",
+    "folderPathInvalid": "无法读取所选文件夹路径",
+    "statsUnavailable": "系统采样数据尚未就绪，请稍后重试",
     "exportNeedsImport": "只有导入页面可以导出为页面包",
     "exportNeedsOpen": "请先开启页面再导出",
     "collectDataFailed": "无法读取页面数据",

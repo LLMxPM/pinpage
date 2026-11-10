@@ -43,14 +43,17 @@
     "filterWeb": "Web files",
     "filterPackage": "PinPage package",
     "folderLabel": "Web folder",
-    "packageLabel": "Page package"
+    "packageLabel": "Page package",
+    "folderAccessTitle": "Pick the folder to grant to this page"
   },
   "names": {
     "example": "Focus Timer",
     "webPage": "Web page",
     "notes": "Quick notes",
     "checklist": "Daily checklist",
-    "clock": "Digital clock"
+    "clock": "Digital clock",
+    "folder": "Folder",
+    "systemMonitor": "System monitor"
   },
   "restore": {
     "title": "Restoring page data",
@@ -102,6 +105,14 @@
     "noRootHtml": "No HTML file sits in the root of the selected folder. Import a single file instead",
     "measureFailed": "Measuring the import failed. You can import a single file instead",
     "pinNotFound": "The page does not exist",
+    "folderNoGrant": "This page has no folder access yet. Pick a folder first",
+    "folderRootMissing": "The granted folder is no longer available. Pick it again",
+    "folderOutside": "The target path is outside the granted folder",
+    "folderNotFound": "The file or folder does not exist",
+    "folderReadFailed": "Reading the folder contents failed",
+    "folderOpenFailed": "Opening the file failed",
+    "folderPathInvalid": "The selected folder path could not be read",
+    "statsUnavailable": "System sampling is not ready yet. Try again shortly",
     "exportNeedsImport": "Only imported pages can be exported as a package",
     "exportNeedsOpen": "Open the page before exporting it",
     "collectDataFailed": "The page data could not be read",

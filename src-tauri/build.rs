@@ -52,6 +52,12 @@ fn main() {
             "updates_snapshot",
             "update_action",
             "quit_app",
+            "host_info",
+            "system_stats",
+            "folder_pick",
+            "folder_list",
+            "folder_open",
+            "folder_reveal",
         ]),
     ))
     .expect("Tauri 构建资源生成失败");

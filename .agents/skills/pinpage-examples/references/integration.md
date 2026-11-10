@@ -46,6 +46,7 @@ Rust 枚举使用 `#[serde(rename_all = "camelCase")]`，前端 ID 与实际序�
 | 卡片、类型与宿主文案 | `pnpm check`；新增宿主文案时运行 `pnpm check:i18n` |
 | 包源码、注册或打包器 | `pnpm examples:pack`；`cargo test --manifest-path src-tauri/Cargo.toml --lib examples::tests` |
 | 包格式或随包布局 | `cargo test --manifest-path src-tauri/Cargo.toml --lib package::tests` 及相关预设、来源测试 |
+| 原生能力页面 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` 覆盖 pathguard／folder／host；浏览器预览只验演示降级与布局，授权模态、越界拒绝、CSP 与采样数值按[原生能力契约](native-capabilities.md)列入实机验收 |
 | 构建与跨模块接入 | 按需要运行 `pnpm build`、Rustfmt 和 Clippy；前端构建不能替代 Rust 包生成和原生验收 |
 
 在对应新构建的应用中添加示例和独立生成的包，验证核心操作、资源完整性、默认布局选择与取消、两个副本的数据隔离。有持久化内容时检查刷新、关闭再开启，以及运行中导出后导入；有计时功能时覆盖休眠校正。现有资源测试检查 HTML 直接引用，新增 CSS `url()` 或 JS 动态读取时仍需验证实际加载。

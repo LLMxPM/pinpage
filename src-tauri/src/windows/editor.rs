@@ -143,6 +143,8 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
     candidate.name = name.into();
     if let Some(source) = &source {
         candidate.source = source.clone();
+        // 来源更换后内容不再受信任，清除既有文件夹授权。
+        candidate.folder_root = None;
     }
     let target = if source.is_some() && app.get_webview_window(id).is_some() {
         Some(super::initial_url(app, &candidate)?)
@@ -160,6 +162,7 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
     {
         pin.name = candidate.name.clone();
         pin.source = candidate.source.clone();
+        pin.folder_root = candidate.folder_root.clone();
     }
     if let Err(error) = state.save() {
         if let Some(pin) = state
@@ -172,6 +175,7 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
         {
             pin.name = previous.name;
             pin.source = previous.source;
+            pin.folder_root = previous.folder_root;
         }
         return Err(error);
     }
