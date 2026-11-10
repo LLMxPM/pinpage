@@ -1,0 +1,90 @@
+/* 功能：提供可滚动的紧凑自选列表，选中行与趋势联动并保持数字列对齐。 */
+.columns,
+.quote {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 64px;
+  align-items: center;
+  gap: 7px;
+}
+.columns {
+  flex-shrink: 0;
+  padding: 0 8px 7px;
+  font-size: 9px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.columns span:not(:first-child) {
+  text-align: right;
+}
+.quotes {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 3px 0;
+}
+.quote {
+  width: 100%;
+  min-height: 49px;
+  padding: 9px 7px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--line);
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+}
+.quote:hover {
+  background: var(--selected);
+  border-color: transparent;
+}
+.quote[aria-pressed='true'] {
+  background: var(--selected);
+  border-left-color: var(--accent);
+}
+.identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 5px;
+}
+.name {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 500;
+}
+.quote-meta {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.price,
+.percent {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.price {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.percent {
+  padding: 5px 2px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.up {
+  color: var(--up);
+  background: #ef718510;
+}
+.down {
+  color: var(--down);
+  background: #64c6a110;
+}
+.flat {
+  color: var(--muted);
+}
