@@ -1,4 +1,4 @@
-<!-- 功能：统一管理自定义预设，支持副本、编辑、重命名和删除确认。 -->
+<!-- 功能：管理单个页面的自定义预设，支持副本、编辑、重命名和删除确认。 -->
 <script setup lang="ts">
 import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -10,6 +10,7 @@ import { text } from '../../i18n/messages';
 import type { PlatformCapabilities, PresetInput, UiMessage, WindowPreset } from '../../types';
 
 const props = defineProps<{
+  pinName: string;
   presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   busy: boolean;
@@ -78,6 +79,7 @@ function discard() {
 <template>
   <AppDialog
     :title="t(editing ? 'ui.presets.edit' : 'ui.presets.manage')"
+    :description="pinName"
     :busy="busy"
     wide
     @close="close"
@@ -144,7 +146,7 @@ function discard() {
         </li>
       </ul>
       <p v-if="!presets.length" class="settings-hint">
-        {{ t('ui.settings.presetEmpty') }}
+        {{ t('ui.presets.empty') }}
       </p>
     </div>
     <template #footer>

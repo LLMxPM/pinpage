@@ -78,10 +78,10 @@ export function useWindowActions(
 
   /// 预设切换一次提交整套窗口参数；它不进入单字段撤销，避免模式或锁定变化后旧快照失效。
   async function applyPreset(id: string, presetId: string) {
-    const preset = snapshot.value.presets.find((entry) => entry.id === presetId);
-    if (!preset || !supportsWindow(preset, snapshot.value.capabilities)) return false;
+    const pin = find(id);
+    const preset = pin?.presets.find((entry) => entry.id === presetId);
+    if (!pin || !preset || !supportsWindow(preset, snapshot.value.capabilities)) return false;
     const applied = await run(async () => {
-      if (!find(id)) throw { code: 'errors.pinNotFound', args: {} };
       await desktop.pinAction(id, `preset:${presetId}`);
     }, `${id}:preset:${presetId}`);
     if (applied) {
@@ -102,10 +102,10 @@ export function useWindowActions(
   }
 
   /// 管理器只编辑模板；已有页面不会自动跟随模板变化。
-  async function writePreset(input: PresetInput, presetId?: string) {
+  async function writePreset(pinId: string, input: PresetInput, presetId?: string) {
     const saved = await run(async () => {
-      await desktop.writePreset(input, presetId);
-    }, 'preset:write');
+      await desktop.writePreset(pinId, input, presetId);
+    }, `${pinId}:preset:write`);
     if (saved)
       notify(
         message(presetId ? 'ui.toast.presetUpdated' : 'ui.toast.presetSaved', { name: input.name }),
@@ -114,9 +114,13 @@ export function useWindowActions(
   }
 
   /// 删除模板后的页面继续保留当前状态。
-  async function deletePreset(presetId: string) {
-    const preset = snapshot.value.presets.find((entry) => entry.id === presetId);
-    const removed = await run(() => desktop.deletePreset(presetId), 'preset:delete');
+  async function deletePreset(pinId: string, presetId: string) {
+    const pin = find(pinId);
+    const preset = pin?.presets.find((entry) => entry.id === presetId);
+    const removed = await run(
+      () => desktop.deletePreset(pinId, presetId),
+      `${pinId}:preset:delete`,
+    );
     if (removed && preset) notify(message('ui.toast.presetDeleted', { name: presetLabel(preset) }));
     return removed;
   }

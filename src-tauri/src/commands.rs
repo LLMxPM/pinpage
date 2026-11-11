@@ -88,6 +88,7 @@ pub async fn create_pin(
         size_locked: false,
         page_context_menu: false,
         preset: None,
+        presets: Vec::new(),
         folder_root: None,
     };
     if input.use_package_preset {
@@ -181,18 +182,19 @@ pub async fn save_preset(
     windows::presets::save(&app, &pin, &name, preset_id.as_deref())
 }
 
-/// 删除自定义预设。
+/// 删除页面自己的自定义预设。
 #[tauri::command]
 pub async fn delete_preset(
     window: WebviewWindow,
     app: AppHandle,
+    pin_id: String,
     preset_id: String,
 ) -> Result<(), AppMessage> {
     windows::ensure_manager(&window)?;
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
     state.ensure_mutable()?;
-    windows::presets::delete(&app, &preset_id)
+    windows::presets::delete(&app, &pin_id, &preset_id)
 }
 
 /// 用户给定的名称优先，留空时使用来源推导的兜底名称。

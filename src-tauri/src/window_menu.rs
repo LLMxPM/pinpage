@@ -35,23 +35,16 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
     else {
         return Ok(());
     };
-    let custom = app
-        .state::<AppState>()
-        .settings
-        .lock()
-        .unwrap()
-        .window_presets
-        .clone();
     let locale = state::locale(app);
     let text = |key: &str| i18n::text(locale, key, &Default::default());
     let failed = |error: tauri::Error| AppMessage::new("errors.windowMenuFailed").detail(error);
     let menu = Menu::new(app).map_err(failed)?;
-    // 预设是切换重点：平铺单选勾选，切换走外观与几何的组合应用。
-    let presets = crate::windows::presets::all(&custom);
+    // 预设是切换重点：平铺单选勾选，切换走外观与几何的组合应用；只展示该页面自己的模板。
+    let presets = &pin.presets;
     let matched = presets
         .iter()
         .any(|preset| pin.preset.as_deref() == Some(preset.id.as_str()));
-    for preset in &presets {
+    for preset in presets {
         menu.append(
             &CheckMenuItem::with_id(
                 app,

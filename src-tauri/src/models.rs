@@ -6,7 +6,7 @@ use std::collections::HashMap;
 mod editor;
 mod workspace;
 pub use editor::{PinContentInput, PresetInput, WindowChange, WindowPatch};
-pub use workspace::{GestureModifier, Settings, SettingsInput, WorkspaceSettings};
+pub use workspace::{GestureModifier, Settings, SettingsInput, WorkspaceSettings, SCHEMA_VERSION};
 
 /// 用户语言偏好，随配置持久化；`system` 表示由平台解析。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,6 +97,9 @@ pub struct PinConfig {
     /// 当前匹配的预设 ID；调整窗口参数后清空，内容修改不影响它。
     #[serde(default)]
     pub preset: Option<String>,
+    /// 页面自己的预设列表，ID 只需在本页内唯一；v1 全局库已在加载时迁移。
+    #[serde(default, deserialize_with = "lenient_pin_presets")]
+    pub presets: Vec<WindowPreset>,
     /// 内容页文件夹能力的授权根目录；仅 Rust 持有，不随页面包导出，更换来源时清除。
     #[serde(default)]
     pub folder_root: Option<String>,
@@ -107,6 +110,18 @@ impl PinConfig {
     pub fn effective_decorations(&self) -> bool {
         self.mode == WindowMode::Floating && self.decorations
     }
+}
+
+/// 逐条解析页面内预设，跳过字段缺失或取值非法的条目，避免单条坏数据丢失整个页面。
+fn lenient_pin_presets<'de, D>(deserializer: D) -> Result<Vec<WindowPreset>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let values = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(values
+        .into_iter()
+        .filter_map(|value| serde_json::from_value(value).ok())
+        .collect())
 }
 
 /// 预设包含的外观与几何字段；内置表与用户自定义项共用同一份结构。
@@ -133,23 +148,13 @@ pub struct PresetFields {
     pub fullscreen: bool,
 }
 
-/// 用户自定义预设，随配置持久化；不再附带只读内置项。
+/// 用户自定义预设，随所属页面持久化；不再附带只读内置项。
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowPreset {
     pub id: String,
     /// 自定义名称；预留在反序列化时容忍缺失，便于旧配置演进。
     #[serde(default)]
-    pub name: String,
-    #[serde(flatten)]
-    pub fields: PresetFields,
-}
-
-/// 下发给管理界面的预设视图；预设均为用户自定义项，名称直接使用用户输入。
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetView {
-    pub id: String,
     pub name: String,
     #[serde(flatten)]
     pub fields: PresetFields,
@@ -224,8 +229,6 @@ pub struct Snapshot {
     pub settings: Settings,
     pub runtime: HashMap<String, PinRuntime>,
     pub notices: Vec<AppMessage>,
-    /// 内置与自定义预设，Rust 是唯一来源，前端只负责渲染。
-    pub presets: Vec<PresetView>,
     /// Rust 已解析的有效语言，前端不再自行猜测系统语言。
     pub resolved_locale: AppLocale,
     /// 当前构建支持的窗口能力，管理界面据此裁剪所有入口。

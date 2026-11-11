@@ -1,26 +1,26 @@
 // 功能：列出自定义预设、校验预设参数，并在归一化位置与屏幕物理坐标之间换算。
 use crate::{
     errors::AppMessage,
-    models::{PinConfig, PresetFields, PresetView, WindowMode, WindowPreset},
+    models::{PinConfig, PresetFields, WindowMode, WindowPreset},
     state::{self, AppState},
 };
 use tauri::{AppHandle, Manager};
 
-/// 自定义预设数量上限，避免原生菜单与卡片菜单被撑得过长。
+/// 单个页面的自定义预设数量上限，避免原生菜单与卡片菜单被撑得过长。
 pub const MAX_CUSTOM: usize = 20;
 /// 预设名称长度上限，与页面名称保持同等可读范围。
 pub const MAX_NAME: usize = 40;
 
-/// 按 ID 查找预设，内置项优先。
-pub fn find(app: &AppHandle, id: &str) -> Option<PresetView> {
-    let state = app.state::<AppState>();
-    let presets = state.settings.lock().unwrap().window_presets.clone();
-    all(&presets).into_iter().find(|preset| preset.id == id)
+/// 在页面自己的预设列表中按 ID 查找，返回归一化后的副本。
+pub fn find(pin: &PinConfig, id: &str) -> Option<WindowPreset> {
+    normalized(&pin.presets)
+        .into_iter()
+        .find(|preset| preset.id == id)
 }
 
 /// 应用预设：只合并外观与几何字段，名称、来源和开关状态保持不变。
 pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppMessage> {
-    let preset = find(app, id).ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
+    let preset = find(previous, id).ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
     let mut next = previous.clone();
     next.mode = preset.fields.mode;
     next.always_on_top = preset.fields.always_on_top;
@@ -73,15 +73,9 @@ pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppM
 }
 
 /// 按实际外观和目标显示器几何匹配模板，允许系统像素取整；撤销也可恢复匹配状态。
+/// 只在页面自己的预设列表中匹配，不同页面可以保存同名或同参数模板。
 pub fn matching_id(app: &AppHandle, pin: &PinConfig) -> Option<String> {
-    let custom = app
-        .state::<AppState>()
-        .settings
-        .lock()
-        .unwrap()
-        .window_presets
-        .clone();
-    let mut presets = all(&custom);
+    let mut presets = normalized(&pin.presets);
     presets.sort_by_key(|preset| pin.preset.as_deref() != Some(preset.id.as_str()));
     presets
         .into_iter()
@@ -118,14 +112,14 @@ mod storage;
 use geometry::target_geometry;
 pub use storage::{delete, save, snapshot_fields, write};
 
-/// 自定义预设列表；字段在输出前统一归一化，顺序即保存顺序。
-pub fn all(custom: &[WindowPreset]) -> Vec<PresetView> {
+/// 页内预设列表在输出前统一归一化，顺序即保存顺序。
+fn normalized(custom: &[WindowPreset]) -> Vec<WindowPreset> {
     custom
         .iter()
         .map(|preset| {
             let mut fields = preset.fields.clone();
             normalize(&mut fields);
-            PresetView {
+            WindowPreset {
                 id: preset.id.clone(),
                 name: preset.name.clone(),
                 fields,

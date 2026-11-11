@@ -9,7 +9,6 @@ import type { PinConfig, PlatformCapabilities, WindowPreset } from '../../types'
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   apply: (id: string) => Promise<boolean>;
   save: (name: string, presetId?: string) => Promise<boolean>;
@@ -24,8 +23,8 @@ const overwrite = ref<WindowPreset | null>(null);
 // 记录最近选择项，调整窗口成为自定义后仍可明确覆盖原模板。
 const selectedId = ref(props.pin.preset);
 /// 当前平台不支持的预设不进入应用入口，管理器仍负责旧模板的删除与回退编辑。
-const visiblePresets = computed(() => supportedPresets(props.presets, props.capabilities));
-const selected = computed(() => props.presets.find((preset) => preset.id === selectedId.value));
+const visiblePresets = computed(() => supportedPresets(props.pin.presets, props.capabilities));
+const selected = computed(() => props.pin.presets.find((preset) => preset.id === selectedId.value));
 /// 同名预设（常见于保存过的副本）追加尺寸，避免胶囊看起来完全重复。
 const duplicateLabels = computed(() => {
   const counts = new Map<string, number>();

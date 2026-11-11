@@ -25,7 +25,7 @@ pnpm tauri dev
 ```text
 src/
   features/launcher/      添加页面、来源导入
-  features/pins/          工作台、即时窗口设置、独立内容保存与共用预设管理器
+  features/pins/          工作台、即时窗口设置、独立内容保存与页面级预设管理器
   features/updates/       版本、下载进度与安装确认
   components/             通用组件
   services/               Tauri 调用封装
@@ -36,7 +36,7 @@ src-tauri/src/
   commands/               前端命令入口
   windows/                窗口生命周期、事件与几何
   windows/editor.rs       窗口局部事务与内容独立保存
-  windows/presets/         内置定义、相对几何、预设读写及测试
+  windows/presets/         页面级预设查找、相对几何、读写及测试
   platform.rs / platform/ 跨平台能力声明、回退校验与 Windows 专用适配
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
@@ -85,15 +85,23 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-11，应用版本 `0.2.0`，未发布配置格式 `schemaVersion = 2`（v0.2.0 发布时为 1，升级时自动迁移）。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
 - **页面来源**：HTTP/HTTPS、目录与单文件导入、页面包导入导出、六个内置示例。
-- **窗口**：浮动与桌面模式、置顶、三选一边框样式（系统边框／无边框／无边框圆角）、独立位置锁和大小锁、自定义窗口预设、修饰键拖动与右键窗口菜单、会话恢复。
+- **窗口**：浮动与桌面模式、置顶、三选一边框样式（系统边框／无边框／无边框圆角）、独立位置锁和大小锁、页面级自定义窗口预设、修饰键拖动与右键窗口菜单、会话恢复。
 - **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
 - **页面能力层（未发布）**：L0 宿主信息与共享系统采样、L1 文件夹只读逐页授权、内容页独立 CSP 响应头；文件夹与系统监控两个参考示例已注册示例库。
 - **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新、可配置的 Windows 登录自启（未发布）。
+
+### 2026-11-11 预设改为页面级（未发布）
+
+- 预设从全局库迁到页面：`PinConfig` 新增 `presets` 列表，ID 只需页内唯一；`Settings` 的全局 `windowPresets` 库移除，配置 `schemaVersion` 升至 2（旧字段仅在加载迁移时读取，不再写出）。加载 v1 配置时迁移：只把被页面引用的模板复制进该页自己的列表，未被引用的全局模板丢弃，窗口外观与几何不变；指向不存在模板的标记收敛为「自定义」。
+- 命令与作用域：`write_preset`、`delete_preset` 增加 `pinId` 参数，Rust 侧校验页面归属后才写入；`save_preset` 语义不变，另存／覆盖写入当前页面列表。编辑或删除模板只清除该页的匹配标记，`MAX_CUSTOM`（20 条）按页面独立计算；原生窗口菜单、卡片菜单与设置弹窗只展示该页面自己的预设。随包 `windowPreset` 仍只初始化新页面，不写入页面预设列表。
+- 前端：`Snapshot` 不再携带顶层 `presets`，预设随 `settings.pins` 下发；预设管理器从系统设置移入页面设置的「管理预设」入口，标题栏显示页面名称；卡片胶囊、菜单与选择器数据源均改为 `pin.presets`。移除系统设置中的「自定义预设」区块与孤立 i18n 键（`ui.settings.windowPresets`、`ui.settings.presetEmpty`、`ui.settings.presetDelete`、`ui.presets.customCount`），新增 `ui.presets.empty`。
+- 自动检查通过：114 项 Rust 单元测试（新增 v1 迁移、页内查找、上限独立计算、合并保留列表等用例）与 6 项原生集成测试、`pnpm check:limits`、`pnpm check:i18n`（ui 225 / native 174 键）、`pnpm check`（vue-tsc）、`pnpm test:ui` 29 项、cargo fmt 与相关文件 Prettier。
+- **验收边界**：迁移仅通过单测模拟 v1 配置验证；真实旧配置升级、预设管理器与右键菜单按页展示的真实 WebView2 交互待实机验收。未发布改动，旧版本应用读取 v2 配置会按未来版本进入只读保护。
 
 ### 2026-11-11 裸右键打开窗口菜单与按页面右键开关（未发布）
 

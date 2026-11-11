@@ -194,6 +194,74 @@ fn broken_config_is_backed_up_with_notice() {
 }
 
 #[test]
+/// v1 全局预设库迁移：被引用的模板复制进对应页面，未引用的丢弃，标记与外观保持。
+fn legacy_global_presets_migrate_into_referencing_pins() {
+    let directory = std::env::temp_dir().join(format!("pinpage-migrate-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&directory).unwrap();
+    let path = directory.join("settings.json");
+    std::fs::write(
+        &path,
+        serde_json::to_string(&serde_json::json!({
+            "schemaVersion": 1,
+            "pins": [
+                {
+                    "id": "p-used", "name": "计时器",
+                    "source": {"kind": "bundled", "entry": "index.html"},
+                    "width": 420, "height": 360, "x": 10, "y": 20, "scale": 1.,
+                    "alwaysOnTop": true, "decorations": false,
+                    "preset": "custom-keep"
+                },
+                {
+                    "id": "p-clean", "name": "看板",
+                    "source": {"kind": "bundled", "entry": "index.html"},
+                    "width": 420, "height": 360, "x": null, "y": null, "scale": 1.,
+                    "alwaysOnTop": false, "decorations": true
+                }
+            ],
+            "windowPresets": [
+                {
+                    "id": "custom-keep", "name": "右上角",
+                    "mode": "floating", "alwaysOnTop": true, "decorations": false,
+                    "rounded": true, "positionLocked": false, "sizeLocked": false,
+                    "width": 320, "height": 480, "fx": 1., "fy": 0.
+                },
+                {
+                    "id": "custom-unused", "name": "从未应用",
+                    "mode": "desktop", "alwaysOnTop": false, "decorations": false,
+                    "rounded": true, "positionLocked": false, "sizeLocked": false,
+                    "width": 600, "height": 240, "fx": 0.5, "fy": 0.5
+                }
+            ]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let state = AppState::load(path.clone());
+    let settings = state.settings.lock().unwrap();
+    assert_eq!(settings.schema_version, crate::models::SCHEMA_VERSION);
+    let used = settings.pins.iter().find(|pin| pin.id == "p-used").unwrap();
+    assert_eq!(used.presets.len(), 1, "只迁移被引用的模板");
+    assert_eq!(used.presets[0].id, "custom-keep");
+    assert_eq!(used.presets[0].name, "右上角");
+    assert_eq!(used.preset.as_deref(), Some("custom-keep"));
+    assert_eq!(used.width, 420., "迁移不改变窗口几何");
+    let clean = settings
+        .pins
+        .iter()
+        .find(|pin| pin.id == "p-clean")
+        .unwrap();
+    assert!(clean.presets.is_empty() && clean.preset.is_none());
+    drop(settings);
+    state.save().unwrap();
+    let saved = std::fs::read_to_string(&path).unwrap();
+    assert!(!saved.contains("windowPresets"), "旧全局库不再写出");
+    assert!(!saved.contains("custom-unused"), "未引用模板被丢弃");
+    assert!(saved.contains("custom-keep"));
+    assert!(saved.contains("\"schemaVersion\": 2"));
+    let _ = std::fs::remove_dir_all(&directory);
+}
+
+#[test]
 /// 快照携带语言偏好、有效语言与手势修饰键，管理界面重建后可直接恢复。
 fn snapshot_reports_locale_and_gesture_modifier() {
     let directory = std::env::temp_dir().join(format!("pinpage-i18n-{}", uuid::Uuid::new_v4()));

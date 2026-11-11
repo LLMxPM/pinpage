@@ -57,14 +57,19 @@ impl AppState {
                 if serde_json::from_slice::<serde_json::Value>(&bytes)
                     .ok()
                     .and_then(|value| value.get("schemaVersion").and_then(|value| value.as_u64()))
-                    .is_some_and(|version| version > 1) =>
+                    .is_some_and(|version| version > crate::models::SCHEMA_VERSION as u64) =>
             {
                 read_only = true;
                 notices.push(AppMessage::new("errors.configNewer"));
                 Settings::default()
             }
             Ok(bytes) => match serde_json::from_slice::<Settings>(&bytes) {
-                Ok(value) if value.schema_version == 1 => value,
+                Ok(value)
+                    if value.schema_version == crate::models::SCHEMA_VERSION
+                        || value.schema_version == 1 =>
+                {
+                    value
+                }
                 _ => {
                     let backup =
                         path.with_extension(format!("backup-{}.json", uuid::Uuid::new_v4()));
@@ -86,6 +91,24 @@ impl AppState {
                 Settings::default()
             }
         };
+        // v1 → v2：预设从全局库迁移到页面。只把被页面引用的模板复制进该页自己的
+        // 列表，未被引用的模板丢弃；外观与几何不发生任何变化。
+        if settings.schema_version == 1 {
+            for pin in &mut settings.pins {
+                if let Some(id) = pin.preset.clone() {
+                    if let Some(preset) = settings
+                        .window_presets
+                        .iter()
+                        .find(|preset| preset.id == id)
+                        .cloned()
+                    {
+                        pin.presets.push(preset);
+                    }
+                }
+            }
+            settings.schema_version = crate::models::SCHEMA_VERSION;
+        }
+        settings.window_presets.clear();
         // 配置可能来自 Windows：加载时先降级到当前平台可用的组合，避免恢复会话反复失败。
         let mut fallback = false;
         for pin in &mut settings.pins {
@@ -94,12 +117,12 @@ impl AppState {
         if fallback {
             notices.push(AppMessage::new("errors.platformFallback"));
         }
-        // 旧版内置预设已移除：指向不存在模板的标记收敛为“自定义”，窗口外观保持不变。
+        // 指向页内不存在模板的标记收敛为“自定义”，窗口外观保持不变。
         for pin in &mut settings.pins {
             if pin
                 .preset
                 .as_deref()
-                .is_some_and(|id| !settings.window_presets.iter().any(|preset| preset.id == id))
+                .is_some_and(|id| !pin.presets.iter().any(|preset| preset.id == id))
             {
                 pin.preset = None;
             }
@@ -133,7 +156,6 @@ impl AppState {
     pub fn snapshot(&self) -> Snapshot {
         let settings = self.settings.lock().unwrap().clone();
         Snapshot {
-            presets: crate::windows::presets::all(&settings.window_presets),
             settings,
             runtime: self.runtime.lock().unwrap().clone(),
             notices: self.notices.lock().unwrap().clone(),

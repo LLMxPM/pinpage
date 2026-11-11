@@ -41,6 +41,8 @@ export interface PinConfig {
   pageContextMenu: boolean;
   /// 当前匹配的预设 ID；窗口参数调整后清空，修改内容不影响它。
   preset: string | null;
+  /// 页面自己的预设列表，ID 只需在本页内唯一。
+  presets: WindowPreset[];
 }
 
 export interface PinSettingsInput {
@@ -150,8 +152,6 @@ export interface Snapshot {
   settings: Settings;
   runtime: Record<string, PinRuntime>;
   notices: AppMessage[];
-  /// 用户自定义预设，由 Rust 统一持久化，前端只负责渲染。
-  presets: WindowPreset[];
   /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
   resolvedLocale: AppLocale;
   /// 当前构建支持的窗口能力，所有窗口入口共用同一来源。

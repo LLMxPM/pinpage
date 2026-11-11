@@ -1,8 +1,8 @@
-// 功能：校验、创建、编辑和删除自定义预设，独立保存模板并在失败时回滚。
+// 功能：校验、创建、编辑和删除页面自己的预设，独立保存模板并在失败时回滚。
 use super::{normalize, MAX_CUSTOM, MAX_NAME};
 use crate::{
     errors::AppMessage,
-    models::{PinConfig, PresetFields, PresetInput, Settings, WindowPreset},
+    models::{PinConfig, PresetFields, PresetInput, WindowPreset},
     state::{self, AppState},
 };
 use tauri::{AppHandle, Manager};
@@ -27,32 +27,32 @@ fn validate(input: &mut PresetInput) -> Result<(), AppMessage> {
     Ok(())
 }
 
-/// 创建或更新模板；窗口只清除失效匹配标记，实际外观与几何不会联动修改。
-pub(super) fn write_settings(
-    settings: &mut Settings,
+/// 创建或更新页面自己的模板；窗口只清除失效匹配标记，实际外观与几何不会联动修改。
+pub(super) fn write_pin(
+    pin: &mut PinConfig,
     id: Option<&str>,
     mut input: PresetInput,
 ) -> Result<String, AppMessage> {
     validate(&mut input)?;
     if let Some(id) = id {
-        let preset = settings
-            .window_presets
+        let preset = pin
+            .presets
             .iter_mut()
             .find(|preset| preset.id == id)
             .ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
         let changed = preset.fields != input.fields;
         preset.name = input.name;
         preset.fields = input.fields;
-        if changed {
-            clear_markers(settings, id);
+        if changed && pin.preset.as_deref() == Some(id) {
+            pin.preset = None;
         }
         Ok(id.into())
     } else {
-        if settings.window_presets.len() >= MAX_CUSTOM {
+        if pin.presets.len() >= MAX_CUSTOM {
             return Err(AppMessage::new("errors.presetLimit").arg("max", MAX_CUSTOM));
         }
         let id = format!("custom-{}", uuid::Uuid::new_v4().simple());
-        settings.window_presets.push(WindowPreset {
+        pin.presets.push(WindowPreset {
             id: id.clone(),
             name: input.name,
             fields: input.fields,
@@ -61,48 +61,57 @@ pub(super) fn write_settings(
     }
 }
 
-/// 移除模板前校验存在；删除后保留窗口内容、开关、外观与几何。
-pub(super) fn delete_settings(settings: &mut Settings, id: &str) -> Result<(), AppMessage> {
-    let index = settings
-        .window_presets
+/// 移除页面自己的模板；删除后窗口内容、开关、外观与几何全部保留。
+pub(super) fn delete_pin(pin: &mut PinConfig, id: &str) -> Result<(), AppMessage> {
+    let index = pin
+        .presets
         .iter()
         .position(|preset| preset.id == id)
         .ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
-    settings.window_presets.remove(index);
-    clear_markers(settings, id);
+    pin.presets.remove(index);
+    if pin.preset.as_deref() == Some(id) {
+        pin.preset = None;
+    }
     Ok(())
 }
 
-/// 只有模板参数变化或删除才清除标记，重命名不会影响匹配关系。
-fn clear_markers(settings: &mut Settings, id: &str) {
-    for pin in &mut settings.pins {
-        if pin.preset.as_deref() == Some(id) {
-            pin.preset = None;
-        }
-    }
-}
-
-/// 调用者持有操作锁；落盘失败仅还原预设与未发生几何变化的匹配标记。
+/// 调用者持有操作锁；落盘失败仅还原目标页面的预设列表与匹配标记。
 fn transaction<T>(
     app: &AppHandle,
-    operation: impl FnOnce(&mut Settings) -> Result<T, AppMessage>,
+    pin_id: &str,
+    operation: impl FnOnce(&mut PinConfig) -> Result<T, AppMessage>,
 ) -> Result<T, AppMessage> {
     let state = app.state::<AppState>();
-    let before = state.settings.lock().unwrap().clone();
-    let result = operation(&mut state.settings.lock().unwrap())?;
+    let before = state
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .find(|pin| pin.id == pin_id)
+        .cloned()
+        .ok_or_else(|| AppMessage::new("errors.pinNotFound"))?;
+    let result = operation(
+        state
+            .settings
+            .lock()
+            .unwrap()
+            .pins
+            .iter_mut()
+            .find(|pin| pin.id == pin_id)
+            .expect("before 已确认页面存在"),
+    )?;
     if let Err(error) = state.save() {
-        let mut settings = state.settings.lock().unwrap();
-        settings.window_presets = before.window_presets;
-        for pin in &mut settings.pins {
-            if let Some(old) = before.pins.iter().find(|old| old.id == pin.id) {
-                pin.preset = if (pin.width, pin.height, pin.x, pin.y)
-                    == (old.width, old.height, old.x, old.y)
-                {
-                    old.preset.clone()
-                } else {
-                    None
-                };
-            }
+        if let Some(pin) = state
+            .settings
+            .lock()
+            .unwrap()
+            .pins
+            .iter_mut()
+            .find(|pin| pin.id == pin_id)
+        {
+            pin.presets = before.presets;
+            pin.preset = before.preset;
         }
         return Err(error);
     }
@@ -111,12 +120,17 @@ fn transaction<T>(
     Ok(result)
 }
 
-/// 从管理器编辑模板，不把模板变化应用到任何正在运行的页面。
-pub fn write(app: &AppHandle, id: Option<&str>, input: PresetInput) -> Result<String, AppMessage> {
-    transaction(app, |settings| write_settings(settings, id, input))
+/// 在指定页面的模板列表中编辑模板，不把模板变化应用到正在运行的窗口。
+pub fn write(
+    app: &AppHandle,
+    pin_id: &str,
+    id: Option<&str>,
+    input: PresetInput,
+) -> Result<String, AppMessage> {
+    transaction(app, pin_id, |pin| write_pin(pin, id, input))
 }
 
-/// 把已生效窗口状态另存或覆盖自定义模板，成功后标记当前窗口匹配该模板。
+/// 把已生效窗口状态另存或覆盖页面自己的模板，成功后标记当前窗口匹配该模板。
 pub fn save(
     app: &AppHandle,
     pin: &PinConfig,
@@ -124,25 +138,24 @@ pub fn save(
     id: Option<&str>,
 ) -> Result<String, AppMessage> {
     let fields = snapshot_fields(app, pin)?;
-    transaction(app, |settings| {
-        let id = write_settings(
-            settings,
+    let pin_id = pin.id.clone();
+    transaction(app, &pin_id, |saved| {
+        let id = write_pin(
+            saved,
             id,
             PresetInput {
                 name: name.into(),
                 fields,
             },
         )?;
-        if let Some(saved) = settings.pins.iter_mut().find(|saved| saved.id == pin.id) {
-            saved.preset = Some(id.clone());
-        }
+        saved.preset = Some(id.clone());
         Ok(id)
     })
 }
 
-/// 删除仅移除模板，失败时配置与界面保持原状。
-pub fn delete(app: &AppHandle, id: &str) -> Result<(), AppMessage> {
-    transaction(app, |settings| delete_settings(settings, id))
+/// 仅移除指定页面的模板，失败时配置与界面保持原状。
+pub fn delete(app: &AppHandle, pin_id: &str, id: &str) -> Result<(), AppMessage> {
+    transaction(app, pin_id, |pin| delete_pin(pin, id))
 }
 
 /// 读取页面当前状态并折算为归一化位置；页面关闭时按保存的几何与缩放估算。
@@ -204,7 +217,7 @@ pub fn snapshot_fields(app: &AppHandle, pin: &PinConfig) -> Result<PresetFields,
         fullscreen: pin
             .preset
             .as_deref()
-            .and_then(|id| super::find(app, id))
+            .and_then(|id| super::find(pin, id))
             .is_some_and(|preset| preset.fields.fullscreen),
     })
 }

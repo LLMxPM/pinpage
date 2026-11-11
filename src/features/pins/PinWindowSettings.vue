@@ -6,11 +6,10 @@ import HintTip from '../../components/HintTip.vue';
 import WindowFields from './WindowFields.vue';
 import PinPresetPicker from './PinPresetPicker.vue';
 import { useLiveWindow } from './useLiveWindow';
-import type { PinConfig, PlatformCapabilities, WindowPatch, WindowPreset } from '../../types';
+import type { PinConfig, PlatformCapabilities, WindowPatch } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   open: boolean;
   apply: (patch: WindowPatch) => Promise<PinConfig | null>;
@@ -68,7 +67,6 @@ defineExpose({ resetInput: () => live.reset() });
     </p>
     <PinPresetPicker
       :pin="pin"
-      :presets="presets"
       :capabilities="capabilities"
       :apply="applyPreset"
       :save="savePreset"

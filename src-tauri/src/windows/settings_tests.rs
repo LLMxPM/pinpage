@@ -131,3 +131,26 @@ fn merge_carries_preset_marker() {
     let plain: PinSettingsInput = serde_json::from_value(untagged).unwrap();
     assert!(merge(&old_pin(), &plain).unwrap().preset.is_none());
 }
+
+#[test]
+/// 页面级预设列表随窗口设置提交整体保留，表单不携带也不清空模板库。
+fn merge_keeps_page_preset_library() {
+    let mut previous = old_pin();
+    previous.presets = vec![serde_json::from_value(serde_json::json!({
+        "id": "custom-demo", "name": "右上角",
+        "mode": "floating", "alwaysOnTop": true, "decorations": false,
+        "rounded": true, "positionLocked": false, "sizeLocked": false,
+        "width": 320, "height": 480, "fx": 1., "fy": 0.
+    }))
+    .unwrap()];
+    previous.presets[0].fields.transparent_background = false;
+    previous.presets[0].fields.fullscreen = false;
+    let next = merge(&previous, &input()).unwrap();
+    assert_eq!(next.presets.len(), 1);
+    assert_eq!(next.presets[0].id, "custom-demo");
+    // 损坏的单条预设不应拖累整个页面：lenient 解析逐条跳过。
+    let mut broken = serde_json::to_value(&previous).unwrap();
+    broken["presets"][0].as_object_mut().unwrap().remove("id");
+    let restored: PinConfig = serde_json::from_value(broken).unwrap();
+    assert!(restored.presets.is_empty());
+}

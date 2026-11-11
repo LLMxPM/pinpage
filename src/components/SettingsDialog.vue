@@ -8,18 +8,11 @@ import UpdateSettings from '../features/updates/UpdateSettings.vue';
 import AboutSettings from '../features/updates/AboutSettings.vue';
 import { fromAppMessage, text } from '../i18n/messages';
 import { desktopAvailable } from '../services/desktop';
-import type {
-  AutostartStatus,
-  PlatformCapabilities,
-  SettingsInput,
-  UiMessage,
-  WindowPreset,
-} from '../types';
+import type { AutostartStatus, PlatformCapabilities, SettingsInput, UiMessage } from '../types';
 
 const props = defineProps<{
   settings: SettingsInput;
   autostart: AutostartStatus;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   busy: boolean;
   error: UiMessage | null;
@@ -28,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   save: [input: SettingsInput, autostart: boolean | null];
-  managePresets: [];
   quit: [];
 }>();
 const { t } = useI18n();
@@ -58,8 +50,6 @@ const sections = computed(
       { id: 'about', label: t('ui.settings.navAbout') },
     ] as const,
 );
-/// 预设均为用户自定义项，数量用于入口摘要，管理操作由共用管理器处理。
-const customPresets = computed(() => props.presets);
 const languageOptions = computed(
   () =>
     [
@@ -248,23 +238,6 @@ function save() {
               />
               <p class="settings-hint">{{ t('ui.settings.gestureHint') }}</p>
             </template>
-            <div class="form-section">
-              <h3>{{ t('ui.settings.windowPresets') }}</h3>
-              <p v-if="!customPresets.length" class="settings-hint">
-                {{ t('ui.settings.presetEmpty') }}
-              </p>
-              <p v-else class="settings-hint">
-                {{ t('ui.presets.customCount', { count: customPresets.length }) }}
-              </p>
-              <button
-                type="button"
-                class="secondary"
-                :disabled="busy"
-                @click="emit('managePresets')"
-              >
-                {{ t('ui.presets.manage') }}
-              </button>
-            </div>
           </section>
           <section
             :id="sectionId('about')"

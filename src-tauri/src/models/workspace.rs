@@ -13,6 +13,9 @@ pub enum GestureModifier {
     Disabled,
 }
 
+/// 当前配置结构版本；更高版本按“未来配置”只读保护，更低版本在加载时迁移。
+pub const SCHEMA_VERSION: u32 = 2;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
@@ -27,8 +30,8 @@ pub struct Settings {
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
-    /// 用户自定义预设，随配置持久化；页面只保存匹配预设的 ID 引用。
-    #[serde(default, deserialize_with = "lenient_presets")]
+    /// v1 的全局预设库，仅在加载迁移时读取，迁移后不再写出。
+    #[serde(default, deserialize_with = "lenient_presets", skip_serializing)]
     pub window_presets: Vec<WindowPreset>,
 }
 
@@ -44,7 +47,7 @@ where
         .collect())
 }
 
-/// 逐条解析自定义预设，跳过字段缺失或取值非法的条目。
+/// 逐条解析 v1 全局预设，跳过字段缺失或取值非法的条目；仅用于加载迁移。
 fn lenient_presets<'de, D>(deserializer: D) -> Result<Vec<WindowPreset>, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -78,7 +81,7 @@ impl Default for Settings {
     /// 提供首版配置与默认手势，允许旧配置缺失新增字段。
     fn default() -> Self {
         Self {
-            schema_version: 1,
+            schema_version: SCHEMA_VERSION,
             locale: LocalePreference::default(),
             gesture_modifier: GestureModifier::default(),
             restore_session: true,

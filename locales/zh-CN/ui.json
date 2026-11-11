@@ -169,10 +169,7 @@
     "gestureCtrl": "Ctrl（左右均可）",
     "gestureShift": "Shift（左右均可）",
     "gestureDisabled": "关闭",
-    "gestureHint": "直接右键打开窗口菜单；按住修饰键后，左键拖动未锁定的无边框窗口。",
-    "windowPresets": "自定义预设",
-    "presetEmpty": "还没有自定义预设。在页面设置里可以把当前外观与位置存为预设。",
-    "presetDelete": "删除预设“{name}”"
+    "gestureHint": "直接右键打开窗口菜单；按住修饰键后，左键拖动未锁定的无边框窗口。"
   },
   "toast": {
     "exportedWithData": "已导出 {count} 个文件，页面数据 {size}：{path}",
@@ -248,10 +245,10 @@
     "overwriteConfirm": "将当前窗口配置覆盖到预设“{name}”？",
     "confirmUpdate": "确认更新",
     "deleteConfirm": "确定删除预设“{name}”吗？",
-    "deleteHint": "只删除预设，现有页面会保留当前外观和位置。",
+    "deleteHint": "只删除此页面的预设，窗口会保留当前外观和位置。",
     "discardConfirm": "放弃尚未保存的预设修改并返回列表？",
     "discard": "放弃修改",
-    "customCount": "已保存 {count} 个自定义预设",
+    "empty": "此页面还没有预设。可以把当前外观与位置存为预设。",
     "fullscreen": "铺满目标显示器",
     "relativePosition": "相对位置",
     "horizontalPercent": "横向位置（%）",

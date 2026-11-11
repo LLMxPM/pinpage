@@ -169,10 +169,7 @@
     "gestureCtrl": "Ctrl (either side)",
     "gestureShift": "Shift (either side)",
     "gestureDisabled": "Off",
-    "gestureHint": "A plain right-click opens the window menu; hold the modifier to left-drag an unlocked borderless window.",
-    "windowPresets": "Custom presets",
-    "presetEmpty": "No custom presets yet. Save a page's current look and position as a preset in its settings.",
-    "presetDelete": "Delete preset “{name}”"
+    "gestureHint": "A plain right-click opens the window menu; hold the modifier to left-drag an unlocked borderless window."
   },
   "toast": {
     "exportedWithData": "Exported {count} file, page data {size}: {path} | Exported {count} files, page data {size}: {path}",
@@ -248,10 +245,10 @@
     "overwriteConfirm": "Replace preset “{name}” with the current window settings?",
     "confirmUpdate": "Confirm update",
     "deleteConfirm": "Delete preset “{name}”?",
-    "deleteHint": "Only the preset is deleted. Existing pages keep their appearance and position.",
+    "deleteHint": "Only this page's preset is deleted. The window keeps its current appearance and position.",
     "discardConfirm": "Discard unsaved preset changes and return to the list?",
     "discard": "Discard changes",
-    "customCount": "{count} custom presets saved",
+    "empty": "This page has no presets yet. Save its current look and position as a preset.",
     "fullscreen": "Fill the target display",
     "relativePosition": "Relative position",
     "horizontalPercent": "Horizontal position (%)",

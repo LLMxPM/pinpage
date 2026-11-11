@@ -1,6 +1,6 @@
-// 功能：验证自定义预设、归一化约束与跨屏相对位置换算。
+// 功能：验证页面级自定义预设、归一化约束与跨屏相对位置换算。
 use super::*;
-use crate::models::{PresetFields, PresetInput, Settings, WindowMode, WindowPreset};
+use crate::models::{PresetFields, PresetInput, WindowMode, WindowPreset};
 
 /// 标准窗口字段基准，替代已移除的内置预设，供各测试复用。
 fn standard_fields() -> PresetFields {
@@ -61,43 +61,45 @@ fn editor_input(name: &str) -> PresetInput {
     }
 }
 
+/// 构造一个只含基础字段的页面配置，预设相关字段由测试自行补齐。
+fn plain_pin(id: &str) -> PinConfig {
+    serde_json::from_value(serde_json::json!({
+        "id": id, "name": "计时器", "source": {"kind": "bundled", "entry": "index.html"},
+        "width": 960, "height": 720, "x": 100, "y": 100, "scale": 1.,
+        "alwaysOnTop": false, "decorations": true
+    }))
+    .unwrap()
+}
+
 #[test]
 /// 重命名保留匹配，修改模板参数不联动窗口，删除模板也只移除标记。
 fn editing_and_deleting_presets_preserve_windows() {
-    let mut settings = Settings::default();
-    let id = storage::write_settings(&mut settings, None, editor_input("初始模板")).unwrap();
-    let pin: PinConfig = serde_json::from_value(serde_json::json!({
-        "id": "p-template", "name": "计时器", "source": {"kind": "bundled", "entry": "index.html"},
-        "width": 960, "height": 720, "x": 100, "y": 100, "scale": 1.,
-        "alwaysOnTop": false, "decorations": true, "preset": id
-    }))
-    .unwrap();
-    settings.pins.push(pin.clone());
-    storage::write_settings(&mut settings, Some(&id), editor_input("重命名")).unwrap();
-    assert_eq!(settings.pins[0].preset.as_deref(), Some(id.as_str()));
+    let mut pin = plain_pin("p-template");
+    let id = storage::write_pin(&mut pin, None, editor_input("初始模板")).unwrap();
+    pin.preset = Some(id.clone());
+    let before = pin.clone();
+    storage::write_pin(&mut pin, Some(&id), editor_input("重命名")).unwrap();
+    assert_eq!(pin.preset.as_deref(), Some(id.as_str()));
     let mut changed = editor_input("修改尺寸");
     changed.fields.width = 500.;
-    storage::write_settings(&mut settings, Some(&id), changed).unwrap();
-    assert_eq!(settings.pins[0].width, pin.width);
-    assert_eq!(settings.pins[0].source, pin.source);
-    assert!(settings.pins[0].preset.is_none());
-    settings.pins[0].preset = Some(id.clone());
-    storage::delete_settings(&mut settings, &id).unwrap();
-    assert!(settings.window_presets.is_empty());
-    assert_eq!(settings.pins[0].name, pin.name);
-    assert_eq!(settings.pins[0].x, pin.x);
-    assert!(settings.pins[0].preset.is_none());
+    storage::write_pin(&mut pin, Some(&id), changed).unwrap();
+    assert_eq!(pin.width, before.width);
+    assert_eq!(pin.source, before.source);
+    assert!(pin.preset.is_none());
+    pin.preset = Some(id.clone());
+    storage::delete_pin(&mut pin, &id).unwrap();
+    assert!(pin.presets.is_empty());
+    assert_eq!(pin.name, before.name);
+    assert_eq!(pin.x, before.x);
+    assert!(pin.preset.is_none());
 }
 
 #[test]
 /// 编辑或删除不存在的模板被拒绝，非法参数被拒绝，达到数量上限后仍可编辑已有项。
 fn template_permissions_validation_and_limit() {
-    let mut settings = Settings::default();
-    assert!(
-        storage::write_settings(&mut settings, Some("missing"), editor_input("不存在的模板"))
-            .is_err()
-    );
-    assert!(storage::delete_settings(&mut settings, "missing").is_err());
+    let mut pin = plain_pin("p-limits");
+    assert!(storage::write_pin(&mut pin, Some("missing"), editor_input("不存在的模板")).is_err());
+    assert!(storage::delete_pin(&mut pin, "missing").is_err());
     for (width, fx) in [
         (f64::NAN, 0.),
         (crate::windows::limits::MIN_WIDTH - 1., 0.),
@@ -107,15 +109,17 @@ fn template_permissions_validation_and_limit() {
         let mut input = editor_input("非法参数");
         input.fields.width = width;
         input.fields.fx = fx;
-        assert!(storage::write_settings(&mut settings, None, input).is_err());
+        assert!(storage::write_pin(&mut pin, None, input).is_err());
     }
     for index in 0..MAX_CUSTOM {
-        storage::write_settings(&mut settings, None, editor_input(&format!("预设{index}")))
-            .unwrap();
+        storage::write_pin(&mut pin, None, editor_input(&format!("预设{index}"))).unwrap();
     }
-    assert!(storage::write_settings(&mut settings, None, editor_input("超额")).is_err());
-    let id = settings.window_presets[0].id.clone();
-    assert!(storage::write_settings(&mut settings, Some(&id), editor_input("仍可修改")).is_ok());
+    assert!(storage::write_pin(&mut pin, None, editor_input("超额")).is_err());
+    let id = pin.presets[0].id.clone();
+    assert!(storage::write_pin(&mut pin, Some(&id), editor_input("仍可修改")).is_ok());
+    // 上限按页面独立计算，另一个页面不受已满列表影响。
+    let mut other = plain_pin("p-other");
+    assert!(storage::write_pin(&mut other, None, editor_input("独立页面")).is_ok());
 }
 
 #[test]
@@ -169,10 +173,10 @@ fn normalize_removes_conflicting_appearance() {
     assert!(!bordered.rounded, "有系统边框时圆角不生效");
 }
 
-/// 自定义预设保留用户名称并按保存顺序输出；空列表不再含任何内置项。
+/// 自定义预设保留用户名称并按保存顺序输出；不同页面可保存同名模板互不影响。
 #[test]
 fn custom_presets_keep_user_names() {
-    assert!(all(&[]).is_empty(), "不再提供内置预设");
+    assert!(normalized(&[]).is_empty(), "不再提供内置预设");
     let custom = vec![WindowPreset {
         id: "custom-1".into(),
         name: "我的挂件".into(),
@@ -191,11 +195,29 @@ fn custom_presets_keep_user_names() {
             fullscreen: false,
         },
     }];
-    let views = all(&custom);
+    let views = normalized(&custom);
     assert_eq!(views.len(), 1);
     let only = &views[0];
     assert_eq!(only.id, "custom-1");
     assert_eq!(only.name, "我的挂件");
+}
+
+#[test]
+/// v1 迁移语义：页内查找只认自己的列表，引用其他页面模板的标记收敛为“自定义”。
+fn find_resolves_within_own_page_only() {
+    let mut pin = plain_pin("p-own");
+    let id = storage::write_pin(&mut pin, None, editor_input("我的模板")).unwrap();
+    assert!(find(&pin, &id).is_some());
+    let mut other = plain_pin("p-other");
+    other.preset = Some(id.clone());
+    assert!(find(&other, &id).is_none(), "不应看到其他页面的模板");
+    other.presets.push(WindowPreset {
+        id: id.clone(),
+        name: "同名不同页".into(),
+        fields: standard_fields(),
+    });
+    let found = find(&other, &id).unwrap();
+    assert_eq!(found.name, "同名不同页");
 }
 
 /// 归一化比例与屏幕坐标必须能互相还原，覆盖四个角与居中。

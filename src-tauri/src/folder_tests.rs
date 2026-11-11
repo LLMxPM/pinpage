@@ -57,6 +57,7 @@ fn pin(root: Option<String>) -> PinConfig {
         size_locked: false,
         page_context_menu: false,
         preset: None,
+        presets: Vec::new(),
         folder_root: root,
     }
 }

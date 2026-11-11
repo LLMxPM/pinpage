@@ -69,14 +69,14 @@ export function updateContent(id: string, input: PinContentInput): Promise<void>
   return invoke('update_content', { id, input });
 }
 
-/// 编辑自定义预设或创建副本，不联动现有窗口。
-export function writePreset(input: PresetInput, presetId?: string): Promise<string> {
-  return invoke('write_preset', { input, presetId: presetId ?? null });
+/// 编辑页面自己的预设或创建副本，不联动现有窗口。
+export function writePreset(pinId: string, input: PresetInput, presetId?: string): Promise<string> {
+  return invoke('write_preset', { pinId, input, presetId: presetId ?? null });
 }
 
-/// 删除自定义预设。
-export function deletePreset(presetId: string): Promise<void> {
-  return invoke('delete_preset', { presetId });
+/// 删除页面自己的预设。
+export function deletePreset(pinId: string, presetId: string): Promise<void> {
+  return invoke('delete_preset', { pinId, presetId });
 }
 
 /// 更新全局设置；仅明确编辑自启开关时才修改系统注册。

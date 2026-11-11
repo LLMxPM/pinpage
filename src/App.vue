@@ -22,7 +22,6 @@ const { updateAvailable } = useUpdateSubscription();
 const {
   snapshot,
   pins,
-  presets,
   busy,
   pending,
   loading,
@@ -52,7 +51,11 @@ const {
   quit,
 } = useWorkspace();
 const creatingOpen = ref(false);
-const presetManagerOpen = ref(false);
+/// 预设管理器始终属于某个页面：从该页的设置弹窗进入，非空即打开。
+const presetManagerPinId = ref<string | null>(null);
+const presetManagerPin = computed(() =>
+  presetManagerPinId.value ? pins.value.find((pin) => pin.id === presetManagerPinId.value) : null,
+);
 const launchMode = ref<'url' | 'import'>('url');
 const deletingPin = ref<PinConfig | null>(null);
 /// 设置按钮保留固定文字，有更新时通过角标和读屏标签补充状态。
@@ -71,7 +74,7 @@ const modalOpen = computed(
     settingsOpen.value ||
     !!editingPin.value ||
     !!deletingPin.value ||
-    presetManagerOpen.value,
+    !!presetManagerPin.value,
 );
 
 /// 顶栏空白处按下左键拖动窗口，双击在最大化与还原之间切换；按钮和链接保持自身行为。
@@ -121,10 +124,10 @@ function cardAction(id: string, operation: string) {
   else void action(id, operation);
 }
 
-/// 两处入口共用同一个预设管理器，打开时清除上一次操作错误。
+/// 预设管理器只从页面设置进入，操作目标始终是当前编辑的页面。
 function managePresets() {
   error.value = null;
-  presetManagerOpen.value = true;
+  presetManagerPinId.value = editingPinId.value;
 }
 
 /// 仅在原生删除成功后关闭确认框，删除失败的原因留在框内。
@@ -251,7 +254,6 @@ function editPin(id: string) {
               v-for="pin in pins"
               :key="pin.id"
               :pin="pin"
-              :presets="presets"
               :capabilities="snapshot.capabilities"
               :runtime="snapshot.runtime[pin.id]"
               :busy="busy"
@@ -285,21 +287,18 @@ function editPin(id: string) {
       v-if="settingsOpen"
       :settings="snapshot.settings"
       :autostart="snapshot.autostart"
-      :presets="presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
       :update-available="updateAvailable"
       @close="settingsOpen = false"
       @save="saveSettings"
-      @manage-presets="managePresets"
       @quit="quit"
     />
     <PinSettingsDialog
       v-if="editingPin"
       :key="editingPin.id"
       :pin="editingPin"
-      :presets="presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
@@ -315,15 +314,17 @@ function editPin(id: string) {
       @manage="managePresets"
     />
     <PresetManagerDialog
-      v-if="presetManagerOpen"
-      :presets="presets"
+      v-if="presetManagerPin"
+      :key="presetManagerPin.id"
+      :pin-name="presetManagerPin.name"
+      :presets="presetManagerPin.presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
-      :write="writePreset"
-      :remove="deletePreset"
+      :write="(input, presetId) => writePreset(presetManagerPin!.id, input, presetId)"
+      :remove="(id) => deletePreset(presetManagerPin!.id, id)"
       @close="
-        presetManagerOpen = false;
+        presetManagerPinId = null;
         error = null;
       "
     />

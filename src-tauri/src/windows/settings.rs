@@ -99,7 +99,7 @@ pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), 
     if next
         .preset
         .as_deref()
-        .is_some_and(|id| super::presets::find(app, id).is_none())
+        .is_some_and(|id| super::presets::find(&next, id).is_none())
     {
         next.preset = None;
     }

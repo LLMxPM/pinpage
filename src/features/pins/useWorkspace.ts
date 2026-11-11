@@ -29,7 +29,6 @@ function emptySnapshot(): Snapshot {
     },
     runtime: {},
     notices: [],
-    presets: [],
     resolvedLocale: 'zh-CN',
     // 浏览器预览没有原生能力，按最保守的平台裁剪入口。
     capabilities: disabledCapabilities,
@@ -250,7 +249,6 @@ export function useWorkspace() {
     openSettings,
     quit: () => run(desktop.quitApp),
     pins: computed(() => snapshot.value.settings.pins),
-    presets: computed(() => snapshot.value.presets),
     openCount: computed(
       () => Object.values(snapshot.value.runtime).filter((pin) => pin.open).length,
     ),
