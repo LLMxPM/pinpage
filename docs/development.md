@@ -101,7 +101,7 @@ docs/                     用户、架构、开发、平台与发布文档
 - 命令与作用域：`write_preset`、`delete_preset` 增加 `pinId` 参数，Rust 侧校验页面归属后才写入；`save_preset` 语义不变，另存／覆盖写入当前页面列表。编辑或删除模板只清除该页的匹配标记，`MAX_CUSTOM`（20 条）按页面独立计算；原生窗口菜单、卡片菜单与设置弹窗只展示该页面自己的预设。随包 `windowPreset` 仍只初始化新页面，不写入页面预设列表。
 - 前端：`Snapshot` 不再携带顶层 `presets`，预设随 `settings.pins` 下发；预设管理器从系统设置移入页面设置的「管理预设」入口，标题栏显示页面名称；卡片胶囊、菜单与选择器数据源均改为 `pin.presets`。移除系统设置中的「自定义预设」区块与孤立 i18n 键（`ui.settings.windowPresets`、`ui.settings.presetEmpty`、`ui.settings.presetDelete`、`ui.presets.customCount`），新增 `ui.presets.empty`。
 - 自动检查通过：114 项 Rust 单元测试（新增 v1 迁移、页内查找、上限独立计算、合并保留列表等用例）与 6 项原生集成测试、`pnpm check:limits`、`pnpm check:i18n`（ui 225 / native 174 键）、`pnpm check`（vue-tsc）、`pnpm test:ui` 29 项、cargo fmt 与相关文件 Prettier。
-- **验收边界**：迁移仅通过单测模拟 v1 配置验证；真实旧配置升级、预设管理器与右键菜单按页展示的真实 WebView2 交互待实机验收。未发布改动，旧版本应用读取 v2 配置会按未来版本进入只读保护。
+- **实机验收通过（2026-11-11）**：v1 旧配置升级迁移、页面级预设管理器与右键菜单按页展示已在真实桌面环境验证。未发布改动，旧版本应用读取 v2 配置会按未来版本进入只读保护。
 
 ### 2026-11-11 裸右键打开窗口菜单与按页面右键开关（未发布）
 
