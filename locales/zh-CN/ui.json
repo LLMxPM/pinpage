@@ -145,7 +145,9 @@
     "footerWindow": "更改即时生效并自动保存",
     "unappliedGeometry": "未生效 · 实际：{width} × {height} · X {x} / Y {y}",
     "transparentBackground": "页面背景透明",
-    "transparentHint": "允许透明区域透出桌面，文字与控件保持原样。网页自身的不透明背景仍会遮挡；内置示例已适配。"
+    "transparentHint": "允许透明区域透出桌面，文字与控件保持原样。网页自身的不透明背景仍会遮挡；内置示例已适配。",
+    "pageContextMenu": "让页面处理右键",
+    "pageContextMenuHint": "默认直接右键打开窗口菜单；开启后右键交给页面自己的菜单。按住修饰键的右键始终打开窗口菜单。"
   },
   "settings": {
     "title": "设置",
@@ -164,11 +166,10 @@
     "languageSystem": "跟随系统",
     "save": "保存设置",
     "gestureModifier": "手势修饰键",
-    "gestureAlt": "Alt（仅左 Alt）",
     "gestureCtrl": "Ctrl（左右均可）",
     "gestureShift": "Shift（左右均可）",
     "gestureDisabled": "关闭",
-    "gestureHint": "按住修饰键后，左键拖动未锁定的无边框窗口，右键打开窗口菜单。使用 Alt 时，Alt+左键拖动窗口；Alt+右键需先松开右键，再松开 Alt，菜单才会显示。",
+    "gestureHint": "直接右键打开窗口菜单；按住修饰键后，左键拖动未锁定的无边框窗口。",
     "windowPresets": "自定义预设",
     "presetEmpty": "还没有自定义预设。在页面设置里可以把当前外观与位置存为预设。",
     "presetDelete": "删除预设“{name}”"

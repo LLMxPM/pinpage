@@ -19,15 +19,10 @@
     "managerTitle": "PinPage · floating web workspace",
     "titleSuffix": "{title} · PinPage",
     "menu": {
-      "top": "Always on top",
-      "desktop": "Desktop mode",
-      "frameSystem": "System frame",
-      "frameBorderless": "Borderless",
-      "frameRounded": "Rounded borderless",
-      "positionLock": "Lock position",
-      "sizeLock": "Lock size",
-      "hide": "Hide page",
-      "presets": "Window presets"
+      "settings": "Page settings…",
+      "custom": "Custom",
+      "noPresets": "No presets yet; save one in page settings",
+      "hide": "Hide page"
     }
   },
   "picker": {

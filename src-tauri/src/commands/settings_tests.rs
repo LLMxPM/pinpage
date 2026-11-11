@@ -11,10 +11,9 @@ fn apply_and_rollback_preserve_all_workspace_fields() {
         .join("settings.json");
     let state = AppState::load(path);
     for (before, after) in [
-        (GestureModifier::Alt, "ctrl"),
         (GestureModifier::Ctrl, "shift"),
         (GestureModifier::Shift, "disabled"),
-        (GestureModifier::Disabled, "alt"),
+        (GestureModifier::Disabled, "ctrl"),
     ] {
         // 旧配置中的快捷键字段已经废弃，反序列化时应被忽略。
         let original: Settings = serde_json::from_value(json!({

@@ -23,7 +23,7 @@ function emptySnapshot(): Snapshot {
     settings: {
       schemaVersion: 1,
       locale: 'zh-CN',
-      gestureModifier: 'alt',
+      gestureModifier: 'ctrl',
       restoreSession: true,
       pins: [],
     },
@@ -52,6 +52,7 @@ export function useWorkspace() {
   let revision = 0;
   let disposed = false;
   let unlisten: (() => void) | undefined;
+  let unlistenSettings: (() => void) | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -180,6 +181,19 @@ export function useWorkspace() {
     });
   }
 
+  /// 取走原生菜单的「页面设置」意图并打开对应弹窗；事件与挂载两路共用，取走即清空不会重复打开。
+  async function consumePendingPinSettings() {
+    try {
+      const id = await desktop.takePendingPinSettings();
+      if (id && !disposed) {
+        error.value = null;
+        editingPinId.value = id;
+      }
+    } catch {
+      // 意图取走失败不阻塞管理界面，用户仍可从卡片进入页面设置。
+    }
+  }
+
   onMounted(async () => {
     if (!desktop.desktopAvailable) return;
     try {
@@ -189,16 +203,24 @@ export function useWorkspace() {
           void refresh();
         }, 80);
       });
-      if (disposed) unlisten();
+      unlistenSettings = await desktop.onOpenPinSettings(() => {
+        void consumePendingPinSettings();
+      });
+      if (disposed) {
+        unlisten();
+        unlistenSettings();
+      }
     } catch (reason) {
       error.value = toUiMessage(reason);
     }
     await refresh();
+    await consumePendingPinSettings();
     if (!disposed) ready.value = true;
   });
   onUnmounted(() => {
     disposed = true;
     unlisten?.();
+    unlistenSettings?.();
     clearTimeout(refreshTimer);
     clearTimeout(toastTimer);
   });

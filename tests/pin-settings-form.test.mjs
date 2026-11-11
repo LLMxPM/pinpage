@@ -23,6 +23,7 @@ function createPin(id = 'p-test') {
     transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
+    pageContextMenu: false,
   };
 }
 

@@ -93,3 +93,13 @@ export function quitApp(): Promise<void> {
 export function onPinsChanged(callback: () => void) {
   return listen('pins-changed', callback);
 }
+
+/// 取走原生窗口菜单签发的「页面设置」意图，无意图时返回 null。
+export function takePendingPinSettings(): Promise<string | null> {
+  return invoke('take_pending_pin_settings');
+}
+
+/// 管理窗口已打开时原生菜单签发「页面设置」的即时通知；创建中的窗口由挂载后的 take 兜底。
+export function onOpenPinSettings(callback: () => void) {
+  return listen('open-pin-settings', callback);
+}

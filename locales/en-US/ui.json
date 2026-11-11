@@ -145,7 +145,9 @@
     "footerWindow": "Changes apply and save instantly",
     "unappliedGeometry": "Not applied · Actual: {width} × {height} · X {x} / Y {y}",
     "transparentBackground": "Transparent page background",
-    "transparentHint": "Let transparent areas reveal the desktop while keeping text and controls unchanged. Opaque backgrounds inside the page still cover the desktop; built-in examples are adapted."
+    "transparentHint": "Let transparent areas reveal the desktop while keeping text and controls unchanged. Opaque backgrounds inside the page still cover the desktop; built-in examples are adapted.",
+    "pageContextMenu": "Let the page handle right-click",
+    "pageContextMenuHint": "By default a plain right-click opens the window menu; enable this to let the page show its own context menu. Right-click with the modifier held always opens the window menu."
   },
   "settings": {
     "title": "Settings",
@@ -164,11 +166,10 @@
     "languageSystem": "System",
     "save": "Save settings",
     "gestureModifier": "Gesture modifier",
-    "gestureAlt": "Alt (left Alt only)",
     "gestureCtrl": "Ctrl (either side)",
     "gestureShift": "Shift (either side)",
     "gestureDisabled": "Off",
-    "gestureHint": "Hold the modifier to left-drag an unlocked borderless window or right-click to open its menu. With Alt, use Alt+left-drag to move the window; for Alt+right-click, release the right button and then Alt before the menu appears.",
+    "gestureHint": "A plain right-click opens the window menu; hold the modifier to left-drag an unlocked borderless window.",
     "windowPresets": "Custom presets",
     "presetEmpty": "No custom presets yet. Save a page's current look and position as a preset in its settings.",
     "presetDelete": "Delete preset “{name}”"

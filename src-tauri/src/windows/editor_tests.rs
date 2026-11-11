@@ -31,6 +31,19 @@ fn patch_preserves_unrelated_state() {
 }
 
 #[test]
+/// 右键开关属于页面行为而非预设字段，切换后保留匹配标记，撤销比较覆盖该字段。
+fn page_context_menu_patch_keeps_preset() {
+    let previous = pin();
+    let patch: WindowPatch = serde_json::from_value(json!({"pageContextMenu": true})).unwrap();
+    let next = merge_window(&previous, &patch).unwrap();
+    assert!(next.page_context_menu);
+    assert_eq!(next.preset, previous.preset);
+    assert!(matches_expected(&next, &patch));
+    let stale: WindowPatch = serde_json::from_value(json!({"pageContextMenu": false})).unwrap();
+    assert!(!matches_expected(&next, &stale));
+}
+
+#[test]
 /// 未发生变化的字段保留匹配标记，位置锁与大小锁可以独立更新。
 fn no_op_and_independent_locks() {
     let previous = pin();

@@ -14,7 +14,8 @@ interface PositionValues {
   positionLocked: boolean;
 }
 const props = defineProps<{
-  values: Omit<WindowValues, 'x' | 'y' | 'positionLocked'>;
+  /// 右键开关是页面行为，不属于预设共享字段，由页面设置单独渲染。
+  values: Omit<WindowValues, 'x' | 'y' | 'positionLocked' | 'pageContextMenu'>;
   position?: PositionValues;
   capabilities: PlatformCapabilities;
   fullscreen?: boolean;

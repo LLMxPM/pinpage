@@ -48,6 +48,7 @@ pub fn run() {
             commands::session::export_page,
             commands::session::submit_page_data,
             commands::pin_action,
+            commands::take_pending_pin_settings,
             commands::update_pin,
             commands::editor::update_window,
             commands::editor::update_content,

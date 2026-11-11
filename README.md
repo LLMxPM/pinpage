@@ -23,7 +23,7 @@ English | [简体中文](README.zh-CN.md)
 - **Transparent backgrounds** — allow transparency per page in floating and desktop modes on Windows without reloading its running state. Built-in examples are adapted; other pages must provide transparent backgrounds. See [verification status](docs/development.md#当前状态与验收).
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, IndexedDB, and default window layout as a `.pinpage` package and restore it elsewhere. Built-in examples use the same format.
-- **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
+- **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, plain right-click for a window menu (per-page opt-out to let the page handle it), and DPI/monitor correction when restoring windows. The drag modifier defaults to Ctrl; choose Shift or Off in settings.
 - **Immediate window settings** — appearance, size, position, and locks apply and save directly, with undo for the last adjustment. Names and sources are saved separately under Content.
 - **One-click window presets** — package appearance, size, and relative position into your own presets and switch them in one step. Save the current window layout as a new preset or overwrite an existing one; a shared manager supports editing, renaming, copying, and deleting templates without changing existing pages, and imported page packages can carry a default layout.
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; the tray keeps windows recoverable.
@@ -41,7 +41,7 @@ English | [简体中文](README.zh-CN.md)
 1. Download the Windows installer from [GitHub Releases](../../releases/latest) and install it.
 2. Click "Add page" and enter a web address, import a local page, or add a sample.
 3. Choose Floating window or Pinned to desktop under "Window options", then create the page.
-4. Reopen the workspace from the tray. By default, hold left Alt and left-drag a borderless window to move it, or Alt+right-click a page to open its window menu; release the right button and then Alt so the menu appears. Change or disable this modifier in Settings → Controls.
+4. Reopen the workspace from the tray. Right-click a page to open its window menu: switch presets at the top, or choose "Page settings…" to open the manager with that page's settings dialog. Hold Ctrl (default) and left-drag to move a borderless window; change or disable the drag modifier in Settings → Controls.
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 

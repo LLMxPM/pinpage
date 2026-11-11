@@ -55,6 +55,7 @@ fn pin(root: Option<String>) -> PinConfig {
         transparent_background: false,
         position_locked: false,
         size_locked: false,
+        page_context_menu: false,
         preset: None,
         folder_root: root,
     }

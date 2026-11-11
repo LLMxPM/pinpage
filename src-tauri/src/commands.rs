@@ -86,6 +86,7 @@ pub async fn create_pin(
         transparent_background: false,
         position_locked: false,
         size_locked: false,
+        page_context_menu: false,
         preset: None,
         folder_root: None,
     };
@@ -130,6 +131,21 @@ pub async fn update_pin(
 ) -> Result<(), AppMessage> {
     windows::ensure_manager(&window)?;
     windows::update(&app, &id, input)
+}
+
+/// 取走窗口菜单签发的「页面设置」意图；管理窗口挂载或收到事件后调用，无意图返回 null。
+#[tauri::command]
+pub async fn take_pending_pin_settings(
+    window: WebviewWindow,
+    app: AppHandle,
+) -> Result<Option<String>, AppMessage> {
+    windows::ensure_manager(&window)?;
+    Ok(app
+        .state::<AppState>()
+        .pending_pin_settings
+        .lock()
+        .unwrap()
+        .take())
 }
 
 /// 显式退出保留会话，与关闭单个悬浮窗的删除语义分离。

@@ -18,7 +18,8 @@ use crate::{
 };
 use std::{collections::BTreeMap, sync::atomic::Ordering};
 use tauri::{
-    webview::NewWindowResponse, AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    webview::NewWindowResponse, AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
 
@@ -112,6 +113,25 @@ pub fn show_manager(app: &AppHandle) {
             }
         }
     });
+}
+
+/// 窗口菜单「页面设置」直达：先记录意图再激活或创建管理窗口。
+/// 管理窗口可能尚未挂载，事件会丢失，前端挂载后另经 take 命令兜底取走意图。
+pub fn open_pin_settings(app: &AppHandle, id: &str) {
+    let state = app.state::<AppState>();
+    if !state
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .any(|pin| pin.id == id)
+    {
+        return;
+    }
+    *state.pending_pin_settings.lock().unwrap() = Some(id.to_string());
+    show_manager(app);
+    let _ = app.emit_to("main", "open-pin-settings", ());
 }
 
 /// 按当前配置校验导航目标；来源可以随时被修改，因此不能沿用建窗时的快照。
@@ -292,6 +312,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     {
         saved.enabled = true;
     }
+    crate::platform::suppress_context_menu(&window);
     events::attach(&window);
     events::watch_load(app, &pin.id);
     state::notify(app);

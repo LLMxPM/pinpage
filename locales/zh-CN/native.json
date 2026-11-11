@@ -19,15 +19,10 @@
     "managerTitle": "PinPage · 网页悬浮工作台",
     "titleSuffix": "{title} · PinPage",
     "menu": {
-      "top": "始终置顶",
-      "desktop": "桌面模式",
-      "frameSystem": "系统边框",
-      "frameBorderless": "无边框",
-      "frameRounded": "无边框圆角",
-      "positionLock": "锁定位置",
-      "sizeLock": "锁定大小",
-      "hide": "隐藏页面",
-      "presets": "窗口预设"
+      "settings": "页面设置…",
+      "custom": "自定义",
+      "noPresets": "暂无预设，可在页面设置中保存",
+      "hide": "隐藏页面"
     }
   },
   "picker": {

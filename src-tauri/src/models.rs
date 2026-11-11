@@ -91,6 +91,9 @@ pub struct PinConfig {
     pub position_locked: bool,
     #[serde(default)]
     pub size_locked: bool,
+    /// 裸右键交给页面自己的右键菜单；默认由宿主打开窗口菜单，修饰键组合不受此开关影响。
+    #[serde(default)]
+    pub page_context_menu: bool,
     /// 当前匹配的预设 ID；调整窗口参数后清空，内容修改不影响它。
     #[serde(default)]
     pub preset: Option<String>,
@@ -164,6 +167,9 @@ pub struct PinSettingsInput {
     pub transparent_background: bool,
     pub position_locked: bool,
     pub size_locked: bool,
+    /// 缺省保持默认：裸右键打开窗口菜单。
+    #[serde(default)]
+    pub page_context_menu: bool,
     pub width: f64,
     pub height: f64,
     pub x: i32,

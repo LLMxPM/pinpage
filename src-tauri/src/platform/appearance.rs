@@ -1,17 +1,32 @@
-// 功能：在不重载内容页的情况下切换 WebView2 背景，并更新后续导航使用的外观脚本。
+// 功能：配置内容 WebView2 环境：关闭默认右键菜单，并在不重载内容页的情况下切换背景与外观脚本。
 use crate::{errors::AppMessage, models::PinConfig};
 #[cfg(windows)]
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tauri::WebviewWindow;
+use tauri::{Manager, WebviewWindow};
+
+/// 内容窗口统一关闭浏览器默认右键菜单；裸右键的归属由手势层按页面开关决定。
+/// 设置随控制器保留，导航不重置；失败只上报，不阻塞窗口创建。
+#[cfg(windows)]
+pub fn suppress_context_menu(window: &WebviewWindow) {
+    let app = window.app_handle().clone();
+    let _ = window.with_webview(move |view| {
+        let result = (|| -> windows::core::Result<()> {
+            let webview = unsafe { view.controller().CoreWebView2() }?;
+            unsafe { webview.Settings()?.SetAreDefaultContextMenusEnabled(false) }
+        })();
+        if let Err(error) = result {
+            crate::state::report(&app, failed(error));
+        }
+    });
+}
 
 /// 在工作线程等待 WebView2 异步回调；UI 线程只执行 COM 调用，禁止阻塞消息循环。
 #[cfg(windows)]
 pub fn apply(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage> {
     use crate::state::AppState;
-    use tauri::Manager;
     let state = window.state::<AppState>();
     let previous = state.appearances.lock().unwrap().get(&pin.id).cloned();
     if previous.as_ref().is_some_and(|(enabled, mode, _)| {

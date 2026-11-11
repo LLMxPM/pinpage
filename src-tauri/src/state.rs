@@ -26,6 +26,8 @@ pub struct AppState {
     pub grants: Mutex<HashMap<String, ImportGrant>>,
     /// 正在导出的页面 ID，只有这些页面可以回传数据。
     pub export_pending: Mutex<HashSet<String>>,
+    /// 窗口菜单签发的「页面设置」直达意图；管理窗口取走后立即清空，不写入配置。
+    pub pending_pin_settings: Mutex<Option<String>>,
     /// 已回传的页面数据，导出命令取走后立即清空。
     pub export_data: Mutex<HashMap<String, String>>,
     /// 共享系统采样器的最新快照；内容页监控命令只读缓存，不触发采样。
@@ -111,6 +113,7 @@ impl AppState {
             runtime: Mutex::new(HashMap::new()),
             grants: Mutex::new(HashMap::new()),
             export_pending: Mutex::new(HashSet::new()),
+            pending_pin_settings: Mutex::new(None),
             export_data: Mutex::new(HashMap::new()),
             stats: Mutex::new(None),
             notices: Mutex::new(notices),

@@ -10,7 +10,7 @@ export type LocalePreference = 'zh-CN' | 'en-US' | 'system';
 export type AppLocale = 'zh-CN' | 'en-US';
 
 /// 窗口左右鼠标手势共用的修饰键，与 Rust `GestureModifier` 一致。
-export type GestureModifier = 'alt' | 'ctrl' | 'shift' | 'disabled';
+export type GestureModifier = 'ctrl' | 'shift' | 'disabled';
 
 /// 内置示例来源，与 Rust 的 ExampleId 白名单一致，不接受任意资源路径。
 export type ExampleId = 'timer' | 'notes' | 'checklist' | 'clock' | 'folder' | 'systemMonitor';
@@ -37,6 +37,8 @@ export interface PinConfig {
   transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
+  /// 让页面处理裸右键；默认 false 时右键打开窗口菜单。
+  pageContextMenu: boolean;
   /// 当前匹配的预设 ID；窗口参数调整后清空，修改内容不影响它。
   preset: string | null;
 }
@@ -50,6 +52,7 @@ export interface PinSettingsInput {
   transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
+  pageContextMenu: boolean;
   width: number;
   height: number;
   x: number;

@@ -16,6 +16,7 @@
     "allow-import-page",
     "allow-export-page",
     "allow-pin-action",
+    "allow-take-pending-pin-settings",
     "allow-update-pin",
     "allow-update-window",
     "allow-update-content",

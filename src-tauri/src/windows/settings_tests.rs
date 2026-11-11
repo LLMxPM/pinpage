@@ -101,6 +101,18 @@ fn merge_never_applies_the_submitted_source() {
 }
 
 #[test]
+/// 右键开关缺省为窗口菜单，旧配置与表单缺省都不改变默认，显式提交才交给页面。
+fn page_context_menu_defaults_off_and_merges() {
+    let previous = old_pin();
+    assert!(!previous.page_context_menu);
+    let mut value = input();
+    assert!(!value.page_context_menu);
+    assert!(!merge(&previous, &value).unwrap().page_context_menu);
+    value.page_context_menu = true;
+    assert!(merge(&previous, &value).unwrap().page_context_menu);
+}
+
+#[test]
 /// 预设标记随表单提交落库，缺省时视为自定义，不影响其他字段。
 fn merge_carries_preset_marker() {
     let value = serde_json::json!({

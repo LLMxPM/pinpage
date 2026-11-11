@@ -66,14 +66,14 @@ fn locale_round_trips_as_bcp47() {
 }
 
 #[test]
-/// 新配置与空配置均使用 Alt，序列化字段保持前后端约定的驼峰命名。
-fn gesture_modifier_defaults_to_alt() {
-    assert_eq!(GestureModifier::default(), GestureModifier::Alt);
+/// 新配置与空配置均使用 Ctrl，序列化字段保持前后端约定的驼峰命名。
+fn gesture_modifier_defaults_to_ctrl() {
+    assert_eq!(GestureModifier::default(), GestureModifier::Ctrl);
     for settings in [Settings::default(), settings_from("{}")] {
-        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
         assert_eq!(
             serde_json::to_value(settings).unwrap()["gestureModifier"],
-            "alt"
+            "ctrl"
         );
     }
 }
@@ -84,7 +84,7 @@ fn missing_gesture_modifier_keeps_legacy_settings() {
     let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
     legacy["locale"] = serde_json::json!("en-US");
     let settings: Settings = serde_json::from_value(legacy).unwrap();
-    assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+    assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
     assert_eq!(settings.locale, LocalePreference::EnUs);
     assert!(!settings.restore_session);
     assert_eq!(settings.pins.len(), 1);
@@ -93,7 +93,7 @@ fn missing_gesture_modifier_keeps_legacy_settings() {
 }
 
 #[test]
-/// 坏手势值只回退该字段，全部页面属性及其他全局设置保持原样。
+/// 坏手势值与已移除的旧版 Alt 只回退该字段为 Ctrl，全部页面属性及其他全局设置保持原样。
 fn invalid_gesture_modifier_keeps_other_settings() {
     let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
     legacy["locale"] = serde_json::json!("en-US");
@@ -101,6 +101,7 @@ fn invalid_gesture_modifier_keeps_other_settings() {
     let expected = serde_json::to_value(expected).unwrap();
     for value in [
         "\"meta\"",
+        "\"alt\"",
         "\"Alt\"",
         "\" ctrl\"",
         "123",
@@ -111,7 +112,7 @@ fn invalid_gesture_modifier_keeps_other_settings() {
     ] {
         legacy["gestureModifier"] = serde_json::from_str(value).unwrap();
         let settings: Settings = serde_json::from_value(legacy.clone()).unwrap();
-        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
         assert_eq!(
             serde_json::to_value(settings).unwrap(),
             expected,
@@ -121,10 +122,9 @@ fn invalid_gesture_modifier_keeps_other_settings() {
 }
 
 #[test]
-/// 四个修饰键值都按稳定字面量在配置中往返，包括显式关闭。
+/// 三个修饰键值都按稳定字面量在配置中往返，包括显式关闭。
 fn gesture_modifiers_round_trip() {
     for (modifier, text) in [
-        (GestureModifier::Alt, "alt"),
         (GestureModifier::Ctrl, "ctrl"),
         (GestureModifier::Shift, "shift"),
         (GestureModifier::Disabled, "disabled"),

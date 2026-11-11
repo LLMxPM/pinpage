@@ -172,6 +172,14 @@ fn apply_supported(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(),
         .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))
 }
 
+/// 内容窗口关闭浏览器默认右键菜单，避免放行右键时冒出浏览器菜单；其他平台保留系统行为。
+pub fn suppress_context_menu(window: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    appearance::suppress_context_menu(window);
+    #[cfg(not(windows))]
+    let _ = window;
+}
+
 /// 原生读取屏幕物理坐标，避免桌面子窗口被保存成父窗口局部坐标。
 #[cfg(windows)]
 pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition<i32>, AppMessage> {
@@ -195,7 +203,7 @@ pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition
         .map_err(|error| AppMessage::new("errors.readPosition").detail(error))
 }
 
-/// 启动桌面恢复与唯一鼠标输入线程，不再轮询 Alt + 左键。
+/// 启动桌面恢复与唯一鼠标手势输入线程。
 #[cfg(windows)]
 pub fn start(app: &AppHandle) {
     recovery::start(app);

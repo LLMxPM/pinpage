@@ -71,7 +71,6 @@ const languageOptions = computed(
 const gestureModifierOptions = computed(
   () =>
     [
-      { value: 'alt', label: t('ui.settings.gestureAlt') },
       { value: 'ctrl', label: t('ui.settings.gestureCtrl') },
       { value: 'shift', label: t('ui.settings.gestureShift') },
       { value: 'disabled', label: t('ui.settings.gestureDisabled') },

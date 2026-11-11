@@ -22,6 +22,7 @@ pub fn merge(pin: &PinConfig, input: &PinSettingsInput) -> Result<PinConfig, App
     next.transparent_background = input.transparent_background;
     next.position_locked = input.position_locked;
     next.size_locked = input.size_locked;
+    next.page_context_menu = input.page_context_menu;
     next.width = input.width;
     next.height = input.height;
     next.x = Some(input.x);

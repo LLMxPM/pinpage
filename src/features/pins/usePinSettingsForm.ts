@@ -14,6 +14,7 @@ export function pinToInput(pin: PinConfig): PinSettingsInput {
     transparentBackground: pin.transparentBackground,
     positionLocked: pin.positionLocked,
     sizeLocked: pin.sizeLocked,
+    pageContextMenu: pin.pageContextMenu,
     width: Math.round(pin.width),
     height: Math.round(pin.height),
     x: pin.x ?? 60,

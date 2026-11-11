@@ -20,6 +20,7 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
         transparent_background,
         position_locked,
         size_locked,
+        page_context_menu,
         width,
         height
     );
@@ -57,7 +58,8 @@ pub fn matches_expected(pin: &PinConfig, expected: &WindowPatch) -> bool {
         rounded,
         transparent_background,
         position_locked,
-        size_locked
+        size_locked,
+        page_context_menu
     ) && expected
         .width
         .is_none_or(|value| value == pin.width.round())

@@ -63,6 +63,7 @@ function setup(t, apply) {
     transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
+    pageContextMenu: false,
     preset: null,
   });
   const scope = effectScope();
@@ -186,6 +187,20 @@ test('即时调整、另存和删除按调用顺序执行，中途失败不丢�
   assert.equal(await second, 'preset-id');
   await third;
   assert.deepEqual(calls, ['调整', '另存', '删除']);
+});
+
+test('右键开关只提交自身，不夹带其他字段', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    actual.value = { ...actual.value, ...patch };
+    return actual.value;
+  });
+  live.input.pageContextMenu = true;
+  await live.commit('pageContextMenu');
+  assert.deepEqual(calls, [{ pageContextMenu: true }]);
+  assert.equal(pin.value.pageContextMenu, true);
+  assert.equal(live.dirty, false);
 });
 
 test('边框样式联动一次提交 decorations 与 rounded，未变化的字段不夹带', async (t) => {
