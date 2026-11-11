@@ -35,9 +35,6 @@ pub(super) fn write_settings(
 ) -> Result<String, AppMessage> {
     validate(&mut input)?;
     if let Some(id) = id {
-        if super::all(&[]).iter().any(|preset| preset.id == id) {
-            return Err(AppMessage::new("errors.presetReadonly"));
-        }
         let preset = settings
             .window_presets
             .iter_mut()
@@ -64,11 +61,8 @@ pub(super) fn write_settings(
     }
 }
 
-/// 移除模板前校验身份；删除后保留窗口内容、开关、外观与几何。
+/// 移除模板前校验存在；删除后保留窗口内容、开关、外观与几何。
 pub(super) fn delete_settings(settings: &mut Settings, id: &str) -> Result<(), AppMessage> {
-    if super::all(&[]).iter().any(|preset| preset.id == id) {
-        return Err(AppMessage::new("errors.presetReadonly"));
-    }
     let index = settings
         .window_presets
         .iter()

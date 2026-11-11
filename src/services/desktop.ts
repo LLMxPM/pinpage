@@ -74,7 +74,7 @@ export function writePreset(input: PresetInput, presetId?: string): Promise<stri
   return invoke('write_preset', { input, presetId: presetId ?? null });
 }
 
-/// 删除自定义预设；内置预设由 Rust 拒绝删除。
+/// 删除自定义预设。
 export function deletePreset(presetId: string): Promise<void> {
   return invoke('delete_preset', { presetId });
 }

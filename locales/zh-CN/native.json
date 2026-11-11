@@ -21,18 +21,13 @@
     "menu": {
       "top": "始终置顶",
       "desktop": "桌面模式",
-      "border": "显示系统边框",
-      "rounded": "无边框圆角",
+      "frameSystem": "系统边框",
+      "frameBorderless": "无边框",
+      "frameRounded": "无边框圆角",
       "positionLock": "锁定位置",
       "sizeLock": "锁定大小",
       "hide": "隐藏页面",
       "presets": "窗口预设"
-    },
-    "presets": {
-      "fullscreen": "全屏悬浮",
-      "standard": "标准窗口",
-      "topRight": "右上角悬浮",
-      "bottomRight": "右下角桌面"
     }
   },
   "picker": {
@@ -195,7 +190,6 @@
     "presetNotFound": "预设不存在或已被删除",
     "presetNameRange": "预设名称需为 1 到 {max} 个字符",
     "presetLimit": "自定义预设最多 {max} 个，请先删除不用的预设",
-    "presetReadonly": "内置预设只读，请创建副本后修改",
     "presetFieldsInvalid": "预设尺寸或相对位置超出有效范围",
     "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作"
   }

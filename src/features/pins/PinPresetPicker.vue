@@ -77,30 +77,47 @@ async function save() {
 </script>
 
 <template>
-  <div class="preset-section">
-    <div class="section-head">
-      <h3>{{ t('ui.pinSettings.presets') }}</h3>
+  <div class="preset-section" role="group" :aria-label="t('ui.pinSettings.presets')">
+    <div class="preset-bar">
+      <div class="preset-chips">
+        <button
+          v-for="preset in visiblePresets"
+          :key="preset.id"
+          type="button"
+          class="preset-chip"
+          :class="{ active: pin.preset === preset.id }"
+          :title="`${presetLabel(preset)} · ${presetSummary(preset)}`"
+          :disabled="disabled || saving"
+          @click="pick(preset.id)"
+        >
+          <AppIcon v-if="pin.preset === preset.id" name="check" :size="14" />{{ chipLabel(preset) }}
+        </button>
+        <button
+          v-if="!naming && !overwrite"
+          type="button"
+          class="preset-save-toggle"
+          :disabled="disabled || saving"
+          @click="naming = true"
+        >
+          <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
+        </button>
+        <button
+          v-if="selected && !pin.preset && !naming && !overwrite"
+          type="button"
+          class="text-button"
+          :disabled="disabled || saving"
+          @click="overwrite = selected"
+        >
+          {{ t('ui.presets.updateFromWindow', { name: chipLabel(selected) }) }}
+        </button>
+      </div>
       <button
         type="button"
-        class="text-button"
+        class="text-button preset-manage"
         :disabled="disabled || saving"
         @click="emit('manage')"
       >
         {{ t('ui.presets.manage') }}
-      </button>
-    </div>
-    <div class="preset-chips">
-      <button
-        v-for="preset in visiblePresets"
-        :key="preset.id"
-        type="button"
-        class="preset-chip"
-        :class="{ active: pin.preset === preset.id }"
-        :title="`${presetLabel(preset)} · ${presetSummary(preset)}`"
-        :disabled="disabled || saving"
-        @click="pick(preset.id)"
-      >
-        <AppIcon v-if="pin.preset === preset.id" name="check" :size="14" />{{ chipLabel(preset) }}
       </button>
     </div>
     <div v-if="overwrite" class="preset-confirm" role="status">
@@ -132,25 +149,6 @@ async function save() {
         @click="save"
       >
         {{ t('ui.presets.save') }}
-      </button>
-    </div>
-    <div v-else class="inline-actions">
-      <button
-        type="button"
-        class="preset-save-toggle"
-        :disabled="disabled || saving"
-        @click="naming = true"
-      >
-        <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
-      </button>
-      <button
-        v-if="selected && !selected.builtin && !pin.preset"
-        type="button"
-        class="text-button"
-        :disabled="disabled || saving"
-        @click="overwrite = selected"
-      >
-        {{ t('ui.presets.updateFromWindow', { name: chipLabel(selected) }) }}
       </button>
     </div>
   </div>

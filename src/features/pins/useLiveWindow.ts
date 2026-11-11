@@ -36,9 +36,10 @@ export function useLiveWindow(
     },
   );
 
-  /// 单字段提交不会夹带其他正在编辑的字段或过期坐标。
-  function commit(key: keyof WindowValues) {
-    const operation = submit(key);
+  /// 单字段或联动字段（如边框样式同时改 decorations 与 rounded）一次提交，
+  /// 不夹带其他正在编辑的字段或过期坐标。
+  function commit(key: keyof WindowValues | (keyof WindowValues)[]) {
+    const operation = submit(Array.isArray(key) ? key : [key]);
     inFlight.add(operation);
     void operation.finally(() => inFlight.delete(operation));
     return operation;
@@ -71,30 +72,44 @@ export function useLiveWindow(
     return true;
   }
 
-  /// 记录本次输入快照，完成后只校正未被用户继续编辑的字段。
-  async function submit(key: keyof WindowValues) {
-    const value = input[key];
-    if (value === windowValues(getPin())[key] && !pendingFields.get(key)) return;
-    if (!valid(key)) return;
-    const version = (versions.get(key) ?? 0) + 1;
-    versions.set(key, version);
-    pendingFields.set(key, (pendingFields.get(key) ?? 0) + 1);
+  /// 记录本次输入快照，完成后只校正未被用户继续编辑的字段；联动字段共享一次原生事务。
+  async function submit(keys: (keyof WindowValues)[]) {
+    const actual = windowValues(getPin());
+    const patch: WindowPatch = {};
+    const submitted: (keyof WindowValues)[] = [];
+    for (const key of keys) {
+      const value = input[key];
+      if (value === actual[key] && !pendingFields.get(key)) continue;
+      if (!valid(key)) return;
+      Object.assign(patch, { [key]: value });
+      submitted.push(key);
+    }
+    if (!submitted.length) return;
+    const snapshot = new Map<keyof WindowValues, number>();
+    for (const key of submitted) {
+      const version = (versions.get(key) ?? 0) + 1;
+      versions.set(key, version);
+      snapshot.set(key, version);
+      pendingFields.set(key, (pendingFields.get(key) ?? 0) + 1);
+      failures.delete(key);
+    }
     pending.value++;
-    failures.delete(key);
     try {
-      const result = await apply({ [key]: value });
+      const result = await apply(patch);
       if (!result) {
-        failures.add(key);
+        for (const key of submitted) failures.add(key);
         return;
       }
       // 操作完成前用户可能继续输入，只有仍等于本次提交值时才回填系统校正结果。
-      failures.delete(key);
-      if (versions.get(key) === version && Object.is(input[key], value))
-        Object.assign(input, { [key]: windowValues(result)[key] });
+      for (const key of submitted) {
+        failures.delete(key);
+        if (versions.get(key) === snapshot.get(key) && Object.is(input[key], patch[key]))
+          Object.assign(input, { [key]: windowValues(result)[key] });
+      }
     } catch {
-      failures.add(key);
+      for (const key of submitted) failures.add(key);
     } finally {
-      pendingFields.set(key, (pendingFields.get(key) ?? 1) - 1);
+      for (const key of submitted) pendingFields.set(key, (pendingFields.get(key) ?? 1) - 1);
       pending.value--;
     }
   }

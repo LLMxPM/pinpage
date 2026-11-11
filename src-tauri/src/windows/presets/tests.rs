@@ -1,6 +1,24 @@
-// 功能：验证内置预设、归一化约束与跨屏相对位置换算。
+// 功能：验证自定义预设、归一化约束与跨屏相对位置换算。
 use super::*;
 use crate::models::{PresetFields, PresetInput, Settings, WindowMode, WindowPreset};
+
+/// 标准窗口字段基准，替代已移除的内置预设，供各测试复用。
+fn standard_fields() -> PresetFields {
+    PresetFields {
+        mode: WindowMode::Floating,
+        always_on_top: false,
+        decorations: true,
+        rounded: false,
+        transparent_background: false,
+        position_locked: false,
+        size_locked: false,
+        width: 960.,
+        height: 720.,
+        fx: 0.5,
+        fy: 0.5,
+        fullscreen: false,
+    }
+}
 
 #[test]
 /// 包内布局跨平台回退只改变新页的外观几何，不带入包作者的 ID 或全局预设引用。
@@ -11,7 +29,7 @@ fn package_window_preset_falls_back_without_mutating_content() {
         "alwaysOnTop": true, "decorations": false
     }))
     .unwrap();
-    let mut fields = all(&[])[1].fields.clone();
+    let mut fields = standard_fields();
     fields.mode = WindowMode::Desktop;
     fields.transparent_background = true;
     fields.position_locked = true;
@@ -39,7 +57,7 @@ fn package_window_preset_falls_back_without_mutating_content() {
 fn editor_input(name: &str) -> PresetInput {
     PresetInput {
         name: name.into(),
-        fields: all(&[])[1].fields.clone(),
+        fields: standard_fields(),
     }
 }
 
@@ -72,13 +90,14 @@ fn editing_and_deleting_presets_preserve_windows() {
 }
 
 #[test]
-/// 内置项不可写删，非法参数被拒绝，达到数量上限后仍可编辑已有项。
+/// 编辑或删除不存在的模板被拒绝，非法参数被拒绝，达到数量上限后仍可编辑已有项。
 fn template_permissions_validation_and_limit() {
     let mut settings = Settings::default();
     assert!(
-        storage::write_settings(&mut settings, Some("standard"), editor_input("替换内置")).is_err()
+        storage::write_settings(&mut settings, Some("missing"), editor_input("不存在的模板"))
+            .is_err()
     );
-    assert!(storage::delete_settings(&mut settings, "standard").is_err());
+    assert!(storage::delete_settings(&mut settings, "missing").is_err());
     for (width, fx) in [
         (f64::NAN, 0.),
         (crate::windows::limits::MIN_WIDTH - 1., 0.),
@@ -99,16 +118,6 @@ fn template_permissions_validation_and_limit() {
     assert!(storage::write_settings(&mut settings, Some(&id), editor_input("仍可修改")).is_ok());
 }
 
-/// 内置预设对外只暴露 ID 与字段，名称留给 i18n。
-#[test]
-fn builtins_are_named_by_i18n() {
-    let views = all(&[]);
-    assert_eq!(views.len(), 4);
-    assert!(views
-        .iter()
-        .all(|preset| preset.builtin && preset.name.is_none()));
-}
-
 #[test]
 /// 旧模板缺失透明字段时保留不透明外观，新模板的透明偏好可往返持久化。
 fn old_presets_default_to_opaque() {
@@ -123,44 +132,6 @@ fn old_presets_default_to_opaque() {
     let restored: PresetFields =
         serde_json::from_str(&serde_json::to_string(&fields).unwrap()).unwrap();
     assert!(restored.transparent_background);
-}
-
-/// 新内置预设顺序固定：全屏、标准窗口、右上角、右下角；两角统一 320×480。
-#[test]
-fn builtin_order_and_geometry() {
-    let views = all(&[]);
-    let ids: Vec<&str> = views.iter().map(|preset| preset.id.as_str()).collect();
-    assert_eq!(ids, ["fullscreen", "standard", "topRight", "bottomRight"]);
-    let full = &views[0].fields;
-    assert!(full.fullscreen);
-    assert!(!full.always_on_top);
-    let standard = &views[1].fields;
-    assert_eq!((standard.width, standard.height), (960., 720.));
-    assert_eq!((standard.fx, standard.fy), (0.5, 0.5));
-    let top_right = &views[2].fields;
-    assert_eq!(
-        (
-            top_right.width,
-            top_right.height,
-            top_right.fx,
-            top_right.fy
-        ),
-        (320., 480., 1., 0.)
-    );
-    assert!(top_right.always_on_top);
-    let bottom_right = &views[3].fields;
-    assert_eq!(
-        (
-            bottom_right.width,
-            bottom_right.height,
-            bottom_right.fx,
-            bottom_right.fy
-        ),
-        (320., 480., 1., 1.)
-    );
-    assert_eq!(bottom_right.mode, WindowMode::Desktop);
-    assert!(!bottom_right.always_on_top);
-    assert!(!bottom_right.fullscreen);
 }
 
 /// 桌面模式不允许置顶但保留圆角；浮动模式有系统边框时圆角必须失效。
@@ -198,9 +169,10 @@ fn normalize_removes_conflicting_appearance() {
     assert!(!bordered.rounded, "有系统边框时圆角不生效");
 }
 
-/// 自定义预设追加在内置之后，并保留用户名称。
+/// 自定义预设保留用户名称并按保存顺序输出；空列表不再含任何内置项。
 #[test]
-fn custom_presets_follow_builtins() {
+fn custom_presets_keep_user_names() {
+    assert!(all(&[]).is_empty(), "不再提供内置预设");
     let custom = vec![WindowPreset {
         id: "custom-1".into(),
         name: "我的挂件".into(),
@@ -220,11 +192,10 @@ fn custom_presets_follow_builtins() {
         },
     }];
     let views = all(&custom);
-    assert_eq!(views.len(), 5);
-    let last = views.last().unwrap();
-    assert_eq!(last.id, "custom-1");
-    assert_eq!(last.name.as_deref(), Some("我的挂件"));
-    assert!(!last.builtin);
+    assert_eq!(views.len(), 1);
+    let only = &views[0];
+    assert_eq!(only.id, "custom-1");
+    assert_eq!(only.name, "我的挂件");
 }
 
 /// 归一化比例与屏幕坐标必须能互相还原，覆盖四个角与居中。

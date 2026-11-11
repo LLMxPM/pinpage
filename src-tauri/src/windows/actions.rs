@@ -80,7 +80,8 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 runtime.error = None;
             }
         }
-        "top" | "border" | "desktop" | "recover" | "rounded" | "positionLock" | "sizeLock" => {
+        "top" | "border" | "desktop" | "recover" | "frameSystem" | "frameBorderless"
+        | "frameRounded" | "positionLock" | "sizeLock" => {
             let mut next = previous.clone();
             match action {
                 "top" => {
@@ -99,7 +100,13 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                         WindowMode::Desktop
                     };
                 }
-                "rounded" => next.rounded = !next.rounded,
+                // 边框样式三选一：桌面模式不写系统边框偏好，切回浮动时沿用原有选择。
+                "frameSystem" | "frameBorderless" | "frameRounded" => {
+                    if next.mode == WindowMode::Floating {
+                        next.decorations = action == "frameSystem";
+                    }
+                    next.rounded = action == "frameRounded";
+                }
                 "positionLock" => next.position_locked = !next.position_locked,
                 "sizeLock" => next.size_locked = !next.size_locked,
                 "recover" => {

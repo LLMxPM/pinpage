@@ -165,7 +165,7 @@ pub async fn save_preset(
     windows::presets::save(&app, &pin, &name, preset_id.as_deref())
 }
 
-/// 删除自定义预设；内置预设由代码定义，不接受删除。
+/// 删除自定义预设。
 #[tauri::command]
 pub async fn delete_preset(
     window: WebviewWindow,

@@ -19,7 +19,7 @@ fn full_pin() -> PinConfig {
         "rounded": true,
         "positionLocked": true,
         "sizeLocked": true,
-        "preset": "bottomRight"
+        "preset": "custom-demo"
     }))
     .unwrap()
 }
@@ -87,7 +87,7 @@ fn supported_pin_is_not_rewritten() {
     assert!(!fallback_pin(capabilities(), &mut pin));
     assert_eq!(pin.mode, WindowMode::Desktop);
     assert!(pin.rounded);
-    assert_eq!(pin.preset.as_deref(), Some("bottomRight"));
+    assert_eq!(pin.preset.as_deref(), Some("custom-demo"));
 
     let mut limited_pin = pin.clone();
     limited_pin.mode = WindowMode::Floating;
@@ -179,7 +179,20 @@ fn transparency_has_its_own_capability_boundary() {
     assert!(pin.preset.is_none());
     assert!(pin.enabled);
     assert_eq!(pin.source, source);
-    let mut fields = crate::windows::presets::all(&[])[1].fields.clone();
+    let mut fields = PresetFields {
+        mode: WindowMode::Floating,
+        always_on_top: false,
+        decorations: true,
+        rounded: false,
+        transparent_background: false,
+        position_locked: false,
+        size_locked: false,
+        width: 960.,
+        height: 720.,
+        fx: 0.5,
+        fy: 0.5,
+        fullscreen: false,
+    };
     fields.transparent_background = true;
     assert!(validate_preset(limited(), &fields).is_err());
 }

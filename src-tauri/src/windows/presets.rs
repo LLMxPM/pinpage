@@ -1,8 +1,7 @@
-// 功能：定义内置窗口预设，校验自定义预设，并在归一化位置与屏幕物理坐标之间换算。
+// 功能：列出自定义预设、校验预设参数，并在归一化位置与屏幕物理坐标之间换算。
 use crate::{
     errors::AppMessage,
-    i18n,
-    models::{PinConfig, PresetView},
+    models::{PinConfig, PresetFields, PresetView, WindowMode, WindowPreset},
     state::{self, AppState},
 };
 use tauri::{AppHandle, Manager};
@@ -17,18 +16,6 @@ pub fn find(app: &AppHandle, id: &str) -> Option<PresetView> {
     let state = app.state::<AppState>();
     let presets = state.settings.lock().unwrap().window_presets.clone();
     all(&presets).into_iter().find(|preset| preset.id == id)
-}
-
-/// 预设显示名：内置项按当前语言翻译，自定义项使用用户输入的名称。
-pub fn label(app: &AppHandle, preset: &PresetView) -> String {
-    match &preset.name {
-        Some(name) => name.clone(),
-        None => i18n::text(
-            state::locale(app),
-            &format!("window.presets.{}", preset.id),
-            &Default::default(),
-        ),
-    }
 }
 
 /// 应用预设：只合并外观与几何字段，名称、来源和开关状态保持不变。
@@ -126,12 +113,41 @@ pub fn matching_id(app: &AppHandle, pin: &PinConfig) -> Option<String> {
         .map(|preset| preset.id)
 }
 
-mod builtins;
 mod geometry;
 mod storage;
-pub use builtins::{all, normalize};
 use geometry::target_geometry;
 pub use storage::{delete, save, snapshot_fields, write};
+
+/// 自定义预设列表；字段在输出前统一归一化，顺序即保存顺序。
+pub fn all(custom: &[WindowPreset]) -> Vec<PresetView> {
+    custom
+        .iter()
+        .map(|preset| {
+            let mut fields = preset.fields.clone();
+            normalize(&mut fields);
+            PresetView {
+                id: preset.id.clone(),
+                name: preset.name.clone(),
+                fields,
+            }
+        })
+        .collect()
+}
+
+/// 归一化外观组合：桌面模式不置顶，有系统边框时圆角不生效，尺寸与比例限制在合法范围。
+pub fn normalize(fields: &mut PresetFields) {
+    if fields.mode == WindowMode::Desktop {
+        fields.always_on_top = false;
+    }
+    if fields.mode == WindowMode::Floating && fields.decorations {
+        fields.rounded = false;
+    }
+    let (width, height) = crate::windows::limits::clamp_size(fields.width, fields.height);
+    fields.width = width;
+    fields.height = height;
+    fields.fx = fields.fx.clamp(0., 1.);
+    fields.fy = fields.fy.clamp(0., 1.);
+}
 
 /// 随包默认布局只初始化新页面，不写入全局预设库；平台回退后再按主屏计算归一化位置。
 pub fn initialize(app: &AppHandle, pin: &mut PinConfig, mut fields: crate::models::PresetFields) {

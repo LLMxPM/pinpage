@@ -28,7 +28,7 @@ pub struct Settings {
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
-    /// 用户自定义预设；内置预设定义在代码中，不写入配置。
+    /// 用户自定义预设，随配置持久化；页面只保存匹配预设的 ID 引用。
     #[serde(default, deserialize_with = "lenient_presets")]
     pub window_presets: Vec<WindowPreset>,
 }

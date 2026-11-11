@@ -187,3 +187,49 @@ test('即时调整、另存和删除按调用顺序执行，中途失败不丢�
   await third;
   assert.deepEqual(calls, ['调整', '另存', '删除']);
 });
+
+test('边框样式联动一次提交 decorations 与 rounded，未变化的字段不夹带', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    const next = { ...actual.value, ...patch };
+    if (next.decorations) next.rounded = false;
+    actual.value = next;
+    await nextTick();
+    return actual.value;
+  });
+  // 初始为无边框圆角，切到系统边框：两个字段一起进入同一笔原生事务。
+  live.input.decorations = true;
+  live.input.rounded = false;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls, [{ decorations: true, rounded: false }]);
+  assert.equal(pin.value.decorations, true);
+  assert.equal(pin.value.rounded, false);
+  assert.equal(live.dirty, false);
+  // 切到无边框：decorations 变化、rounded 不变，只提交 decorations。
+  live.input.decorations = false;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls[1], { decorations: false });
+  // 切到无边框圆角：仅 rounded 变化。
+  live.input.rounded = true;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls[2], { rounded: true });
+  assert.equal(live.dirty, false);
+});
+
+test('边框联动的原生校正按字段回填，系统边框自动取消圆角', async (t) => {
+  const { pin, live } = setup(t, async (patch, actual) => {
+    const next = { ...actual.value, ...patch };
+    if (next.decorations) next.rounded = false;
+    actual.value = next;
+    await nextTick();
+    return actual.value;
+  });
+  live.input.decorations = true;
+  live.input.rounded = true;
+  await live.commit(['decorations', 'rounded']);
+  assert.equal(pin.value.rounded, false);
+  assert.equal(live.input.rounded, false);
+  assert.equal(live.input.decorations, true);
+  assert.equal(live.dirty, false);
+});

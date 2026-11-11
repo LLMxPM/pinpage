@@ -107,11 +107,11 @@ fn merge_carries_preset_marker() {
         "name": "计时器", "mode": "floating", "alwaysOnTop": false,
         "decorations": false, "rounded": true, "positionLocked": false,
         "sizeLocked": false, "width": 320, "height": 480, "x": 10, "y": 10,
-        "preset": "topRight"
+        "preset": "custom-demo"
     });
     let tagged: PinSettingsInput = serde_json::from_value(value.clone()).unwrap();
     let next = merge(&old_pin(), &tagged).unwrap();
-    assert_eq!(next.preset.as_deref(), Some("topRight"));
+    assert_eq!(next.preset.as_deref(), Some("custom-demo"));
     assert_eq!(next.width, 320.);
 
     let mut untagged = value;

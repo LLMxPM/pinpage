@@ -19,13 +19,13 @@ English | [简体中文](README.zh-CN.md)
 
 ## Highlights
 
-- **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and borderless rounded corners per page.
+- **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and a per-page frame style (system frame, borderless, or rounded borderless).
 - **Transparent backgrounds** — allow transparency per page in floating and desktop modes on Windows without reloading its running state. Built-in examples are adapted; other pages must provide transparent backgrounds. See [verification status](docs/development.md#当前状态与验收).
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, IndexedDB, and default window layout as a `.pinpage` package and restore it elsewhere. Built-in examples use the same format.
 - **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, modifier + right-click for a window menu, and DPI/monitor correction when restoring windows. The shared modifier defaults to left Alt; choose Ctrl, Shift, or Off in settings.
 - **Immediate window settings** — appearance, size, position, and locks apply and save directly, with undo for the last adjustment. Names and sources are saved separately under Content.
-- **One-click window presets** — four built-ins (full-screen overlay without always-on-top, standard window, 320 × 480 top-right overlay, and 320 × 480 bottom-right desktop widget) switch appearance, size, and relative position together. Save adjustments as a new preset or update a custom one; a shared manager supports editing, renaming, copying, and deleting templates without changing existing pages.
+- **One-click window presets** — package appearance, size, and relative position into your own presets and switch them in one step. Save the current window layout as a new preset or overwrite an existing one; a shared manager supports editing, renaming, copying, and deleting templates without changing existing pages, and imported page packages can carry a default layout.
 - **Quiet by design** — floating pages skip the taskbar; the workspace is created on demand and destroyed on close; the tray keeps windows recoverable.
 - **Optional launch at startup** — enable it in Settings → General; off by default. Start in the tray when signing in to Windows, with page restoration controlled separately.
 - **Security boundaries** — separate WebViews for the workspace and page content, a scoped custom protocol for local files, and no shell or window-management permissions for untrusted pages; read-only folder access is granted per page through a native picker.

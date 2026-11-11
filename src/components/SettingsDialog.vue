@@ -58,8 +58,8 @@ const sections = computed(
       { id: 'about', label: t('ui.settings.navAbout') },
     ] as const,
 );
-/// 自定义预设数量用于入口摘要，管理操作由共用管理器处理。
-const customPresets = computed(() => props.presets.filter((preset) => !preset.builtin));
+/// 预设均为用户自定义项，数量用于入口摘要，管理操作由共用管理器处理。
+const customPresets = computed(() => props.presets);
 const languageOptions = computed(
   () =>
     [

@@ -92,6 +92,16 @@ impl AppState {
         if fallback {
             notices.push(AppMessage::new("errors.platformFallback"));
         }
+        // 旧版内置预设已移除：指向不存在模板的标记收敛为“自定义”，窗口外观保持不变。
+        for pin in &mut settings.pins {
+            if pin
+                .preset
+                .as_deref()
+                .is_some_and(|id| !settings.window_presets.iter().any(|preset| preset.id == id))
+            {
+                pin.preset = None;
+            }
+        }
         let locale = i18n::resolve(settings.locale);
         Self {
             operation: Mutex::new(()),

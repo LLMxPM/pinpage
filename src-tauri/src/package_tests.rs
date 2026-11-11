@@ -3,6 +3,24 @@ use super::*;
 use std::io::Write;
 use std::path::PathBuf;
 
+/// 标准窗口字段基准，替代已移除的内置预设，供包布局测试复用。
+fn standard_fields() -> PresetFields {
+    PresetFields {
+        mode: crate::models::WindowMode::Floating,
+        always_on_top: false,
+        decorations: true,
+        rounded: false,
+        transparent_background: false,
+        position_locked: false,
+        size_locked: false,
+        width: 960.,
+        height: 720.,
+        fx: 0.5,
+        fy: 0.5,
+        fullscreen: false,
+    }
+}
+
 struct Fixture(PathBuf);
 
 impl Fixture {
@@ -157,7 +175,7 @@ fn rejects_invalid_storage_json() {
 fn round_trips_optional_window_preset() {
     let fixture = Fixture::new();
     let package = fixture.0.join("out/window.pinpage");
-    let mut fields = crate::windows::presets::all(&[])[1].fields.clone();
+    let mut fields = standard_fields();
     fields.transparent_background = true;
     write_dir(
         &fixture.0.join("site"),
@@ -183,7 +201,7 @@ fn round_trips_optional_window_preset() {
 /// 非法窗口字段在读取清单时拒绝，不夹到合法范围后悄悄应用。
 fn rejects_invalid_package_window_presets() {
     let fixture = Fixture::new();
-    let fields = crate::windows::presets::all(&[])[1].fields.clone();
+    let fields = standard_fields();
     for (field, value) in [("width", 0.), ("height", 9000.), ("fx", -0.1), ("fy", 1.1)] {
         let mut preset = serde_json::to_value(&fields).unwrap();
         preset[field] = serde_json::json!(value);

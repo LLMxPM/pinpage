@@ -56,17 +56,24 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
             !desktop && pin.always_on_top,
         ),
         ("desktop", "window.menu.desktop", true, desktop),
+        // 边框样式三选一：桌面模式强制无边框，系统边框项禁用；勾选始终只落在当前样式上。
         (
-            "border",
-            "window.menu.border",
+            "frameSystem",
+            "window.menu.frameSystem",
             !desktop,
             pin.effective_decorations(),
         ),
         (
-            "rounded",
-            "window.menu.rounded",
-            !pin.effective_decorations(),
-            pin.rounded,
+            "frameBorderless",
+            "window.menu.frameBorderless",
+            true,
+            !pin.effective_decorations() && !pin.rounded,
+        ),
+        (
+            "frameRounded",
+            "window.menu.frameRounded",
+            true,
+            !pin.effective_decorations() && pin.rounded,
         ),
         (
             "positionLock",
@@ -92,13 +99,12 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
     // 预设子菜单按当前标记勾选，切换后再次弹出即反映最新状态。
     let presets = Submenu::new(app, text("window.menu.presets"), true).map_err(failed)?;
     for preset in crate::windows::presets::all(&custom) {
-        let name = crate::windows::presets::label(app, &preset);
         presets
             .append(
                 &CheckMenuItem::with_id(
                     app,
                     format!("pin|{id}|preset:{}", preset.id),
-                    name,
+                    preset.name.clone(),
                     true,
                     pin.preset.as_deref() == Some(preset.id.as_str()),
                     None::<&str>,

@@ -99,11 +99,10 @@ export interface PresetFields {
   fullscreen: boolean;
 }
 
-/// 窗口预设；内置项 name 为 null，由语言资源提供显示名。
+/// 窗口预设；均为用户自定义项，名称直接使用用户输入。
 export interface WindowPreset extends PresetFields {
   id: string;
-  name: string | null;
-  builtin: boolean;
+  name: string;
 }
 
 /// 无边框窗口的默认或固定拖动修饰键，与 Rust `PlatformDragModifier` 一致。
@@ -148,7 +147,7 @@ export interface Snapshot {
   settings: Settings;
   runtime: Record<string, PinRuntime>;
   notices: AppMessage[];
-  /// 内置与自定义预设，由 Rust 统一定义，前端只负责渲染。
+  /// 用户自定义预设，由 Rust 统一持久化，前端只负责渲染。
   presets: WindowPreset[];
   /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
   resolvedLocale: AppLocale;

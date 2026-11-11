@@ -130,7 +130,7 @@ pub struct PresetFields {
     pub fullscreen: bool,
 }
 
-/// 用户自定义预设；内置预设不落盘，配置里只保存它的 ID 引用。
+/// 用户自定义预设，随配置持久化；不再附带只读内置项。
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowPreset {
@@ -142,13 +142,12 @@ pub struct WindowPreset {
     pub fields: PresetFields,
 }
 
-/// 下发给管理界面的预设视图：内置项不带名称，由前端按 i18n 键渲染。
+/// 下发给管理界面的预设视图；预设均为用户自定义项，名称直接使用用户输入。
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PresetView {
     pub id: String,
-    pub name: Option<String>,
-    pub builtin: bool,
+    pub name: String,
     #[serde(flatten)]
     pub fields: PresetFields,
 }

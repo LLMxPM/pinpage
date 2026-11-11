@@ -21,18 +21,13 @@
     "menu": {
       "top": "Always on top",
       "desktop": "Desktop mode",
-      "border": "Show system frame",
-      "rounded": "Rounded borderless corners",
+      "frameSystem": "System frame",
+      "frameBorderless": "Borderless",
+      "frameRounded": "Rounded borderless",
       "positionLock": "Lock position",
       "sizeLock": "Lock size",
       "hide": "Hide page",
       "presets": "Window presets"
-    },
-    "presets": {
-      "fullscreen": "Full-screen overlay",
-      "standard": "Standard window",
-      "topRight": "Top-right overlay",
-      "bottomRight": "Bottom-right desktop"
     }
   },
   "picker": {
@@ -195,7 +190,6 @@
     "presetNotFound": "That preset does not exist or was deleted",
     "presetNameRange": "Preset names must be 1 to {max} characters",
     "presetLimit": "You can keep up to {max} custom presets; delete one first",
-    "presetReadonly": "Built-in presets are read-only. Create a copy to edit.",
     "presetFieldsInvalid": "Preset size or relative position is outside the allowed range",
     "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone."
   }
