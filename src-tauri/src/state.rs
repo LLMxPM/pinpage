@@ -283,6 +283,7 @@ pub fn schedule_save(app: &AppHandle) {
                 continue;
             }
             if !state.installing.load(Ordering::SeqCst) {
+                let _operation = state.operation.lock().unwrap();
                 if let Err(error) = state.save() {
                     report(&app, error);
                 }

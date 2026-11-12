@@ -27,6 +27,8 @@ fn build_examples() {
 
 /// 生成示例包及 Tauri 资源，测试程序沿用原生窗口所需的 manifest。
 fn main() {
+    // 工作区在普通 Cargo 检查与 Tauri 发布特性间切换时，必须重新生成 dev/production 配置。
+    println!("cargo:rerun-if-env-changed=DEP_TAURI_DEV");
     build_examples();
     // Rust 测试可执行文件也需要启用 Common Controls 6，以加载窗口子类化接口。
     #[cfg(windows)]
@@ -36,6 +38,9 @@ fn main() {
     }
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "automation_snapshot",
+            "automation_control",
+            "automation_skill",
             "snapshot",
             "create_pin",
             "import_page",

@@ -120,6 +120,7 @@ pub fn update_window(
         }
         return Err(error);
     }
+    crate::automation::touch(app, id);
     Ok(WindowChange {
         before: previous,
         after: current(&state, id)?,
@@ -144,7 +145,7 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
     let mut candidate = previous.clone();
     candidate.name = name.into();
     if let Some(source) = &source {
-        candidate.source = source.clone();
+        candidate.source = source.source.clone();
         // 来源更换后内容不再受信任，清除既有文件夹授权。
         candidate.folder_root = None;
     }
@@ -166,6 +167,10 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
         pin.source = candidate.source.clone();
         pin.folder_root = candidate.folder_root.clone();
     }
+    let previous_commits = state.settings.lock().unwrap().site_commits.clone();
+    if let Some(source) = &source {
+        source.mark(app, id);
+    }
     if let Err(error) = state.save() {
         if let Some(pin) = state
             .settings
@@ -179,8 +184,13 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
             pin.source = previous.source;
             pin.folder_root = previous.folder_root;
         }
+        state.settings.lock().unwrap().site_commits = previous_commits;
         return Err(error);
     }
+    if let Some(source) = source {
+        source.committed();
+    }
+    crate::automation::touch(app, id);
     if let Some(window) = app.get_webview_window(id) {
         if let Err(error) = window.set_title(&super::window_title(app, name)) {
             state::report(

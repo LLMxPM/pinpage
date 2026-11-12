@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
 import { ROOT, parseVersion, readVersions } from './release/shared.mjs';
 
-/// 同步四处版本，先检查文件形状再写入；可传入临时项目目录进行独立测试。
+/// 同步应用与工作区成员版本，先检查文件形状再写入；可传入临时项目目录进行独立测试。
 export async function setVersion(version, root = ROOT) {
   parseVersion(version);
   const values = await readVersions(root);
@@ -18,9 +18,18 @@ export async function setVersion(version, root = ROOT) {
     (_, prefix, suffix) => `${prefix}${version}${suffix}`,
   );
   const lock = values.lock.replace(
-    /(\[\[package\]\]\r?\nname = "pinpage"\r?\nversion = ")[^"]+(")/,
-    (_, prefix, suffix) => `${prefix}${version}${suffix}`,
+    /(\[\[package\]\]\r?\nname = "pinpage(?:-cli|-protocol|-skills)?"\r?\nversion = ")[^"]+(")/g,
+    (_, prefix, suffix) => prefix + version + suffix,
   );
+  for (const member of values.members) {
+    await writeFile(
+      path.join(root, member.relative),
+      member.text.replace(
+        /(\[package\][\s\S]*?\nversion = ")[^"]+(")/,
+        (_, prefix, suffix) => prefix + version + suffix,
+      ),
+    );
+  }
   for (const [relative, value] of [
     ['package.json', values.packageJson],
     ['src-tauri/tauri.conf.json', values.config],
@@ -33,7 +42,7 @@ export async function setVersion(version, root = ROOT) {
     );
   }
   await writeFile(path.join(root, 'src-tauri/Cargo.toml'), cargo);
-  await writeFile(path.join(root, 'src-tauri/Cargo.lock'), lock);
+  await writeFile(path.join(root, 'Cargo.lock'), lock);
 }
 
 /// 检查项目版本及可选 Git 标签；CI 与本地构建共用，避免校验逻辑漂移。

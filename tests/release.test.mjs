@@ -23,13 +23,13 @@ test('版本同步只修改应用字段，保持依赖版本；标签和锁文�
       '[package]\nname = "pinpage"\nversion = "0.1.0"\n[dependencies]\ndemo = "1.0.0"\n',
     );
     await writeFile(
-      path.join(root, 'src-tauri/Cargo.lock'),
+      path.join(root, 'Cargo.lock'),
       '[[package]]\nname = "demo"\nversion = "1.0.0"\n[[package]]\nname = "pinpage"\nversion = "0.1.0"\n',
     );
     await setVersion('0.2.0', root);
     assert.equal(await checkVersion('v0.2.0', root), '0.2.0');
     assert.match(
-      await readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8'),
+      await readFile(path.join(root, 'Cargo.lock'), 'utf8'),
       /name = "demo"\nversion = "1.0.0"/,
     );
     assert.equal(
@@ -38,7 +38,7 @@ test('版本同步只修改应用字段，保持依赖版本；标签和锁文�
     );
     await assert.rejects(checkVersion('v0.1.0', root));
     await writeFile(
-      path.join(root, 'src-tauri/Cargo.lock'),
+      path.join(root, 'Cargo.lock'),
       '[[package]]\nname = "pinpage"\nversion = "0.1.0"\n',
     );
     await assert.rejects(checkVersion(undefined, root));

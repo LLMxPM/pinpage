@@ -48,7 +48,7 @@ jobs:
       - name: 缓存 Rust 构建
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri -> target
+          workspaces: . -> src-tauri/target
 
       - name: 安装依赖
         run: pnpm install --frozen-lockfile

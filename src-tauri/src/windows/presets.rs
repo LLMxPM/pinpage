@@ -69,6 +69,7 @@ pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppM
         }
         return Err(error);
     }
+    crate::automation::touch(app, &previous.id);
     Ok(())
 }
 

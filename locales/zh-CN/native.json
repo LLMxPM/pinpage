@@ -90,7 +90,7 @@
     "tooManyFiles": "导入文件超过 {max} 个，请先精简目录再导入",
     "tooLarge": "导入体积超过 {max} MiB，请先精简目录再导入",
     "pathEscaped": "导入路径越界",
-    "folderPathInvalid": "无法读取所选目录路径",
+    "folderPathInvalid": "无法读取所选文件夹路径",
     "filePathInvalid": "无法读取所选文件路径",
     "noRootHtml": "所选目录根目录下没有 HTML 文件，请改用导入单文件",
     "measureFailed": "导入统计失败，也可以改用导入单文件",
@@ -101,7 +101,6 @@
     "folderNotFound": "文件或文件夹不存在",
     "folderReadFailed": "读取文件夹内容失败",
     "folderOpenFailed": "打开文件失败",
-    "folderPathInvalid": "无法读取所选文件夹路径",
     "statsUnavailable": "系统采样数据尚未就绪，请稍后重试",
     "exportNeedsImport": "只有导入页面可以导出为页面包",
     "exportNeedsOpen": "请先开启页面再导出",
@@ -186,6 +185,8 @@
     "presetNameRange": "预设名称需为 1 到 {max} 个字符",
     "presetLimit": "自定义预设最多 {max} 个，请先删除不用的预设",
     "presetFieldsInvalid": "预设尺寸或相对位置超出有效范围",
-    "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作"
+    "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作",
+    "automationFailed": "本机控制或技能操作失败，请检查详情",
+    "navigationFailed": "页面导航失败：{reason}"
   }
 }

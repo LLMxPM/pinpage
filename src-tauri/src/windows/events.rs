@@ -8,6 +8,11 @@ use tauri::{webview::PageLoadEvent, AppHandle, Manager, WebviewWindow, WindowEve
 
 /// 记录单窗加载错误，管理界面可展示失败原因并提供重试。
 pub fn set_error(app: &AppHandle, id: &str, error: AppMessage) {
+    crate::automation::load_error(
+        app,
+        id,
+        pinpage_protocol::Failure::new("loadFailed", "页面加载失败").detail(&error),
+    );
     let state = app.state::<AppState>();
     let mut runtime = state.runtime.lock().unwrap();
     let item = runtime.entry(id.into()).or_default();
@@ -19,6 +24,12 @@ pub fn set_error(app: &AppHandle, id: &str, error: AppMessage) {
 
 /// 页面加载事件仅更新运行态，不把跳转后的敏感地址写入会话配置。
 pub fn page_load(window: WebviewWindow, payload: tauri::webview::PageLoadPayload<'_>) {
+    #[cfg(not(windows))]
+    crate::automation::navigation(
+        window.app_handle(),
+        window.label(),
+        matches!(payload.event(), PageLoadEvent::Started),
+    );
     let state = window.state::<AppState>();
     let mut runtime = state.runtime.lock().unwrap();
     let item = runtime.entry(window.label().into()).or_default();
@@ -33,8 +44,26 @@ pub fn page_load(window: WebviewWindow, payload: tauri::webview::PageLoadPayload
 pub fn watch_load(app: &AppHandle, id: &str) {
     let app = app.clone();
     let id = id.to_string();
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(25));
+    let load_id = app
+        .state::<crate::automation::AutomationState>()
+        .loads
+        .lock()
+        .unwrap()
+        .get(&id)
+        .map(|l| l.id.clone());
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(25)).await;
+        if app
+            .state::<crate::automation::AutomationState>()
+            .loads
+            .lock()
+            .unwrap()
+            .get(&id)
+            .map(|l| l.id.clone())
+            != load_id
+        {
+            return;
+        }
         let loading = app
             .state::<AppState>()
             .runtime
@@ -116,6 +145,12 @@ pub fn attach(window: &WebviewWindow) {
             | WindowEvent::Resized(_)
             | WindowEvent::ScaleFactorChanged { .. } => capture(&handle),
             WindowEvent::Destroyed => {
+                crate::automation::load_error(
+                    app,
+                    handle.label(),
+                    pinpage_protocol::Failure::new("pageClosed", "页面窗口已销毁"),
+                );
+                crate::automation::diagnostics::close_page(app, handle.label());
                 let state = app.state::<AppState>();
                 #[cfg(windows)]
                 state.appearances.lock().unwrap().remove(handle.label());

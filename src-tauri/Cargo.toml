@@ -6,6 +6,7 @@ description = "将计时器、看板和本地工具页固定在桌面上方"
 license = "MIT"
 edition = "2021"
 rust-version = "1.90"
+default-run = "pinpage"
 
 [lib]
 name = "pinpage_lib"
@@ -31,12 +32,16 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 tauri-plugin-updater = "2.14.1"
 semver = "1.0.28"
 sysinfo = "0.37"
+pinpage-protocol = { path = "../crates/pinpage-protocol" }
+pinpage-skills = { path = "../crates/pinpage-skills" }
+tokio = { version = "1", features = ["net", "io-util", "time", "rt-multi-thread", "macros", "sync"] }
+sha2 = "0.10"
 
 [target.'cfg(windows)'.dependencies]
 auto-launch = "0.6"
 webview2-com = "0.39"
 windows = { version = "0.62", default-features = false }
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_UI_Input_KeyboardAndMouse", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_System_Power"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_UI_Input_KeyboardAndMouse", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Graphics_Dwm", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_System_Power", "Win32_System_Pipes", "Win32_System_IO", "Win32_Security"] }
 
 [dev-dependencies]
 base64 = "0.22"

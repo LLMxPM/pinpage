@@ -1,4 +1,5 @@
 // 功能：提供经过管理窗口身份校验的 IPC 命令入口，并协调窗口创建与状态通知。
+pub mod automation;
 pub mod editor;
 pub mod folder;
 pub mod host;
@@ -8,8 +9,7 @@ pub mod updates;
 
 use crate::{
     errors::AppMessage,
-    i18n,
-    models::{CreatePin, PageSource, PinConfig, Snapshot},
+    models::{CreatePin, Snapshot},
     state::{self, AppState},
     tray, windows,
 };
@@ -51,55 +51,26 @@ pub async fn create_pin(
     state.ensure_mutable()?;
     // 站点副本以页面 ID 命名，先分配 ID 再复制，避免复制完成后还要改名。
     let id = format!("p-{}", uuid::Uuid::new_v4().simple());
-    let (source, window_preset) = crate::source::prepare_with_window(&app, &id, &input.source)?;
-    let name = match &source {
-        PageSource::Url { url } => user_name(&input.name, || {
-            url::Url::parse(url)
-                .ok()
-                .and_then(|parsed| parsed.host_str().map(String::from))
-                .unwrap_or_else(|| {
-                    i18n::text(state::locale(&app), "names.webPage", &Default::default())
-                })
-        }),
-        PageSource::Bundled { entry } => user_name(&input.name, || {
-            std::path::Path::new(entry)
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into()
-        }),
-    };
-    let mut pin = PinConfig {
-        id,
-        name,
-        source,
-        width: 420.,
-        height: 360.,
-        x: None,
-        y: None,
-        scale: 1.,
-        always_on_top: input.always_on_top,
-        decorations: input.decorations,
-        enabled: true,
-        mode: input.mode,
-        rounded: false,
-        transparent_background: false,
-        position_locked: false,
-        size_locked: false,
-        page_context_menu: false,
-        preset: None,
-        presets: Vec::new(),
-        folder_root: None,
-    };
+    let prepared = crate::source::prepare_with_window(&app, &id, &input.source)?;
+    let mut pin = crate::services::pages::new_pin(id, &input.name, prepared.source.clone());
+    pin.always_on_top = input.always_on_top;
+    pin.decorations = input.decorations;
+    pin.mode = input.mode;
     if input.use_package_preset {
-        if let Some(fields) = window_preset {
+        if let Some(fields) = prepared.preset.clone() {
             windows::presets::initialize(&app, &mut pin, fields);
         }
     }
     // 前端已禁用不支持的模式，这里仍按原生能力拒绝伪造或旧版 IPC 输入。
     crate::platform::validate_pin(crate::platform::capabilities(), &pin)?;
+    let previous = state.settings.lock().unwrap().clone();
     state.settings.lock().unwrap().pins.push(pin.clone());
-    state::schedule_save(&app);
+    prepared.mark(&app, &pin.id);
+    if let Err(error) = state.save() {
+        *state.settings.lock().unwrap() = previous;
+        return Err(error);
+    }
+    prepared.committed();
     let result = windows::open_pin(&app, &pin);
     if let Err(error) = &result {
         crate::windows::show_manager(&app);
@@ -195,14 +166,4 @@ pub async fn delete_preset(
     let _operation = state.operation.lock().unwrap();
     state.ensure_mutable()?;
     windows::presets::delete(&app, &pin_id, &preset_id)
-}
-
-/// 用户给定的名称优先，留空时使用来源推导的兜底名称。
-fn user_name(input: &str, fallback: impl FnOnce() -> String) -> String {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        fallback()
-    } else {
-        trimmed.chars().take(80).collect()
-    }
 }

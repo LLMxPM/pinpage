@@ -1,4 +1,5 @@
 // 功能：声明各平台窗口能力、执行统一校验，并提供 Windows 原生策略与安全回退。
+pub mod navigation;
 #[cfg(windows)]
 use crate::models::PlatformDragModifier;
 use crate::{

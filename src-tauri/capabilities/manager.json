@@ -4,6 +4,9 @@
   "description": "仅允许本地管理界面调用窗口管理命令和订阅状态事件。",
   "webviews": ["main"],
   "permissions": [
+    "allow-automation-snapshot",
+    "allow-automation-control",
+    "allow-automation-skill",
     "core:event:allow-listen",
     "core:event:allow-unlisten",
     "core:window:allow-close",

@@ -103,20 +103,36 @@ pub fn update(app: &AppHandle, id: &str, input: PinSettingsInput) -> Result<(), 
     {
         next.preset = None;
     }
-    let refreshed = match &input.source {
-        Some(value) => {
-            next.source = crate::source::prepare(app, id, value)?;
-            true
-        }
-        None => false,
-    };
+    let prepared = input
+        .source
+        .as_ref()
+        .map(|value| crate::source::prepare(app, id, value))
+        .transpose()?;
+    let refreshed = prepared.is_some();
+    if let Some(prepared) = &prepared {
+        next.source = prepared.source.clone();
+        next.folder_root = None;
+    }
     // 先算出新来源的首屏地址：导入内容缺失等问题应在落盘前暴露，且关闭的窗口无需导航。
     let target = if refreshed && app.get_webview_window(id).is_some() {
         Some(super::initial_url(app, &next)?)
     } else {
         None
     };
+    let previous_commits = state.settings.lock().unwrap().site_commits.clone();
     apply(app, &previous, next.clone())?;
+    if let Some(prepared) = &prepared {
+        prepared.mark(app, id);
+    }
+    if let Err(error) = state.save() {
+        let _ = apply(app, &next, previous);
+        state.settings.lock().unwrap().site_commits = previous_commits;
+        return Err(error);
+    }
+    if let Some(prepared) = prepared {
+        prepared.committed();
+    }
+    crate::automation::touch(app, id);
     if let Some(url) = target {
         if let Err(error) = super::navigate(app, id, url) {
             // 配置已保存，导航失败通常是窗口刚被关闭；重新开启即可加载新来源。

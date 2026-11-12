@@ -1,4 +1,5 @@
 // 功能：装配应用状态、本地资源协议、托盘及会话恢复。
+mod automation;
 mod commands;
 mod content;
 mod data;
@@ -12,6 +13,7 @@ mod models;
 mod package;
 mod pathguard;
 mod platform;
+mod services;
 mod source;
 mod state;
 mod tray;
@@ -25,6 +27,16 @@ use tauri::Manager;
 
 /// 启动应用；关闭所有窗口后由托盘继续管理，显式退出时保存会话。
 pub fn run() {
+    let context = tauri::generate_context!();
+    // 默认开发运行使用独立标识；显式验证标识保持调用方选择，Release 继续使用正式标识。
+    #[cfg(debug_assertions)]
+    let context = {
+        let mut context = context;
+        if context.config().identifier == pinpage_protocol::DEFAULT_APP {
+            context.config_mut().identifier = "com.pinpage.development".into();
+        }
+        context
+    };
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {
             if !args.iter().any(|argument| argument == "--tray") {
@@ -42,6 +54,9 @@ pub fn run() {
             });
         })
         .invoke_handler(tauri::generate_handler![
+            commands::automation::automation_snapshot,
+            commands::automation::automation_control,
+            commands::automation::automation_skill,
             commands::snapshot,
             commands::create_pin,
             commands::session::import_page,
@@ -69,6 +84,9 @@ pub fn run() {
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(AppState::load(path));
+            app.manage(automation::AutomationState::default());
+            services::transaction::recover(app.handle())?;
+            automation::start(app.handle());
             // 跨平台降级只在首次加载时提示；尽快落盘，避免每次启动重复提醒。
             if app.state::<AppState>().platform_fallback {
                 state::schedule_save(app.handle());
@@ -108,10 +126,11 @@ pub fn run() {
             }
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("PinPage 启动失败")
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                automation::stop(app);
                 platform::stop();
             }
             if let tauri::RunEvent::ExitRequested { api, .. } = event {

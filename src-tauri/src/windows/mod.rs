@@ -183,8 +183,9 @@ pub fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<(), AppMessa
     let window = app
         .get_webview_window(id)
         .ok_or_else(|| AppMessage::new("errors.pageClosed"))?;
+    crate::automation::begin_load(app, id);
     window
-        .navigate(url)
+        .navigate(crate::platform::navigation::runtime_url(url)?)
         .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
     events::watch_load(app, id);
     Ok(())
@@ -207,6 +208,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         return Ok(());
     }
     let url = initial_url(app, pin)?;
+    crate::automation::begin_load(app, &pin.id);
     #[cfg(windows)]
     state.appearances.lock().unwrap().remove(&pin.id);
     let navigation_id = pin.id.clone();
@@ -281,6 +283,8 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
             return Err(message);
         }
     };
+    #[cfg(windows)]
+    crate::automation::lifecycle::attach(&window);
     let setup = (|| {
         geometry::restore(&window, pin)?;
         let mut positioned = pin.clone();

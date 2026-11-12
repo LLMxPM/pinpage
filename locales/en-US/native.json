@@ -101,7 +101,6 @@
     "folderNotFound": "The file or folder does not exist",
     "folderReadFailed": "Reading the folder contents failed",
     "folderOpenFailed": "Opening the file failed",
-    "folderPathInvalid": "The selected folder path could not be read",
     "statsUnavailable": "System sampling is not ready yet. Try again shortly",
     "exportNeedsImport": "Only imported pages can be exported as a package",
     "exportNeedsOpen": "Open the page before exporting it",
@@ -186,6 +185,8 @@
     "presetNameRange": "Preset names must be 1 to {max} characters",
     "presetLimit": "You can keep up to {max} custom presets; delete one first",
     "presetFieldsInvalid": "Preset size or relative position is outside the allowed range",
-    "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone."
+    "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone.",
+    "automationFailed": "Local control or skill operation failed; check the details",
+    "navigationFailed": "Page navigation failed: {reason}"
   }
 }

@@ -27,6 +27,12 @@ pub struct Settings {
     #[serde(deserialize_with = "lenient_gesture_modifier")]
     pub gesture_modifier: GestureModifier,
     pub restore_session: bool,
+    /// 本机控制默认开启；只允许受信任工作台修改，CLI 不能自启权限。
+    pub local_control: bool,
+    /// 自动化安装的持久去重映射，不随页面包导出。
+    pub automation_clients: std::collections::BTreeMap<String, serde_json::Value>,
+    /// 已提交站点事务的持久标记，与站点恢复记录协调。
+    pub site_commits: std::collections::BTreeMap<String, String>,
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
@@ -85,6 +91,9 @@ impl Default for Settings {
             locale: LocalePreference::default(),
             gesture_modifier: GestureModifier::default(),
             restore_session: true,
+            local_control: true,
+            automation_clients: Default::default(),
+            site_commits: Default::default(),
             pins: Vec::new(),
             window_presets: Vec::new(),
         }

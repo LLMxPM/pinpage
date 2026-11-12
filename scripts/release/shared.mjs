@@ -14,22 +14,36 @@ export function parseVersion(input) {
   return input;
 }
 
-/// 原样读取三处版本与 Cargo 锁文件中的应用版本，不修改依赖版本。
+/// 读取应用、CLI 和共享 crate 及根锁文件中的版本，不修改依赖版本。
 export async function readVersions(root = ROOT) {
   const [packageText, configText, cargo, lock] = await Promise.all([
     readFile(path.join(root, 'package.json'), 'utf8'),
     readFile(path.join(root, 'src-tauri/tauri.conf.json'), 'utf8'),
     readFile(path.join(root, 'src-tauri/Cargo.toml'), 'utf8'),
-    readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8'),
+    readFile(path.join(root, 'Cargo.lock'), 'utf8'),
   ]);
+  const members = await Promise.all(
+    ['pinpage-cli', 'pinpage-protocol', 'pinpage-skills'].map(async (name) => {
+      const relative = 'crates/' + name + '/Cargo.toml';
+      const text = await readFile(path.join(root, relative), 'utf8').catch((error) => {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+      });
+      return text === null
+        ? null
+        : { relative, text, version: text.match(/\[package\][\s\S]*?\nversion = "([^"]+)"/)?.[1] };
+    }),
+  );
   const packageJson = JSON.parse(packageText);
   const config = JSON.parse(configText);
   return {
+    members: members.filter(Boolean),
     packageJson,
     config,
     cargo,
     lock,
     versions: [
+      ...members.filter(Boolean).map((member) => member.version),
       packageJson.version,
       config.version,
       cargo.match(/\[package\][\s\S]*?\nversion = "([^"]+)"/)?.[1],

@@ -12,8 +12,6 @@ const MAX_BYTES: u64 = 256 * 1024 * 1024;
 pub const PENDING_DATA: &str = "pending-data.json";
 /// 新来源的暂存目录名，完整落盘后才与站点副本交换。
 const INCOMING_DIR: &str = "incoming";
-/// 被让位的旧站点副本目录名，交换成功后立即删除，中断时下次重新导入前清理。
-const STALE_DIR: &str = "stale";
 
 /// 原生选择器签发的导入暂存，校验通过后才会真正复制文件。
 #[derive(Clone, Debug)]
@@ -37,6 +35,14 @@ pub fn pages_root(app: &AppHandle) -> Result<PathBuf, AppMessage> {
 
 /// 页面 ID 必须是单级普通目录名，防止配置文件被改写后越出 pages 根目录。
 fn validate_id(id: &str) -> Result<(), AppMessage> {
+    if id.is_empty()
+        || id.len() > 128
+        || !id
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
+    {
+        return Err(AppMessage::new("errors.pinIdInvalid"));
+    }
     let mut parts = Path::new(id).components();
     match (parts.next(), parts.next()) {
         (Some(Component::Normal(_)), None) => Ok(()),
@@ -58,43 +64,6 @@ pub fn site_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
 /// 新来源的暂存目录：先完整落盘，再通过 `swap_site` 转正，避免替换中途失败留下空站点。
 pub fn incoming_root(app: &AppHandle, id: &str) -> Result<PathBuf, AppMessage> {
     Ok(page_root(app, id)?.join(INCOMING_DIR))
-}
-
-/// 用暂存目录替换站点副本。
-///
-/// 旧副本先改名让位再被新副本顶替：改名失败说明文件仍被占用，此时原副本完好无损；
-/// 新副本改名失败则把旧副本还原，任何一条路径都不会让页面指向空目录。
-pub fn swap_site(app: &AppHandle, id: &str) -> Result<(), AppMessage> {
-    let root = page_root(app, id)?;
-    let (site, incoming, stale) = (
-        root.join("site"),
-        root.join(INCOMING_DIR),
-        root.join(STALE_DIR),
-    );
-    if !incoming.is_dir() {
-        return Err(AppMessage::new("errors.swapSourceMissing"));
-    }
-    if stale.exists() {
-        // 上次交换中断留下的旧副本，先清掉才腾得出目录名。
-        std::fs::remove_dir_all(&stale)
-            .map_err(|error| AppMessage::new("errors.cleanupFailed").detail(error))?;
-    }
-    if site.exists() {
-        std::fs::rename(&site, &stale).map_err(|error| {
-            AppMessage::new("errors.sourceReplaceFailed")
-                .detail(format!("{}：{error}", site.display()))
-        })?;
-    }
-    if let Err(error) = std::fs::rename(&incoming, &site) {
-        let _ = std::fs::rename(&stale, &site);
-        return Err(AppMessage::new("errors.sourceReplaceFailed")
-            .detail(format!("{}：{error}", incoming.display())));
-    }
-    // 旧副本只影响磁盘占用，删除失败不改写本次替换结果，下次重新导入前会再清理。
-    if let Err(error) = std::fs::remove_dir_all(&stale) {
-        eprintln!("清理旧站点副本失败：{}：{error}", stale.display());
-    }
-    Ok(())
 }
 
 /// 列出根目录下的 HTML 入口候选，不递归子目录，避免误选深层页面。
@@ -136,6 +105,7 @@ pub fn measure(root: &Path) -> Result<(u64, u64), AppMessage> {
 }
 
 /// 把整个目录复制为站点副本，保留相对结构以便样式、脚本和 JSON 请求继续解析。
+#[cfg(test)]
 pub fn copy_site(source: &Path, target: &Path) -> Result<(), AppMessage> {
     std::fs::create_dir_all(target)
         .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
@@ -159,6 +129,7 @@ pub fn copy_site(source: &Path, target: &Path) -> Result<(), AppMessage> {
 }
 
 /// 单文件导入只复制入口本身，返回站点副本内的相对入口。
+#[cfg(test)]
 pub fn copy_entry(source: &Path, target: &Path) -> Result<String, AppMessage> {
     let name = source
         .file_name()
