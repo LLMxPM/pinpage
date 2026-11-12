@@ -265,5 +265,34 @@
       "bottomRight": "Bottom right"
     },
     "discardCloseConfirm": "Discard unsaved preset changes and close the manager?"
+  },
+  "automation": {
+    "title": "Agents and CLI",
+    "description": "Allow the current signed-in user to manage pages using the bundled CLI. Web pages cannot access this control endpoint.",
+    "control": "Allow local CLI control (applies immediately)",
+    "desktopOnly": "Manage local control and skills in the PinPage desktop app.",
+    "skillTitle": "Agent skill",
+    "skillHint": "Install pinpage-pages to teach skill-compatible agents how to create, update and debug pages.",
+    "builtinVersion": "Bundled version",
+    "installedVersion": "User folder version",
+    "notInstalled": "Not installed",
+    "skillPath": "User skill folder",
+    "cliPath": "CLI path",
+    "customTitle": "Other skill folders",
+    "customHint": "Choose the agent's skills root folder. The skill is placed in its pinpage-pages subfolder.",
+    "exportTitle": "Export skill package",
+    "exportHint": "Export the bundled skill for manual installation or sharing. Exporting does not install it.",
+    "install": "Install for this user",
+    "update": "Update user skill",
+    "customInstall": "Install in a folder",
+    "customUpdate": "Update in a folder",
+    "customStatus": "Inspect a folder",
+    "exportZip": "Export ZIP",
+    "exportDirectory": "Export to folder",
+    "reloadHint": "App updates preserve installed skills. Refresh the agent skill list or start a new session after installation.",
+    "completed": "Completed",
+    "unchanged": "Already up to date",
+    "inspected": "Folder version retrieved",
+    "resultVersion": "Version: {version}"
   }
 }

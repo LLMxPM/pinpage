@@ -223,3 +223,9 @@
   color: var(--muted);
   font-size: 11px;
 }
+/* 窄窗口保留独立智能体入口，完整名称仍由提示与读屏标签提供。 */
+@media (max-width: 700px) {
+  .automation-entry span {
+    display: none;
+  }
+}

@@ -1,4 +1,4 @@
-<!-- 功能：以页面管理为中心组织工作台、示例库、新建流程和统一的设置与删除弹窗。 -->
+<!-- 功能：组织页面工作台、示例库、新建流程、智能体入口和统一的管理弹窗。 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import AppIcon from './components/AppIcon.vue';
 import AppDialog from './components/AppDialog.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
+import AutomationDialog from './features/automation/AutomationDialog.vue';
 import NewPinForm from './features/launcher/NewPinForm.vue';
 import ExampleGallery from './features/launcher/ExampleGallery.vue';
 import PinCard from './features/pins/PinCard.vue';
@@ -51,6 +52,7 @@ const {
   quit,
 } = useWorkspace();
 const creatingOpen = ref(false);
+const automationOpen = ref(false);
 /// 预设管理器始终属于某个页面：从该页的设置弹窗进入，非空即打开。
 const presetManagerPinId = ref<string | null>(null);
 const presetManagerPin = computed(() =>
@@ -71,6 +73,7 @@ let unwatchResize: (() => void) | null = null;
 const modalOpen = computed(
   () =>
     creatingOpen.value ||
+    automationOpen.value ||
     settingsOpen.value ||
     !!editingPin.value ||
     !!deletingPin.value ||
@@ -153,6 +156,14 @@ function editPin(id: string) {
       >
       <span v-if="!desktopAvailable" class="preview-badge">{{ t('ui.desktop.preview') }}</span>
       <div class="topbar-actions">
+        <button
+          class="secondary compact automation-entry"
+          :title="t('ui.automation.title')"
+          :aria-label="t('ui.automation.title')"
+          @click="automationOpen = true"
+        >
+          <AppIcon name="terminal" :size="16" /><span>{{ t('ui.automation.title') }}</span>
+        </button>
         <button
           class="secondary compact"
           :title="updateAvailable ? t('ui.updates.availableBadge') : undefined"
@@ -283,6 +294,7 @@ function editPin(id: string) {
       @error="error = $event"
       @close="creatingOpen = false"
     />
+    <AutomationDialog v-if="automationOpen" @close="automationOpen = false" />
     <SettingsDialog
       v-if="settingsOpen"
       :settings="snapshot.settings"
