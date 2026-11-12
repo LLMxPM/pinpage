@@ -53,6 +53,7 @@ Windows 为完整支持平台；macOS 目前仅覆盖标准浮动窗口，桌面
 
 - [用户指南](docs/user-guide.md)：安装启动、页面管理、窗口操作、托盘、数据迁移与常见问题。
 - [架构与数据](docs/architecture.md)：窗口生命周期、安全边界、本地副本、页面包、配置模型与性能。
+- [智能体 CLI 与 skill](docs/agent-cli.md)：工作台顶栏提供独立的「智能体与 CLI」面板；当前源码已接入随应用分发的 CLI、页面更新、桌面截图、诊断与独立技能管理，尚未发布；另见[实施规划](docs/agent-cli-plan.md)与[验收状态](docs/development.md#当前状态与验收)。
 - [开发与构建](docs/development.md)：环境准备、检查与测试、打包、独立验证实例与当前验收状态。
 - [平台支持](docs/platforms.md)：Windows 完整能力、macOS 浮动窗口回退与待验收范围。
 - [版本与升级](docs/releases.md)：版本脚本、签名构建、GitHub Release 发布与客户端升级行为。

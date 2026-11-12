@@ -23,6 +23,8 @@ pnpm tauri dev
 ## 目录结构
 
 ```text
+crates/                  CLI、协议与离线技能管理模块（共享根 Cargo.lock）
+skills/pinpage-pages/     公开技能及随包参考
 src/
   features/launcher/      添加页面、来源导入
   features/pins/          工作台、即时窗口设置、独立内容保存与页面级预设管理器
@@ -70,13 +72,13 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm check:i18n` | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库 |
 | `pnpm check:limits` | 前端与原生窗口尺寸上下限是否一致 |
 | `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
-| `pnpm build` | 文案与尺寸限制检查、类型检查及 Vite 生产构建 |
+| `pnpm build` | 文案、尺寸限制、技能契约、类型检查及 Vite 生产构建 |
 | `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待、操作队列及平台能力过滤与回退，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
 | `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
 | `pnpm test:release` | 版本同步、标签约束与 GitHub 更新清单 |
-| `cargo fmt --manifest-path src-tauri/Cargo.toml --check` | Rust 格式检查 |
-| `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all` | Rust 静态检查 |
+| `cargo fmt --manifest-path src-tauri/Cargo.toml --all --check` | Rust 格式检查 |
+| `cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D clippy::all` | Rust 静态检查 |
 | `pnpm format:check` | 前端、语言资源、脚本、配置与样例文件的 Prettier 检查 |
 
 只运行与改动相关的检查；既有检查通过后，除非发现新问题，不重复扩大测试范围。涉及 URL 校验、本地资源路径边界、状态迁移和窗口恢复时，优先补充对应测试。
@@ -94,6 +96,28 @@ docs/                     用户、架构、开发、平台与发布文档
 - **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
 - **页面能力层（未发布）**：L0 宿主信息与共享系统采样、L1 文件夹只读逐页授权、内容页独立 CSP 响应头；文件夹与系统监控两个参考示例已注册示例库。
 - **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新、可配置的 Windows 登录自启（未发布）。
+
+### 2026-11-12 智能体面板与技能说明（未发布）
+
+- 工作台顶栏新增独立「智能体与 CLI」入口，从设置中移除旧区块；本机控制开关、技能版本与路径、默认／其他目录安装更新和导出按职责分组，沿用统一按钮与开关样式。长路径可换行，原生操作期间保留弹窗，结果与错误自动滚动到可见区域。
+- 修复弹窗在打开期间热更新后可能残留背景禁用状态的问题。浏览器预览已检查独立入口、设置中无旧模块、正常关闭与 Esc 焦点恢复、热更新后关闭，以及 520px 窄视区无横向溢出；这些检查不替代原生选择器和安装导出的桌面验收。
+- 公开技能现为 `1.0.4`，整理为入口与三份参考：入口保留产品与运行机制、阅读导航、流程和边界；页面制作指南合并目录、HTML／CSS、布局滚动、透明、外部数据、存储和页面包；宿主能力契约说明页面 JavaScript 的 L0／L1、能力探测、权限与 CSP；CLI 手册说明终端操作、窗口配置、诊断截图与恢复。移除旧的结构页、约束页和命令页，具体规则集中维护并相互引用。导出清单、状态和工作台共用版本常量；应用升级仍不自动覆盖智能体目录中已安装的技能。
+- 本轮检查：`pnpm build`（ui 252 / native 176 键）、29 项 UI 测试、5 项技能 Rust 测试、技能包 Clippy、应用 `cargo check`、Rustfmt、相关 Prettier、技能结构校验与本地引用检查通过；技能导出内容及导出／安装／状态版本一致性由往返测试覆盖。
+- 技能 `1.0.4` 结构整理检查：6 项技能 Rust 测试与 Clippy 通过，新增旧版 `1.0.3` 目录升级用例，验证废弃参考被替换且新清单与文件一致；技能结构校验、契约同步和相关 Prettier 通过。随包 CLI 离线目录导出实测包含入口与三份参考，摘要、包内文件链接与章节链接全部有效，无旧参考残留；此检查不代表重新验收了原生透明效果。
+
+### 2026-11-11 智能体 CLI 与 skill（未发布）
+
+- 已实现独立 Rust CLI、共享协议和技能管理 crate；默认开发标识为 `com.pinpage.development`，正式标识为 `com.pinpage.desktop`，验证标识由独立配置指定。Cargo workspace 与锁文件迁到仓库根，保留原 manifest 参数和产物目录。使用方式见[CLI 指南](agent-cli.md)，设计基准见[规划](agent-cli-plan.md)。
+- 本机入口采用登录 SID ACL、拒绝远程的单实例命名管道、原生重叠 I/O 与事件等待；客户端发送凭据前核对服务端 PID，服务端校验内核会话、凭据、协议与实例期望。工作台仍校验标签和来源，内容页权限与 CSP 不变。关闭控制时释放服务句柄，禁用描述不含有效凭据。
+- 来源安装／同 ID 更新、持久 client key 去重、修订冲突、操作查询、加载代次、窗口局部修改和关闭保留记录均已接入。旧站点跨配置提交保留，启动依据恢复记录与 siteCommits 标记回滚或清理。更新不恢复包快照、不应用包布局、不重建运行中的 WebView，并清除文件夹授权。
+- 按页诊断覆盖导航、控制台、未捕获异常和资源失败；有界缓存、游标、过期及停止清理已接入。CLI 桌面采集使用 DXGI Desktop Duplication，跳过只有指针变化的帧，按 DWM 物理外框裁剪、关联修订与 loadId，不使用 WebView 离屏图替代。工作台提供控制开关和 skill 管理入口。
+- **自动检查**：工作区 137 项 Rust 测试通过（应用 122、原生窗口 6、CLI 1、协议 3、技能 5），后续新增的空闲管道释放、握手拒绝用例分批通过，合计 139 项；Clippy、Rustfmt、`pnpm build`（ui 239 / native 176 键）、29 项 UI 与 5 项发布测试、相关 Prettier、公开 skill 校验和宿主契约同步检查通过。
+- **安装与命令实测**：使用 `com.pinpage.agent-cli-installer-verification` 和仓库内独立安装目录，NSIS 静默安装、更新与卸载通过；安装包实际包含 CLI，随包 CLI 可独立导出并安装 skill。静默安装／更新／卸载保持用户 PATH，卸载移除随包应用与 CLI，保留技能、源码、截图及测试配置。新启动方式避免 GUI 继承终端输出管道，安装后 PowerShell 读取 `app start --json` 在本次环境约 276ms 返回。未发布、未覆盖已公开附件。
+- **页面功能实测**：中文空格路径、同键去重、同 ID 更新、旧修订拒绝、原生字段修改、关闭页更新不打开、刷新和关闭重开通过。localStorage 与 IndexedDB 内容在更新及关闭重开后保持，sessionStorage 在新 WebView 中重置。故意异常和 HTTP 404 可定位，资源 URL 查询参数被移除；诊断停止及关闭清理通过。锁住独立配置临时文件时更新失败，修订与旧站点保持，刷新仍运行旧源码；解除锁后可更新成功。
+- **技能实测**：隔离 USERPROFILE 下的默认用户目录、指定根目录、同版本无需更新、ZIP 导出重装、本地修改冲突和显式备份替换通过；没有在真实用户技能目录静默安装。
+- **视觉实测**：前半程在 Windows 11 / WebView2 157.0.4341.42、单屏 2560×1440、125% DPI 上，已取得并实际查看系统边框、无边框不透明、圆角透明的真实桌面图，能看到桌面背景、原生外框、阴影及局部面板。早期仅指针帧出现黑图，修复后取得有效画面。后半程当前会话不再提供可采集输出，完整安装包脚本如实返回 `captureUnavailable`，报告 `functionalChecksPassed: true`、`ok: false`，没有用离屏图补齐验收。
+- **资源样本**：独立 Release、无工作台、1／3／5 个计时页及 5 页诊断已采整组私有提交、工作集、CPU、句柄与线程；另以停止进程后的独立配置夹具验证控制关闭，doctor 与 app start 均返回 controlDisabled，并采 1 页样本。每项仅 2 秒、包含启动与重载瞬态，不能据此宣称稳定开销、差异收益或作为完整性能回归。原始报告保留在被忽略的 runtime-data 下。
+- **待验收**：工作台独立面板的原生安装／更新／导出点击（此前桌面输入重试仍报 GetCursorPos 拒绝访问，已停止输入）、交互式 PATH 选择、真实跨版本 updater 安装、长期资源趋势与重复采集稳定性、全部事务故障注入及真实强制中断、多显示器／旋转／100%／150%／200% 与混合 DPI、锁屏／安全桌面／HDR。当前结果不满足规划中的全部发布门槛。
 
 ### 2026-11-11 预设改为页面级（未发布）
 
@@ -312,3 +336,14 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 - 平台能力、回退规则或 macOS 验收结论变化时，同步更新[平台支持](platforms.md)与本文「当前状态与验收」。
 - [docs/screenshots](../docs/screenshots) 存放 README 与用户指南的界面截图，更新界面后按同名文件替换即可。
 - 协作规范见 [AGENTS.md](../AGENTS.md)。
+
+## CLI 独立验收脚本
+
+先构建独立标识的验证应用或安装测试包，然后运行：
+
+```powershell
+# 功能：验证新目录页面、存储、冲突、诊断和 1／3／5 页资源，保留报告与源码。
+./scripts/verify-agent-cli.ps1 -CliPath <CLI绝对路径> -AppPath <应用绝对路径> -Instance com.pinpage.verification
+```
+
+脚本拒绝正式实例标识，只关闭自己创建的页面并停止自己的诊断，不删除记录。默认截图失败即失败；无桌面环境可显式传 -AllowCaptureUnavailable 继续功能采样，但报告仍保留截图失败且 ok 为 false。报告在 runtime-data/agent-cli/acceptance 的独立子目录。测量工具新增 -AppPath 与 -BuildMode，可精确选择隔离实例，额外记录句柄与线程。

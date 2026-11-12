@@ -17,7 +17,7 @@ PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安�
 
 - 应用版本采用 SemVer，例如 `0.2.0`、`0.2.1`、`0.3.0`；预发布可用 `0.3.0-beta.1`。
 - `package.json` 是版本来源，脚本同步 `src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 与 `Cargo.lock` 中的应用版本，不修改依赖版本。
-- Git 标签固定为 `v<版本>`。构建元数据和非规范版本会被脚本拒绝；CI 校验四处版本一致。
+- Git 标签固定为 `v<版本>`。构建元数据和非规范版本会被脚本拒绝；CI 校验应用、CLI 与共享 crate 的版本一致。
 - 应用只接收高于当前版本的正式版，不自动降级。预发布 Release 不设置为 Latest。
 - 配置的 `schemaVersion` 与应用版本独立。未发布构建为 `2`（v1 升级时自动迁移，v0.2.0 发布时为 `1`）；读取未来格式时保留原文件、停止写入并提示使用新程序。
 - 已发布版本禁止覆盖安装包或签名；修复应发布更高版本。草稿允许重试上传。
@@ -109,3 +109,9 @@ https://github.com/LLMxPM/pinpage/releases/latest/download/latest.json
 - [Tauri updater](https://v2.tauri.app/plugin/updater/)：静态清单、构建签名及 Windows 安装方式。
 - [Tauri Update API](https://docs.rs/tauri-plugin-updater/2.14.1/tauri_plugin_updater/struct.Update.html)：下载验签和安装退出行为。
 - [GitHub Release 管理](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)：草稿、附件和正式发布。
+
+## CLI 与技能分发（未发布）
+
+工作区锁文件已迁到仓库根 Cargo.lock，原 --manifest-path src-tauri/Cargo.toml 与 src-tauri/target 产物路径保留。版本脚本同步应用及三个新增 crate，并在 CLI 构建时核对 --version。pnpm release:build 的前置步骤构建 CLI，NSIS 安装钩子将其放在应用旁；CLI 无独立发布附件。技能资源编译内置，按独立 skillVersion 和最低能力清单管理；pnpm check:skill 检查公开宿主契约与仓库原始契约一致。
+
+安装器仅提供当前用户 PATH 选项，静默升级不弹新选择，卸载只移除本安装添加的路径和随包 CLI；不修改所有用户 PATH，不自动安装或覆盖用户技能。已生成本地 NSIS 与 updater 签名，独立测试包的静默安装、同版本更新、卸载和用户文件保留已通过；交互式 PATH 选择、真实跨版本升级及代码签名仍需在干净环境验收，不重发或覆盖已公开的 v0.2.0。

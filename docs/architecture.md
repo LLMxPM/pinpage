@@ -141,3 +141,13 @@
 - 新窗口链接交给默认浏览器，依赖应用内弹窗的登录流程需要按站点验证。
 - 100%、150%、200% DPI、多显示器组合、连续缩放与安装卸载等场景的验收状态见[开发与构建](development.md#当前状态与验收)。
 - 页面能力层当前只提供 L0 环境信息与 L1 文件夹只读；写入、删除、事件推送、通知与剪贴板不在现有契约内。授权选择器模态、内容页 CSP 响应头与 capability 来源匹配的实机验收状态见[开发与构建](development.md#当前状态与验收)。
+
+## 本机自动化（未发布）
+
+`crates/pinpage-protocol` 定义独立版本协议、长度前缀及 1 MiB 控制消息；`crates/pinpage-cli` 为短生命周期控制台和 DXGI 桌面采集器；`crates/pinpage-skills` 为 CLI 与工作台共用的离线技能管理器。工作台保留 ensure_manager 校验，内容页 capability 与 CSP 不放宽，无 MCP、外部 CDP 端口或任意脚本执行方法。
+
+`automation/` 负责当前登录 SID 的显式 DACL、禁止远程的单实例命名管道、服务端 PID 与会话验证、随机凭据、有限操作表和按页诊断。管道用 Win32 重叠 I/O 及事件等待；禁用时关闭句柄并发布无有效凭据的禁用描述，重开重新签发凭据。描述位于用户本地 PinPage/control 的应用与会话目录，不随页面包导出。
+
+`services/` 下沉共用页面初始值、来源复制和站点事务。站点保留旧副本和持久恢复记录，settings.siteCommits 标记配置是否已提交；启动先恢复再开放控制与内容窗口。settings.automationClients 保存去重映射，settings.localControl 默认 true；旧配置缺失这些字段时使用默认值。来源更新清除文件夹授权，忽略更新包存储与布局。修订仅在本实例有效，常规几何采样不触发源码冲突。
+
+Windows 导航监听把原生 NavigationId 与 loadId 关联，旧导航回调不完成新等待。诊断仅会话期间启用 Runtime/Network 域；停止、关闭、到期和退出清理事件与缓存。桌面截图在 CLI 中采集，应用只返回受控页的物理外框；按加载、修订、几何和显示器拓扑复核，不在管道传大图。

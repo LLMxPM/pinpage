@@ -76,3 +76,7 @@ examples/timer/
 预览页面可复用已有开发服务并访问 `/examples/timer/site/index.html`；按目录导入预览时选择工具的 `site/`，按页面包导入才能携带清单中的窗口预设。不要在已有服务运行时重复启动应用。
 
 页面设计、透明背景、状态保存和示例库注册指引见项目技能 [pinpage-examples](../.agents/skills/pinpage-examples/SKILL.md)。修改源码不会覆盖已导入的独立副本，验证新版时重新添加或重新导入。
+
+## CLI 安装与更新
+
+CLI 首次安装可恢复合法随包数据并选择是否应用布局；更新已有导入页始终忽略包内存储与布局，保留原 ID 和同源持久数据，清除文件夹授权。更新重新导航但不额外销毁已运行的 WebView，关闭页仍保持关闭。详见[CLI 指南](agent-cli.md)。

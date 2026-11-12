@@ -53,6 +53,7 @@ Windows is the fully supported platform. macOS currently covers standard floatin
 
 - [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
+- [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, desktop screenshots, diagnostics and portable skill management; not yet released. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/development.md#当前状态与验收).
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and current acceptance status.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
