@@ -13,15 +13,18 @@ impl Fixture {
             "// 功能：测试资源\nconsole.log('v1');",
         )
         .unwrap();
-        Self(root)
+        // macOS 临时目录可能经 /var 符号链接访问，正常来源夹具使用实际根目录。
+        Self(root.canonicalize().unwrap())
     }
 }
 impl Drop for Fixture {
+    /// 仅清理本用例创建的临时目录，链接本身由标准库按链接删除。
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.0);
     }
 }
 #[test]
+/// 目录完整复制，内容修改必须影响稳定摘要。
 fn directory_is_complete_and_content_digest_changes() {
     let f = Fixture::new();
     let a = prepare(&f.0.join("source"), None, &f.0.join("a")).unwrap();
@@ -35,6 +38,7 @@ fn directory_is_complete_and_content_digest_changes() {
     assert_ne!(a.digest, b.digest);
 }
 #[test]
+/// 多入口必须明确选择，单文件导入不能复制相邻资源。
 fn candidates_and_single_file_scope_are_strict() {
     let f = Fixture::new();
     std::fs::write(f.0.join("source/other.htm"), "other").unwrap();
@@ -51,6 +55,7 @@ fn candidates_and_single_file_scope_are_strict() {
     assert!(!f.0.join("single/app.js").exists());
 }
 #[test]
+/// 相对路径与超预算文件在来源准备时被拒绝。
 fn rejects_relative_paths_and_oversized_single_file() {
     let f = Fixture::new();
     assert!(prepare(Path::new("relative"), None, &f.0.join("a")).is_err());
@@ -58,4 +63,19 @@ fn rejects_relative_paths_and_oversized_single_file() {
     file.set_len(256 * 1024 * 1024 + 1).unwrap();
     drop(file);
     assert!(prepare(&f.0.join("large.html"), None, &f.0.join("b")).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+/// 真实临时根目录可用，但链接来源及含链接祖先的来源仍必须拒绝。
+fn rejects_symbolic_link_sources_and_ancestors() {
+    let f = Fixture::new();
+    let link = f.0.join("linked-source");
+    std::os::unix::fs::symlink(f.0.join("source"), &link).unwrap();
+    for source in [&link, &link.join("index.html")] {
+        let error = prepare(source, None, &f.0.join("rejected")).err().unwrap();
+        assert_eq!(error.code, "invalidSource");
+        assert!(error.message.contains("符号链接"));
+    }
+    assert!(!f.0.join("rejected").exists());
 }
