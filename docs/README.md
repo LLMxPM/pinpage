@@ -7,7 +7,8 @@
 | [页面包与示例制作](page-packages.md) | `.pinpage` 清单、随包默认窗口预设、标准示例源码与分发打包 |
 | [示例开发与接入](examples-development.md) | 通过 `AGENTS.md` 引用唯一页面技能的公共规范，维护示例源码、内置注册、打包与验证 |
 | [智能体 CLI 与 skill](agent-cli.md) | 命令、连接、页面更新、截图、诊断与技能管理；[原始实施规划](agent-cli-plan.md)保留设计基准 |
-| [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量、当前状态与验收 |
+| [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量与验收脚本 |
+| [当前状态与验收](acceptance.md) | 实现状态、自动检查结果、桌面实测记录与待验收项 |
 | [平台支持](platforms.md) | Windows 与 macOS／其他平台的能力矩阵、配置回退、macOS 当前范围与验收状态 |
 | [版本与升级](releases.md) | 统一版本号、本地签名构建、GitHub Release 发布与升级数据保护 |
 

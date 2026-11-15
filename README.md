@@ -19,8 +19,8 @@ _Source, window appearance, and size._
 
 ## Highlights
 
-- **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and a per-page frame style (system frame, borderless, or rounded borderless).
-- **Transparent backgrounds** — allow transparency per page in floating and desktop modes on Windows without reloading its running state. Built-in examples are adapted; other pages must provide transparent backgrounds. See [verification status](docs/development.md#当前状态与验收).
+- **Pages above windows, not tabs** — float pages over other apps or pin them to the desktop; set always-on-top and a per-page frame style (system frame, borderless, or rounded borderless). Both borderless styles suppress the system shadow and outline; rounded borderless keeps native corner clipping.
+- **Transparent backgrounds** — allow transparency per page in floating and desktop modes on Windows without reloading its running state. Built-in examples are adapted; other pages must provide transparent backgrounds. See [verification status](docs/acceptance.md).
 - **Any web page or local HTML** — open HTTP/HTTPS addresses or import a folder or single HTML file, including LLM-generated tools that need no deployment or packaging; relative CSS, images, ES modules, and JSON keep working.
 - **Portable page packages** — export an imported page with its localStorage, sessionStorage, IndexedDB, default window layout, and named window presets as a `.pinpage` package and restore it elsewhere. Built-in examples use the same format.
 - **Precise window control** — logical size and physical position, independent position and size locks, modifier + left-drag for borderless windows, plain right-click for a window menu (per-page opt-out to let the page handle it), and DPI/monitor correction when restoring windows. The drag modifier defaults to Ctrl; choose Shift or Off in settings.
@@ -54,8 +54,9 @@ Windows is the fully supported platform. macOS currently covers standard floatin
 - [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Example development and integration](docs/examples-development.md) (Chinese) — examples follow repository `AGENTS.md` and reuse the shared references from the single `pinpage-pages` skill; covers registration, packaging, and verification.
-- [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, named window presets, page package export, desktop screenshots, diagnostics and portable skill management; not yet released. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/development.md#当前状态与验收).
-- [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and current acceptance status.
+- [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, named window presets, page package export, desktop screenshots, diagnostics and portable skill management; not yet released. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/acceptance.md).
+- [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and acceptance scripts.
+- [Implementation and acceptance status](docs/acceptance.md) (Chinese) — implementation status, check results, desktop verification records, and pending acceptance.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
 

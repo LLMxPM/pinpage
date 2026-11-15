@@ -1,5 +1,7 @@
 // 功能：用本进程创建的隐藏窗口验证原生几何锁、圆角裁剪和桌面挂载，不操作用户窗口。
 #![cfg(windows)]
+#[path = "../src/platform/caption.rs"]
+mod caption;
 // 被测的平台模块只依赖消息契约，单独引入以便复用同一份错误定义。
 #[path = "../src/platform/corners.rs"]
 mod corners;
@@ -8,6 +10,8 @@ mod desktop;
 #[allow(dead_code)]
 #[path = "../src/errors.rs"]
 mod errors;
+#[path = "native_windows/frame.rs"]
+mod frame;
 #[path = "../src/platform/rules.rs"]
 mod rules;
 use std::ptr::null_mut;
@@ -16,11 +20,11 @@ use windows_sys::{
     Win32::{
         Foundation::{HWND, RECT},
         Graphics::Gdi::*,
-        UI::WindowsAndMessaging::*,
+        UI::{HiDpi::*, WindowsAndMessaging::*},
     },
 };
 
-struct TestWindow(HWND);
+struct TestWindow(HWND, DPI_AWARENESS_CONTEXT);
 
 impl TestWindow {
     /// 创建测试线程独占的隐藏原生窗口，完全独立于用户现有页面。
@@ -30,6 +34,10 @@ impl TestWindow {
 
     /// 扩展样式在创建时确定，模拟真实内容窗口的合成表面初始化。
     fn with_extended_style(extended: u32) -> Self {
+        // 与应用一样使用物理坐标，避免挂载 Explorer 后 DPI 虚拟化污染其他测试线程。
+        let previous_dpi =
+            unsafe { SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
+        assert!(!previous_dpi.is_null(), "无法设置测试线程 DPI 上下文");
         let handle = unsafe {
             CreateWindowExW(
                 extended,
@@ -47,7 +55,7 @@ impl TestWindow {
             )
         };
         assert!(!handle.is_null(), "无法创建隐藏测试窗口");
-        Self(handle)
+        Self(handle, previous_dpi)
     }
 
     /// 读取实际窗口矩形，使用系统结果验证规则而非只检查配置值。
@@ -83,6 +91,7 @@ impl Drop for TestWindow {
             if IsWindow(self.0) != 0 {
                 DestroyWindow(self.0);
             }
+            SetThreadDpiAwarenessContext(self.1);
         }
     }
 }

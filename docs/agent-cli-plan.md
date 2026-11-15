@@ -1,6 +1,6 @@
 # PinPage 智能体 CLI 与 skill 实施规划
 
-日期：2026-11-11。状态：主体实现已落地，发布验收尚未全部完成。本文保留设计基准，使用方式见[CLI 指南](agent-cli.md)，实际实测与未覆盖项以[开发与构建](development.md#当前状态与验收)为准，不能把下列完整矩阵视为已验收。
+日期：2026-11-11。状态：主体实现已落地，发布验收尚未全部完成。本文保留设计基准，使用方式见[CLI 指南](agent-cli.md)，实际实测与未覆盖项以[当前状态与验收](acceptance.md)为准，不能把下列完整矩阵视为已验收。
 
 PinPage 将随应用安装提供 `pinpage-cli.exe`，不提供独立 CLI 下载；配套 `pinpage-pages` skill 支持独立安装、更新和导出，安装目标可以是指定目录或用户的 `~/.agents/skills`。具备本机终端与图片查看能力的智能体可据此完成页面制作、安装、更新、桌面截图和诊断。对外只提供 CLI，不实现 MCP 服务。截图以真实桌面合成画面为依据，覆盖透明背景、原生边框、圆角、阴影和窗口层级。
 
@@ -519,7 +519,8 @@ pinpage-cli skill update --source 'C:\work\exports\pinpage-pages.zip'
 - [英文 README](../README.md)与[中文 README](../README.zh-CN.md)：增加 CLI 获取方式与能力范围，区分规划和已交付。
 - [用户指南](user-guide.md)：控制开关、页面安装更新语义、截图范围、skill 的用户级或指定目录安装更新与导出。
 - [架构与数据](architecture.md)：业务服务、管道鉴权、数据事务和诊断生命周期。
-- [开发与构建](development.md)：实际构建测试命令、独立实例及当前状态与验收。
+- [开发与构建](development.md)：实际构建测试命令、独立实例与验收脚本。
+- [当前状态与验收](acceptance.md)：实际检查结果、桌面实测记录与待验收项。
 - [平台支持](platforms.md)：CLI、桌面采集和诊断分别列能力与实测范围。
 - [版本与升级](releases.md)：应用内置 CLI、skill 资源、签名、独立技能版本及安装更新行为。
 - [页面包与示例制作](page-packages.md)：安装与更新的布局、存储快照处理差异。

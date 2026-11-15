@@ -38,4 +38,4 @@
 - 包含本地筛选排序和其他示例状态约束的统一入口：`pnpm test:examples`。
 - 格式：`pnpm exec prettier --check examples/stocks tests/stocks.test.mjs tests/stocks-trend.test.mjs`。
 - 标准包：`pnpm examples:pack`，以及 `cargo test --manifest-path src-tauri/Cargo.toml --lib examples::tests`。
-- 浏览器与 Windows WebView2 的实际验证范围见 [开发与构建](../../docs/development.md#当前状态与验收)。接口成功不能替代真实盘中延迟和长时间稳定性测量。
+- 浏览器与 Windows WebView2 的实际验证范围见 [当前状态与验收](../../docs/acceptance.md)。接口成功不能替代真实盘中延迟和长时间稳定性测量。

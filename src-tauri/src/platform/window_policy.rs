@@ -80,11 +80,9 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
         rules.rounded.set(pin.rounded);
         rules.decorated.set(decorated);
         rules.scale.set(scale);
+        // 每次都双向应用，清除系统边框切回无边框时遗留的描边和阴影。
+        caption::apply(hwnd, decorated)?;
         corners::apply(hwnd, pin.rounded, decorated, scale)?;
-        // 只有系统边框才存在标题栏；无边框窗口不写入 DWM 配色。
-        if decorated {
-            caption::apply(hwnd);
-        }
         rules.anchor.set(unsafe { desktop::parent_rect(hwnd) });
         Ok(())
     })();
