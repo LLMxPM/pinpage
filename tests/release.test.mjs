@@ -7,7 +7,7 @@ import test from 'node:test';
 import { checkVersion, setVersion } from '../scripts/version.mjs';
 import { parseVersion } from '../scripts/release/shared.mjs';
 import { createManifest } from '../scripts/release/artifacts.mjs';
-import { findRelease } from '../scripts/release/publish.mjs';
+import { findRelease, waitForDraft } from '../scripts/release/publish.mjs';
 
 test('版本同步更新应用与技能系列，保持依赖版本；标签和锁文件不一致必须报错', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'pinpage-version-'));
@@ -127,5 +127,54 @@ test('Release 列表的权限与网络错误直接中止，不被误判为可以
         throw unavailable;
       }),
     (error) => error === unavailable,
+  );
+});
+
+test('新建草稿的列表可见性允许有限延迟，超时后必须停止', async () => {
+  const draft = { id: 3, tag_name: 'v0.3.0', draft: true };
+  let queries = 0;
+  let waits = 0;
+  const response = () => {
+    queries += 1;
+    return JSON.stringify([queries < 3 ? [] : [draft]]);
+  };
+  const wait = async () => {
+    waits += 1;
+  };
+  assert.deepEqual(await waitForDraft('v0.3.0', response, wait, 3), draft);
+  assert.equal(queries, 3);
+  assert.equal(waits, 2);
+  queries = 0;
+  waits = 0;
+  const missing = () => {
+    queries += 1;
+    return '[[]]';
+  };
+  await assert.rejects(waitForDraft('v0.3.0', missing, wait, 3), /未找到可写的 Release 草稿/);
+  assert.equal(queries, 3);
+  assert.equal(waits, 2);
+});
+
+test('等待新草稿时，API 错误立即中止，正式版本保持不可写状态', async () => {
+  const unavailable = new Error('HTTP 403: Forbidden');
+  let waits = 0;
+  const wait = async () => {
+    waits += 1;
+  };
+  await assert.rejects(
+    waitForDraft(
+      'v0.3.0',
+      () => {
+        throw unavailable;
+      },
+      wait,
+    ),
+    (error) => error === unavailable,
+  );
+  assert.equal(waits, 0);
+  const published = { tag_name: 'v0.3.0', draft: false };
+  assert.deepEqual(
+    await waitForDraft('v0.3.0', () => JSON.stringify([[published]]), wait),
+    published,
   );
 });

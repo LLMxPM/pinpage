@@ -2,6 +2,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import semver from 'semver';
 import { ROOT, REPOSITORY, command } from './shared.mjs';
 import { checkVersion } from '../version.mjs';
@@ -12,6 +13,16 @@ export function findRelease(tag, run = command) {
     run('gh', ['api', '--paginate', '--slurp', `repos/${REPOSITORY}/releases?per_page=100`]),
   );
   return pages.flat().find((release) => release.tag_name === tag) ?? null;
+}
+
+/// 新草稿可能尚未出现在列表中；仅对缺失状态有限重试，权限与网络错误直接中止。
+export async function waitForDraft(tag, run = command, wait = delay, attempts = 6) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const release = findRelease(tag, run);
+    if (release) return release;
+    if (attempt + 1 < attempts) await wait(2000);
+  }
+  throw new Error('未找到可写的 Release 草稿，停止发布');
 }
 
 /// 生成草稿与更新说明；重试只允许修改草稿，不移动已发布标签。
@@ -31,7 +42,7 @@ async function prepare(tag) {
       `PinPage ${tag}`,
       '--generate-notes',
     ]);
-  const release = findRelease(tag);
+  const release = existing ?? (await waitForDraft(tag));
   if (!release?.draft) throw new Error('未找到可写的 Release 草稿，停止发布');
   const authoredNotes = await readFile(
     path.join(ROOT, 'docs/release-notes', `${tag.slice(1)}.md`),

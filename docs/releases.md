@@ -71,6 +71,8 @@ cargo run --locked --manifest-path src-tauri/Cargo.toml --example verify-update 
 
 草稿通过可分页的 Release 列表按标签定位，不能使用只返回已发布版本的按标签查询接口。权限或网络错误直接中止，不按“不存在”处理；接口行为见 [GitHub Release API](https://docs.github.com/en/rest/releases/releases#list-releases)。
 
+新建草稿可能短暂尚未出现在列表中；创建后最多查询六次，间隔两秒，仅重试“未找到”状态。权限与网络错误立即中止，超时也停止发布，不重复创建草稿或修改已公开版本。
+
 若标签已经推送但发布脚本需要修复，保持标签不动，在 `main` 修复并验证发布工具，然后手动运行最新 `main` 的 Release 工作流，输入原标签。应用仍检出并构建原标签源码；准备与发布步骤使用该次工作流 SHA 对应的 `publish.mjs`，只替换发布脚本，不更改安装包的应用源码。已公开的版本仍禁止覆盖；只有草稿可重试。
 
 GitHub Release 的更新清单固定入口为：

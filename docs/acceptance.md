@@ -8,6 +8,7 @@
 - 应用、CLI、协议与技能 crate 版本同步为 `0.3.0`，内置技能版本同步为 `0.3.0`；配置格式继续为 2。发布说明维护在[0.3.0 更新说明](release-notes/0.3.0.md)，工作流同时用于 Release 正文与 updater 清单。
 - 非 Windows 打包跳过 NSIS 专用 CLI 资源；本地以 `aarch64-apple-darwin` 目标验证入口正常跳过。CI 保留 Windows、macOS 默认／Option 三组，Clippy 与测试覆盖 workspace，增加示例逻辑测试。
 - 首轮干净 CI 发现 `take_pending_pin_settings` 缺少构建命令登记，本地旧权限生成文件掩盖了该遗漏；已补齐登记，并从源码核对处理器、构建清单与 capability 中的自定义命令权限。
+- 发布源代码固定为 `v0.3.0` 标签提交 `c890bc1`，对应主线 CI 已全部通过。首轮 Release 的真实安装包验签与版本绑定通过，创建草稿后立即查询未命中而停止；已为新草稿可见性增加有限重试与两项发布测试。后续按保留标签的工具补发流程继续，不移动标签。
 - 本地检查通过：冻结锁文件安装、Prettier、尺寸／中英文／技能检查、类型与 Vite 生产构建、29 项 UI、22 项示例、6 项发布测试、146 项 Rust 单元测试（应用 132、CLI 4、协议 4、技能 6）、workspace 全目标全 feature Clippy、Rustfmt 及本次文档本地文件链接检查。
 - 本机已有开发实例，未覆盖其运行中的主程序；应用本地测试使用 `cargo test -p pinpage --lib`，其余 workspace 模块单独测试。完整 workspace 与原生窗口集成测试交由 CI；macOS 本版构建结果以对应 CI 为准。本记录不新增跨版本安装、鼠标交互、DPI、多显示器或性能验收结论。
 
