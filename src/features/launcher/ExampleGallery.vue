@@ -63,23 +63,25 @@ const { t } = useI18n();
         <div class="example-details">
           <h3>{{ t(example.title) }}</h3>
           <p class="example-description">{{ t(`ui.examples.descriptions.${example.id}`) }}</p>
-          <span class="example-badge" :class="example.badge">{{
-            t(`ui.examples.badges.${example.badge}`)
-          }}</span>
-          <button
-            class="secondary compact"
-            :disabled="busy"
-            :aria-label="t('ui.examples.addAria', { name: t(example.title) })"
-            @click="emit('create', example.id)"
-          >
-            <AppIcon
-              :name="pending === `example:${example.id}` ? 'refresh' : 'plus'"
-              :size="15"
-              :class="{ spinning: pending === `example:${example.id}` }"
-            />{{
-              pending === `example:${example.id}` ? t('ui.common.working') : t('ui.examples.add')
-            }}
-          </button>
+          <div class="example-actions">
+            <span class="example-badge" :class="example.badge">{{
+              t(`ui.examples.badges.${example.badge}`)
+            }}</span>
+            <button
+              class="secondary compact"
+              :disabled="busy"
+              :aria-label="t('ui.examples.addAria', { name: t(example.title) })"
+              @click="emit('create', example.id)"
+            >
+              <AppIcon
+                :name="pending === `example:${example.id}` ? 'refresh' : 'plus'"
+                :size="15"
+                :class="{ spinning: pending === `example:${example.id}` }"
+              />{{
+                pending === `example:${example.id}` ? t('ui.common.working') : t('ui.examples.add')
+              }}
+            </button>
+          </div>
         </div>
       </article>
     </div>
