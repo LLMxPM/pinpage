@@ -47,6 +47,7 @@ fn main() {
             "export_page",
             "submit_page_data",
             "pin_action",
+            "take_pending_pin_settings",
             "update_pin",
             "update_window",
             "update_content",
