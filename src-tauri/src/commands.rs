@@ -56,6 +56,9 @@ pub async fn create_pin(
     pin.always_on_top = input.always_on_top;
     pin.decorations = input.decorations;
     pin.mode = input.mode;
+    if input.import_package_presets {
+        pin.presets = prepared.presets.clone();
+    }
     if input.use_package_preset {
         if let Some(fields) = prepared.preset.clone() {
             windows::presets::initialize(&app, &mut pin, fields);

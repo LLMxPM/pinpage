@@ -40,9 +40,9 @@ pinpage-cli --json doctor
 | `pages reload <id>`                 | 刷新已安装副本，不复制源码。                                                            |
 | `pages wait <id> --load-id <代次>`  | 等待指定导航，之后的新导航不能代替它；可用 `--settle-ms` 留出布局稳定时间。             |
 
-首次安装使用可追踪的 `--client-key`。同键且内容与安装参数相同才去重；请求变化返回冲突。修改源码应更新已保存的页面 ID，不能靠更换键重复创建。安装默认开启，`--closed` 仅保存；新导入包默认恢复合法存储快照并应用随包布局，`--apply-package-preset false` 可取消布局。
+首次安装使用可追踪的 `--client-key`。同键且内容与安装参数相同才去重；请求变化返回冲突。修改源码应更新已保存的页面 ID，不能靠更换键重复创建。安装默认开启，`--closed` 仅保存；新导入包默认恢复合法存储快照、导入命名预设并应用随包默认布局。`--apply-package-preset false` 只取消应用布局；`--import-package-presets false` 单独取消导入预设列表。
 
-更新保留原 ID、窗口配置、开启状态和同源持久存储，忽略包内存储及布局；关闭页保持关闭，运行页重新导航。每次来源更新清除 L1 文件夹授权，即使仍使用同一源码路径。先确保高价值编辑与计时状态已由页面保存。
+更新保留原 ID、窗口配置、开启状态和同源持久存储，忽略包内存储及默认布局。预设默认 `--presets keep`；只有更新来源是 `.pinpage` 时才可显式 `merge` 或 `replace`。合并按 ID 追加，相同 ID 的不同名称或参数返回 `presetConflict`，不会部分提交；替换使用完整随包列表，空列表会清空已有预设。两者都不应用窗口布局。关闭页保持关闭，运行页重新导航；每次来源更新清除 L1 文件夹授权，即使仍使用同一源码路径。先确保高价值编辑与计时状态已由页面保存。
 
 ```powershell
 # 功能：首次安装并检查结果，修改源码后基于最新修订更新同一页面。
@@ -78,6 +78,56 @@ pinpage-cli --json window set $pageId --width 420 --height 480 --transparent tru
 
 仅按用户任务调整窗口。原生透明、拖动缩放、DPI 与多显示器行为需要真实桌面验证，不根据 CSS 截图推断通过。
 
+## 命名窗口预设
+
+预设归属单个页面；先 `doctor` 确认 `capabilities.windowPresets >= 1`。`window presets list <页面ID>` 返回有序 `presets`、`activePresetId` 和 `revision`。名称允许重复，引用和更新始终使用 ID。
+
+| 命令 | 行为 |
+| --- | --- |
+| `window presets put <页面ID> --id compact --file ./compact.json` | 按稳定 ID 创建或更新，不应用到窗口；重试不会增加重复项。 |
+| `window presets save <页面ID> --id compact --name 精简` | 捕获当前窗口为模板，关闭页使用保存的几何；不会开启页面。 |
+| `window presets apply <页面ID> compact` | 应用外观与几何，保留内容、页面开关和 Web 存储，不重新导航。 |
+| `window presets delete <页面ID> compact` | 删除模板，保留当前窗口；删除匹配项时清除标记。 |
+
+所有变更必须携带最新 `--expected-revision` 与当前 `--expected-instance`，执行后使用返回的新修订，或再次 inspect。ID 为 1～80 位 ASCII 字母、数字、短横线或下划线，每页最多 20 项；名称 1～40 字。`put` 文件最大 64 KiB，使用 UTF-8 JSON，内容为名称和完整窗口字段，不包含 ID：
+
+```json
+{
+  "name": "精简",
+  "mode": "floating",
+  "alwaysOnTop": true,
+  "decorations": false,
+  "rounded": true,
+  "transparentBackground": true,
+  "positionLocked": false,
+  "sizeLocked": false,
+  "width": 320,
+  "height": 220,
+  "fx": 1,
+  "fy": 0,
+  "fullscreen": false
+}
+```
+
+宽高沿用窗口逻辑尺寸范围；`fx`、`fy` 是当前显示器工作区内 `0～1` 的相对位置，`fullscreen` 表示应用时按目标显示器整屏换算。跨平台包保留原始模板；应用不支持的能力时安全回退，结果的 `data.warnings` 返回 `platformFallback`，实际窗口不一定匹配原模板。
+
+```powershell
+# 功能：根据最新修订创建命名预设，再独立应用，保留稳定 ID。
+$current = pinpage-cli --json pages inspect $pageId | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or -not $current.ok) { throw '读取页面失败' }
+$saved = pinpage-cli --json window presets put $pageId --id compact --file ./compact.json --expected-revision $current.data.revision --expected-instance $current.instanceId | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or -not $saved.ok) { throw '检查预设操作结果' }
+pinpage-cli --json window presets apply $pageId compact --expected-revision $saved.data.revision --expected-instance $saved.instanceId
+```
+
+## 页面包导出
+
+确认 `capabilities.pageExport >= 1` 后执行 `pages export <页面ID> --out ./工具.pinpage`。导出包含完整站点、当前默认布局和命名预设列表；默认不采集个人 Web 存储，关闭页也可导出。在线 URL 不能导出为站点包。
+
+显式 `--with-data true` 采集运行页的 localStorage、sessionStorage 与可读取的 IndexedDB，要求页面已开启；检查结果的 `withData` 和 `dataBytes`，超时可能只导出站点和窗口配置。返回 `presetCount`。输出父目录必须已存在，目标必须是应用数据目录外的 `.pinpage`；默认不覆盖，需显式 `--overwrite`。失败保留原文件。支持 `--no-wait` 和操作查询。
+
+导出后检查包清单中的预设名称、ID、顺序和参数；逐项截图验证后再报告预设效果。源码不随 PinPage 监听，后续编辑仍更新原页面 ID。离线目录打包尚无 CLI 入口，先安装目录、创建预设再导出。
+
 ## 诊断与真实桌面截图
 
 需要完整加载诊断时，`debug start <id> --reload` 先接入再刷新，再按返回的 loadId 等待。刷新会清除 JS 内存状态；日志只覆盖实际接入后的事件。每页一个诊断会话，重复启动复用，15 分钟到期或关闭页面时清理；完成后 `debug stop <会话ID>` 释放监听。
@@ -104,6 +154,8 @@ pinpage-cli --json window set $pageId --width 420 --height 480 --transparent tru
 ## 技能管理
 
 技能文件描述工作方法，CLI 执行操作，PinPage 本体运行页面。以下命令独立离线执行，不要求应用连接或本机控制开启：
+
+技能与应用的主版本、次版本保持一致，当前为 `0.2.x`；技能补丁号可独立递增。实际接口兼容性由资源清单中的最低 CLI 能力约束。
 
 ```powershell
 # 功能：按需选择技能安装、更新或导出操作，目标始终为 skills 根目录。

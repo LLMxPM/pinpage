@@ -38,20 +38,28 @@ pub async fn request(app: &AppHandle, request: Request) -> Result<Value, Failure
             Ok(json!({"pages":pages}))
         }
         "pages.inspect" => super::inspect(app, &decode::<Id>(request.params)?.id),
+        "window.presets.list" => services::presets::list(app, &decode::<Id>(request.params)?.id),
         "operations.inspect" => operations::inspect(app, &decode::<Id>(request.params)?.id),
         "capture.target" => super::geometry::target(app, &decode::<Id>(request.params)?.id),
         "debug.start" => super::diagnostics::start(app, request.params).await,
         "debug.logs" => super::diagnostics::logs(app, request.params),
         "debug.stop" => super::diagnostics::stop(app, &decode::<Id>(request.params)?.id),
         "pages.install"
+        | "pages.export"
         | "pages.update"
         | "pages.open"
         | "pages.close"
         | "pages.focus"
         | "pages.reload"
         | "pages.wait"
+        | "window.presets.put"
+        | "window.presets.save"
+        | "window.presets.apply"
+        | "window.presets.delete"
         | pinpage_protocol::WINDOW_SET => {
-            if request.method == "pages.update" && request.expected_instance.is_none() {
+            if (request.method == "pages.update" || request.method.starts_with("window.presets."))
+                && request.expected_instance.is_none()
+            {
                 return Err(Failure::new(
                     "invalidArgument",
                     "更新必须携带 expectedInstance",
@@ -77,7 +85,14 @@ pub fn mutate(
 ) -> Result<Value, Failure> {
     match method {
         "pages.install" => services::pages::install(app, decode(params)?, operation),
+        "pages.export" => services::export::run(app, decode(params)?, operation),
         "pages.update" => services::pages::update(app, decode(params)?, expected, operation),
+        "window.presets.put"
+        | "window.presets.save"
+        | "window.presets.apply"
+        | "window.presets.delete" => {
+            services::presets::mutate(app, method, params, expected, operation)
+        }
         pinpage_protocol::WINDOW_SET => {
             let input: Window = decode(params)?;
             let previous = super::pin(app, &input.id)?;

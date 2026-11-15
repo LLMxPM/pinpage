@@ -1,7 +1,7 @@
 // 功能：将已鉴权的本机路径复制到暂存站点，锁定源文件并计算稳定内容摘要。
 use crate::{
     errors::AppMessage,
-    models::{PageSource, PresetFields},
+    models::{PageSource, PresetFields, WindowPreset},
 };
 use pinpage_protocol::Failure;
 use sha2::{Digest, Sha256};
@@ -13,16 +13,25 @@ use std::{
 pub struct Prepared {
     pub source: PageSource,
     pub preset: Option<PresetFields>,
+    pub presets: Vec<WindowPreset>,
     pub storage: Option<String>,
     pub digest: String,
 }
 /// 保留原生 code/args/detail，调用者无需解析本地化文案。
 pub fn native(error: AppMessage) -> Failure {
     Failure::new(
-        if error.code == "errors.pinNotFound" {
-            "pageNotFound"
-        } else {
-            "executionFailed"
+        match error.code.as_str() {
+            "errors.pinNotFound" => "pageNotFound",
+            "errors.presetNotFound" => "presetNotFound",
+            "errors.presetConflict" => "presetConflict",
+            "errors.presetFieldsInvalid"
+            | "errors.presetIdInvalid"
+            | "errors.presetNameRange"
+            | "errors.presetLimit"
+            | "errors.savePathInvalid" => "invalidArgument",
+            "errors.platformUnsupported" => "unsupported",
+            "errors.exportExists" => "outputExists",
+            _ => "executionFailed",
         },
         crate::i18n::render(crate::models::AppLocale::ZhCn, &error),
     )
@@ -150,6 +159,7 @@ pub fn prepare(path: &Path, entry: Option<&str>, target: &Path) -> Result<Prepar
         Ok(Prepared {
             source: PageSource::Bundled { entry },
             preset: None,
+            presets: vec![],
             storage: None,
             digest,
         })
@@ -167,6 +177,7 @@ pub fn prepare(path: &Path, entry: Option<&str>, target: &Path) -> Result<Prepar
         Ok(Prepared {
             source: PageSource::Bundled { entry: name },
             preset: None,
+            presets: vec![],
             storage: None,
             digest,
         })
@@ -189,6 +200,7 @@ pub fn prepare(path: &Path, entry: Option<&str>, target: &Path) -> Result<Prepar
                 entry: extracted.entry,
             },
             preset: extracted.window_preset,
+            presets: extracted.window_presets,
             storage: extracted.storage,
             digest: format!("{:x}", hash.finalize()),
         })

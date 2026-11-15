@@ -101,7 +101,11 @@ impl Failure {
             "invalidArgument" | "invalidSource" => 2,
             "appNotRunning" | "connectionFailed" | "protocolMismatch" => 3,
             "authenticationFailed" | "controlDisabled" => 4,
-            "revisionConflict" | "clientKeyConflict" | "skillTargetConflict" | "skillModified" => 5,
+            "revisionConflict"
+            | "clientKeyConflict"
+            | "skillTargetConflict"
+            | "skillModified"
+            | "presetConflict" => 5,
             "timeout" => 6,
             "unsupported" | "captureUnavailable" | "skillIncompatible" => 7,
             "cancelled" => 130,
@@ -180,6 +184,8 @@ pub fn capabilities() -> BTreeMap<String, u32> {
         "pageInstall",
         "pageUpdate",
         "windowControl",
+        "windowPresets",
+        "pageExport",
         "pageDiagnostics",
         "loadWait",
         "operations",

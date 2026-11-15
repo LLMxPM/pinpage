@@ -1,5 +1,8 @@
 // 功能：把导入页的站点副本与页面数据打包成 .pinpage，并支持解包回站点副本。
-use crate::{errors::AppMessage, models::PresetFields};
+use crate::{
+    errors::AppMessage,
+    models::{PresetFields, WindowPreset},
+};
 use serde::{Deserialize, Serialize};
 use std::{
     io::{Cursor, Read, Seek},
@@ -19,7 +22,7 @@ const STORAGE: &str = "data/storage.json";
 const MAX_FILES: u64 = 4000;
 const MAX_BYTES: u64 = 256 * 1024 * 1024;
 /// 随包页面数据的体积上限；IndexedDB 与内嵌二进制会让数据明显变大。
-const MAX_STORAGE: u64 = 16 * 1024 * 1024;
+pub(crate) const MAX_STORAGE: u64 = 16 * 1024 * 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,6 +36,9 @@ pub struct Manifest {
     /// 可选的默认窗口布局；旧版包缺失时沿用创建表单的设置，不导入全局预设记录。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub window_preset: Option<PresetFields>,
+    /// 页面自己的命名预设列表，稳定 ID 和保存顺序随包迁移，与默认布局独立。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub window_presets: Vec<WindowPreset>,
 }
 
 /// 解包结果：相对入口与随包页面数据。
@@ -40,6 +46,7 @@ pub struct Extracted {
     pub entry: String,
     pub storage: Option<String>,
     pub window_preset: Option<PresetFields>,
+    pub window_presets: Vec<WindowPreset>,
 }
 
 /// 只读取清单，用于导入前的预览与校验。
@@ -87,17 +94,9 @@ fn validate_manifest(manifest: &mut Manifest) -> Result<(), AppMessage> {
         return Err(AppMessage::new("errors.packageEntryInvalid"));
     }
     if let Some(fields) = &mut manifest.window_preset {
-        if !crate::windows::limits::contains(fields.width, fields.height)
-            || !fields.fx.is_finite()
-            || !fields.fy.is_finite()
-            || !(0. ..=1.).contains(&fields.fx)
-            || !(0. ..=1.).contains(&fields.fy)
-        {
-            return Err(AppMessage::new("errors.presetFieldsInvalid"));
-        }
-        crate::windows::presets::normalize(fields);
+        crate::windows::presets::validation::validate_fields(fields)?;
     }
-    Ok(())
+    crate::windows::presets::validation::validate_list(&mut manifest.window_presets)
 }
 
 /// 解包到站点副本，拒绝越界路径、超量文件和非 HTML 入口。
@@ -182,6 +181,7 @@ fn extract_archive<R: Read + Seek>(
         entry: manifest.entry,
         storage,
         window_preset: manifest.window_preset,
+        window_presets: manifest.window_presets,
     })
 }
 

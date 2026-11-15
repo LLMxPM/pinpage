@@ -20,17 +20,13 @@ pub fn find(pin: &PinConfig, id: &str) -> Option<WindowPreset> {
 
 /// 应用预设：只合并外观与几何字段，名称、来源和开关状态保持不变。
 pub fn apply(app: &AppHandle, previous: &PinConfig, id: &str) -> Result<(), AppMessage> {
-    let preset = find(previous, id).ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
+    let mut preset = find(previous, id).ok_or_else(|| AppMessage::new("errors.presetNotFound"))?;
     let mut next = previous.clone();
-    next.mode = preset.fields.mode;
-    next.always_on_top = preset.fields.always_on_top;
-    next.decorations = preset.fields.decorations;
-    next.rounded = preset.fields.rounded;
-    next.transparent_background = preset.fields.transparent_background;
-    next.position_locked = preset.fields.position_locked;
-    next.size_locked = preset.fields.size_locked;
-    next.width = preset.fields.width;
-    next.height = preset.fields.height;
+    initialize_fields(
+        &mut next,
+        &mut preset.fields,
+        crate::platform::capabilities(),
+    );
     // 位置与全屏尺寸必须在原生应用前算好：位置锁在应用过程中同步生效，之后再移动会被规则拦回。
     if let Some((width, height, x, y)) = target_geometry(app, previous, &preset.fields) {
         next.width = width;
@@ -110,8 +106,9 @@ pub fn matching_id(app: &AppHandle, pin: &PinConfig) -> Option<String> {
 
 mod geometry;
 mod storage;
+pub mod validation;
 use geometry::target_geometry;
-pub use storage::{delete, save, snapshot_fields, write};
+pub use storage::{capture, delete, put, save, snapshot_fields, write};
 
 /// 页内预设列表在输出前统一归一化，顺序即保存顺序。
 fn normalized(custom: &[WindowPreset]) -> Vec<WindowPreset> {
@@ -156,6 +153,7 @@ pub fn initialize(app: &AppHandle, pin: &mut PinConfig, mut fields: crate::model
         pin.x = Some(x);
         pin.y = Some(y);
     }
+    pin.preset = matching_id(app, pin);
 }
 
 /// 把已校验包内布局合并为初始状态；不支持的能力安全回退，没有手势时保留系统边框。

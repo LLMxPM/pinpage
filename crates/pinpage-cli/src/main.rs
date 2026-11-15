@@ -3,6 +3,7 @@ mod app_start;
 mod args;
 mod capture;
 mod client;
+mod presets;
 mod route;
 use args::Cli;
 use clap::Parser;
@@ -88,6 +89,10 @@ fn localize(response: &mut Response) {
                 "The skill version is incompatible or would downgrade the installation."
             }
             "pageNotFound" => "The page does not exist.",
+            "presetNotFound" => "The preset does not exist on the selected page.",
+            "presetConflict" => {
+                "A preset with this ID has different content. Review before replacing."
+            }
             "pageNotVisible" => "The page is hidden or minimized. Use --bring-to-front explicitly.",
             "cancelled" => "Interrupted. Already committed changes were not reverted.",
             _ => "The operation failed. Check the error code and details.",

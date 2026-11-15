@@ -2,6 +2,8 @@
 use super::*;
 use std::io::Write;
 use std::path::PathBuf;
+#[path = "package/presets_tests.rs"]
+mod presets_tests;
 
 /// 标准窗口字段基准，替代已移除的内置预设，供包布局测试复用。
 fn standard_fields() -> PresetFields {
@@ -72,7 +74,16 @@ fn round_trips_site_and_storage() {
     let site = fixture.0.join("site");
     let package = fixture.0.join("out/示例.pinpage");
     let storage = r#"{"localStorage":{"timer":"300"},"sessionStorage":{}}"#;
-    let files = write_dir(&site, "示例", "index.html", Some(storage), None, &package).unwrap();
+    let files = write_dir(
+        &site,
+        "示例",
+        "index.html",
+        Some(storage),
+        None,
+        &[],
+        &package,
+    )
+    .unwrap();
     assert_eq!(files, 2);
 
     let manifest = read_manifest(&package).unwrap();
@@ -164,6 +175,7 @@ fn rejects_invalid_storage_json() {
         "index.html",
         Some("not json"),
         None,
+        &[],
         &package,
     )
     .unwrap();
@@ -183,6 +195,7 @@ fn round_trips_optional_window_preset() {
         "index.html",
         None,
         Some(&fields),
+        &[],
         &package,
     )
     .unwrap();

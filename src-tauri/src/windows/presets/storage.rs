@@ -1,5 +1,5 @@
 // 功能：校验、创建、编辑和删除页面自己的预设，独立保存模板并在失败时回滚。
-use super::{normalize, MAX_CUSTOM, MAX_NAME};
+use super::{validation, MAX_CUSTOM};
 use crate::{
     errors::AppMessage,
     models::{PinConfig, PresetFields, PresetInput, WindowPreset},
@@ -9,21 +9,8 @@ use tauri::{AppHandle, Manager};
 
 /// 严格校验 IPC 参数后才归一化外观冲突，不悄悄截断非法尺寸或位置。
 fn validate(input: &mut PresetInput) -> Result<(), AppMessage> {
-    input.name = input.name.trim().into();
-    if input.name.is_empty() || input.name.chars().count() > MAX_NAME {
-        return Err(AppMessage::new("errors.presetNameRange").arg("max", MAX_NAME));
-    }
-    let fields = &mut input.fields;
-    if !crate::windows::limits::contains(fields.width, fields.height)
-        || !fields.fx.is_finite()
-        || !fields.fy.is_finite()
-        || !(0. ..=1.).contains(&fields.fx)
-        || !(0. ..=1.).contains(&fields.fy)
-    {
-        return Err(AppMessage::new("errors.presetFieldsInvalid"));
-    }
-    normalize(fields);
-    crate::platform::validate_preset(crate::platform::capabilities(), fields)?;
+    validation::validate_input(input)?;
+    crate::platform::validate_preset(crate::platform::capabilities(), &input.fields)?;
     Ok(())
 }
 
@@ -128,6 +115,60 @@ pub fn write(
     input: PresetInput,
 ) -> Result<String, AppMessage> {
     transaction(app, pin_id, |pin| write_pin(pin, id, input))
+}
+
+/// 指定稳定 ID 创建或更新模板，重试相同请求不会增加重复项，窗口不会随模板编辑而变化。
+pub(super) fn put_pin(
+    pin: &mut PinConfig,
+    id: &str,
+    mut input: PresetInput,
+) -> Result<String, AppMessage> {
+    validation::validate_id(id)?;
+    validate(&mut input)?;
+    if pin.presets.iter().any(|p| p.id == id) {
+        return write_pin(pin, Some(id), input);
+    }
+    if pin.presets.len() >= MAX_CUSTOM {
+        return Err(AppMessage::new("errors.presetLimit").arg("max", MAX_CUSTOM));
+    }
+    pin.presets.push(WindowPreset {
+        id: id.into(),
+        name: input.name,
+        fields: input.fields,
+    });
+    Ok(id.into())
+}
+
+/// 调用者持有操作锁，在同一个保存事务内提交稳定 ID 的模板。
+pub fn put(
+    app: &AppHandle,
+    pin_id: &str,
+    id: &str,
+    input: PresetInput,
+) -> Result<String, AppMessage> {
+    transaction(app, pin_id, |pin| put_pin(pin, id, input))
+}
+
+/// 把已生效窗口状态另存或覆盖页面自己的模板，成功后标记当前窗口匹配该模板。
+pub fn capture(
+    app: &AppHandle,
+    pin: &PinConfig,
+    name: &str,
+    id: &str,
+) -> Result<String, AppMessage> {
+    let fields = snapshot_fields(app, pin)?;
+    transaction(app, &pin.id, |saved| {
+        let id = put_pin(
+            saved,
+            id,
+            PresetInput {
+                name: name.into(),
+                fields,
+            },
+        )?;
+        saved.preset = Some(id.clone());
+        Ok(id)
+    })
 }
 
 /// 把已生效窗口状态另存或覆盖页面自己的模板，成功后标记当前窗口匹配该模板。

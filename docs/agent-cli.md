@@ -1,6 +1,6 @@
 # 智能体 CLI 与公开 skill
 
-当前源码已实现 Windows 本机控制、页面安装更新、桌面截图、按页诊断与离线 skill 管理；尚未发布。公开的 v0.2.0 安装包不包含此次新增能力。实测范围与发布前待办见[当前状态与验收](development.md#当前状态与验收)，原始设计见[实施规划](agent-cli-plan.md)。
+当前源码已实现 Windows 本机控制、页面安装更新、命名窗口预设、页面包导出、桌面截图、按页诊断与离线 skill 管理；尚未发布。公开的 v0.2.0 安装包不包含此次新增能力。实测范围与发布前待办见[当前状态与验收](development.md#当前状态与验收)，原始设计见[实施规划](agent-cli-plan.md)。
 
 ## 获取与连接
 
@@ -28,13 +28,19 @@ if (-not $current.ok) { throw '无法读取页面' }
 pinpage-cli --json pages update $pageId --source ./site --entry index.html --expected-revision $current.data.revision --expected-instance $current.instanceId
 ```
 
-`pages install` 接受目录、单 HTML、`.pinpage`，或互斥的 `--url https://...`。多个根级 HTML 需指定入口。默认开启，可用 `--closed` 仅保存；首次包安装默认应用随包布局，`--apply-package-preset false` 可取消。同一 client key 和相同内容返回现有页面；不同内容返回冲突，删除页面时才移除对应映射。
+`pages install` 接受目录、单 HTML、`.pinpage`，或互斥的 `--url https://...`。多个根级 HTML 需指定入口。默认开启，可用 `--closed` 仅保存；首次包安装默认导入命名预设并应用随包默认布局；`--import-package-presets false` 和 `--apply-package-preset false` 分别控制两者。同一 client key 和相同内容返回现有页面；不同内容返回冲突，删除页面时才移除对应映射。
 
-`pages update` 只用于导入页，保留 ID、名称、窗口、预设、enabled 和同源持久存储；忽略包内布局与存储快照，清除文件夹授权。更新重新导航，JS 内存会丢失；sessionStorage 只在原 WebView 生命周期内延续，不保证关闭重开。页面应持久保存高价值编辑和计时截止时间。
+`pages update` 只用于导入页，保留 ID、名称、窗口、预设、enabled 和同源持久存储；忽略包内默认布局与存储快照，清除文件夹授权。预设默认 `--presets keep`，包来源可显式 `merge` 或 `replace`；合并按 ID 追加，同 ID 不同内容报冲突，替换可清空列表，两者都不应用当前窗口。更新重新导航，JS 内存会丢失；sessionStorage 只在原 WebView 生命周期内延续，不保证关闭重开。页面应持久保存高价值编辑和计时截止时间。
 
 `pages list/inspect/open/close/reload/focus` 分别查询、开启、关闭、刷新副本和显示找回；关闭保留记录，CLI 不提供删除。`window set <id>` 只合并出现的字段，支持逻辑尺寸、物理位置、模式、边框、透明、置顶和独立锁定；布尔值必须显式传 true/false。
 
 变更可用 `--no-wait` 先取得 operationId，再 `operations inspect <id>`。超时或 Ctrl+C 不回滚已提交修改。失败响应中的 `committed: true` 表示内容已经保存，应修复同一页面。操作保留 100 项、15 分钟；`pages wait <id> --load-id <id>` 绑定本次导航，不会把新导航当作旧导航成功。
+
+## 命名窗口预设与页面包导出
+
+`doctor` 的能力表新增 `windowPresets: 1` 和 `pageExport: 1`，调用前先探测，不根据应用版本猜测。`window presets list <页面 ID>` 返回页内有序模板、当前匹配标记和修订；`put --id <稳定 ID> --file <JSON>` 创建或更新，`save --id <ID> --name <名称>` 捕获当前窗口，`apply <页面 ID> <预设 ID>` 应用，`delete <页面 ID> <预设 ID>` 删除模板。所有预设变更都必须提供最新 `--expected-revision` 和 `--expected-instance`；创建、编辑和删除不改变当前窗口，应用不导航、不改变页面开关。
+
+`pages export <页面 ID> --out ./工具.pinpage` 导出完整站点、当前默认布局和命名模板，默认不采集个人存储，关闭页也可导出。显式 `--with-data true` 要求页面开启；检查 `withData` 和 `dataBytes`，超时仍可能只导出站点与窗口配置。结果包含 `presetCount`。目标父目录必须已存在，文件为应用数据目录外的 `.pinpage`，默认不覆盖，显式 `--overwrite` 才替换。完整预设 JSON、工作流和失败恢复见随包 [CLI 手册](../skills/pinpage-pages/references/cli.md#命名窗口预设)。
 
 ## 诊断与截图
 
@@ -50,12 +56,13 @@ pinpage-cli --json pages update $pageId --source ./site --entry index.html --exp
 
 工作台顶栏的「智能体与 CLI」面板集中展示内置版本、用户目录版本、技能目录和 CLI 路径，并分组提供用户目录安装更新、其他目录安装更新与版本查询、目录／ZIP 导出。
 
-当前源码内置技能版本为 `1.0.4`，按任务分层组织：
+当前源码内置技能版本为 `0.2.0`。技能与应用保持主版本、次版本一致（当前为 `0.2.x`），补丁号可独立递增；最低 CLI 能力仍由清单声明。按任务分层组织：
 
 | 文件                                                                   | 职责                                                                            |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | [SKILL.md](../skills/pinpage-pages/SKILL.md)                           | 产品与运行机制、按任务阅读导航、工作流程和执行边界。                            |
 | [页面制作指南](../skills/pinpage-pages/references/page-development.md) | 统一说明目录与产物、HTML／CSS、布局滚动、透明背景、外部数据、持久状态和页面包。 |
+| [页面包文件格式](../skills/pinpage-pages/references/package-format.md) | 自包含说明 manifest.json、storage.json、预设字段、存储类型编码与迁移限制。 |
 | [宿主能力契约](../skills/pinpage-pages/references/host-api.md)         | 页面 JavaScript 的能力探测、L0／L1 接口、权限、CSP 与降级；从统一契约生成。     |
 | [CLI 手册](../skills/pinpage-pages/references/cli.md)                  | 智能体终端的连接与身份、页面操作、窗口配置、诊断截图、失败恢复和技能管理。      |
 

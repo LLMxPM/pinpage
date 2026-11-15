@@ -100,7 +100,7 @@ fn reorganized_bundle_replaces_previous_reference_layout() {
     .map(|(name, text)| (name.into(), text.as_bytes().to_vec()))
     .collect();
     let mut manifest = validate(&builtin()).unwrap();
-    manifest.skill_version = "1.0.3".into();
+    manifest.skill_version = "0.1.3".into();
     manifest.files = previous
         .iter()
         .map(|(p, b)| (p.clone(), digest(b)))
@@ -116,7 +116,7 @@ fn reorganized_bundle_replaces_previous_reference_layout() {
     }
     install(Some(&root.0), Some(&source.0), false, false).unwrap();
     let result = install(Some(&root.0), None, true, false).unwrap();
-    assert_eq!(result["previousVersion"], "1.0.3");
+    assert_eq!(result["previousVersion"], "0.1.3");
     assert_eq!(result["sourceVersion"], VERSION);
     assert_eq!(result["changed"], true);
     assert_eq!(files::read_tree(&root.0.join(ID)).unwrap(), builtin());

@@ -1,9 +1,9 @@
-// 功能：将页面站点、存储快照和当前窗口布局导出为标准 .pinpage。
+// 功能：将页面站点、存储快照、当前默认布局与命名预设列表导出为标准 .pinpage。
 use super::{validate_manifest, Manifest, MANIFEST, PACKAGE_VERSION, STORAGE};
 use crate::{
     errors::AppMessage,
     import,
-    models::{PageSource, PinConfig, PresetFields},
+    models::{PageSource, PinConfig, PresetFields, WindowPreset},
 };
 use std::{
     io::Write,
@@ -27,7 +27,15 @@ pub fn write(
         return Err(AppMessage::new("errors.importContentLost"));
     }
     let fields = crate::windows::presets::snapshot_fields(app, pin)?;
-    write_dir(&site, &pin.name, entry, storage, Some(&fields), target)
+    write_dir(
+        &site,
+        &pin.name,
+        entry,
+        storage,
+        Some(&fields),
+        &pin.presets,
+        target,
+    )
 }
 
 /// 不依赖应用句柄的打包实现，便于直接对目录做往返测试。
@@ -37,6 +45,7 @@ pub fn write_dir(
     entry: &str,
     storage: Option<&str>,
     window_preset: Option<&PresetFields>,
+    window_presets: &[WindowPreset],
     target: &Path,
 ) -> Result<u64, AppMessage> {
     let (files, _) = import::measure(site)?;
@@ -50,6 +59,7 @@ pub fn write_dir(
             .unwrap_or_default(),
         files,
         window_preset: window_preset.cloned(),
+        window_presets: window_presets.to_vec(),
     };
     validate_manifest(&mut manifest)?;
     let file = std::fs::File::create(target)

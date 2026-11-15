@@ -106,6 +106,7 @@
     "exportNeedsOpen": "Open the page before exporting it",
     "collectDataFailed": "The page data could not be read",
     "savePathInvalid": "The save path could not be read",
+    "exportExists": "The export file exists; choose another path or explicitly allow overwriting",
     "grantExpired": "The import grant expired. Please choose again",
     "entryMismatch": "The entry does not match the selected file. Please choose again",
     "entryMismatchSource": "The entry does not match the import source. Please choose again",
@@ -185,6 +186,8 @@
     "presetNameRange": "Preset names must be 1 to {max} characters",
     "presetLimit": "You can keep up to {max} custom presets; delete one first",
     "presetFieldsInvalid": "Preset size or relative position is outside the allowed range",
+    "presetIdInvalid": "Preset IDs must be 1 to 80 ASCII letters, digits, hyphens or underscores and unique within the page",
+    "presetConflict": "Preset {id} differs from the existing preset; review it before choosing replace",
     "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone.",
     "automationFailed": "Local control or skill operation failed; check the details",
     "navigationFailed": "Page navigation failed: {reason}"

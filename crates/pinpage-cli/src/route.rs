@@ -3,6 +3,9 @@ use crate::{args::*, client};
 use pinpage_protocol::{Failure, Response};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
+#[cfg(test)]
+#[path = "route_tests.rs"]
+mod tests;
 
 /// 将本地路径转换为绝对路径；服务端仍再次规范化和验证类型。
 fn absolute(path: &Path) -> Result<PathBuf, Failure> {
@@ -119,10 +122,11 @@ fn remote(cli: &Cli) -> Result<(&'static str, Value, bool), Failure> {
                 client_key,
                 closed,
                 apply_package_preset,
+                import_package_presets,
                 no_wait,
             } => (
                 "pages.install",
-                json!({"source":source.source.as_ref().map(|p|absolute(p)).transpose()?,"url":source.url,"entry":source.entry,"name":name,"clientKey":client_key,"closed":closed,"applyPackagePreset":apply_package_preset}),
+                json!({"source":source.source.as_ref().map(|p|absolute(p)).transpose()?,"url":source.url,"entry":source.entry,"name":name,"clientKey":client_key,"closed":closed,"applyPackagePreset":apply_package_preset,"importPackagePresets":import_package_presets}),
                 *no_wait,
             ),
             Pages::Update {
@@ -130,6 +134,7 @@ fn remote(cli: &Cli) -> Result<(&'static str, Value, bool), Failure> {
                 source,
                 entry,
                 expected_revision,
+                presets,
                 no_wait,
             } => {
                 if cli.expected_instance.is_none() {
@@ -140,11 +145,16 @@ fn remote(cli: &Cli) -> Result<(&'static str, Value, bool), Failure> {
                 }
                 (
                     "pages.update",
-                    json!({"id":id,"source":absolute(source)?,"entry":entry,"expectedRevision":expected_revision}),
+                    json!({"id":id,"source":absolute(source)?,"entry":entry,"expectedRevision":expected_revision,"presets":match presets {PresetSync::Keep=>"keep",PresetSync::Merge=>"merge",PresetSync::Replace=>"replace"}}),
                     *no_wait,
                 )
             }
             Pages::Open(a) => ("pages.open", json!({"id":a.id}), a.no_wait),
+            Pages::Export(e) => (
+                "pages.export",
+                json!({"id":e.id,"out":absolute(&e.out)?,"overwrite":e.overwrite,"withData":e.with_data}),
+                e.no_wait,
+            ),
             Pages::Close(a) => ("pages.close", json!({"id":a.id}), a.no_wait),
             Pages::Reload(a) => ("pages.reload", json!({"id":a.id}), a.no_wait),
             Pages::Focus(a) => ("pages.focus", json!({"id":a.id}), a.no_wait),
@@ -158,6 +168,9 @@ fn remote(cli: &Cli) -> Result<(&'static str, Value, bool), Failure> {
                 false,
             ),
         },
+        Command::Window {
+            command: Window::Presets { command },
+        } => crate::presets::remote(cli, command)?,
         Command::Window {
             command: Window::Set(p),
         } => {

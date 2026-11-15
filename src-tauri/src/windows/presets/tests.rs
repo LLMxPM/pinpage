@@ -1,6 +1,8 @@
 // 功能：验证页面级自定义预设、归一化约束与跨屏相对位置换算。
 use super::*;
 use crate::models::{PresetFields, PresetInput, WindowMode, WindowPreset};
+#[path = "sync_tests.rs"]
+mod sync_tests;
 
 /// 标准窗口字段基准，替代已移除的内置预设，供各测试复用。
 fn standard_fields() -> PresetFields {

@@ -36,7 +36,20 @@ export async function readVersions(root = ROOT) {
   );
   const packageJson = JSON.parse(packageText);
   const config = JSON.parse(configText);
+  const skillRelative = 'crates/pinpage-skills/src/lib.rs';
+  const skillText = await readFile(path.join(root, skillRelative), 'utf8').catch((error) => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
   return {
+    skill:
+      skillText === null
+        ? null
+        : {
+            relative: skillRelative,
+            text: skillText,
+            version: skillText.match(/pub const VERSION: &str = "([^"]+)";/)?.[1],
+          },
     members: members.filter(Boolean),
     packageJson,
     config,

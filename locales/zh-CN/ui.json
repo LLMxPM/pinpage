@@ -48,7 +48,8 @@
     "needDesktop": "请在桌面应用中导入页面",
     "optional": "选填",
     "windowOptions": "窗口选项",
-    "usePackagePreset": "使用随包窗口预设（{width} × {height}）",
+    "usePackagePreset": "应用随包默认布局（{width} × {height}）",
+    "importPackagePresets": "导入随包窗口预设（{count} 个）",
     "platformLimited": "当前平台仅支持标准浮动窗口；桌面模式和原生拖动手势暂不可用"
   },
   "pins": {

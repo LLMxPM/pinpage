@@ -1,6 +1,8 @@
 // 功能：定义 CLI 的中英文帮助入口、严格参数和互斥来源。
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
+mod presets;
+pub use presets::*;
 
 #[derive(Parser)]
 #[command(version, about = "PinPage 本机页面控制 / Local page control")]
@@ -113,6 +115,8 @@ pub enum Pages {
         closed: bool,
         #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         apply_package_preset: bool,
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+        import_package_presets: bool,
         #[arg(long)]
         no_wait: bool,
     },
@@ -124,10 +128,14 @@ pub enum Pages {
         entry: Option<String>,
         #[arg(long)]
         expected_revision: u64,
+        #[arg(long, value_enum, default_value = "keep")]
+        presets: PresetSync,
         #[arg(long)]
         no_wait: bool,
     },
     Open(Action),
+    /// 导出包含命名预设的页面包 / Export a page package with presets
+    Export(PageExport),
     Close(Action),
     Reload(Action),
     Focus(Action),
@@ -148,6 +156,11 @@ pub struct Action {
 #[derive(Subcommand)]
 pub enum Window {
     Set(Patch),
+    /// 管理页面自己的命名预设 / Manage named page presets
+    Presets {
+        #[command(subcommand)]
+        command: Presets,
+    },
 }
 #[derive(Clone, Copy, ValueEnum)]
 pub enum Mode {

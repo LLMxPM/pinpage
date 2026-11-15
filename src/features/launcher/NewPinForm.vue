@@ -28,6 +28,7 @@ const top = ref(true);
 const borderless = ref(hasNativeDrag(props.capabilities));
 const windowMode = ref<'floating' | 'desktop'>('floating');
 const usePackagePreset = ref(true);
+const importPackagePresets = ref(true);
 // 选择器的预览、入口候选与错误收敛由共用组合式函数负责，本组件只管名称与窗口偏好。
 const { preview, entry, choosing, entryOptions, choose } = useImportSource({
   onError: (reason) => emit('error', reason),
@@ -52,6 +53,7 @@ const displayBorderless = computed({
 /// 来源确定后按来源推导名称；用户已手动命名时保留其输入。
 function adoptName(selected: ImportPreview) {
   usePackagePreset.value = true;
+  importPackagePresets.value = true;
   if (!nameAuto.value && name.value) return;
   name.value =
     selected.mode === 'directory' ? selected.label : selected.label.replace(/\.(html|htm)$/i, '');
@@ -74,6 +76,7 @@ function submit() {
     decorations: !borderless.value,
     mode: windowMode.value,
     usePackagePreset: usingPackagePreset.value,
+    importPackagePresets: importPackagePresets.value,
     source:
       mode.value === 'url'
         ? { kind: 'url', address: address.value }
@@ -130,6 +133,10 @@ function submit() {
           <p v-if="choosing" class="import-progress" role="status">{{ t('ui.common.working') }}</p>
           <div v-if="preview" class="import-summary">
             <p><AppIcon name="check" :size="16" />{{ preview.label }}</p>
+            <label v-if="preview.windowPresets" class="check-row">
+              <input v-model="importPackagePresets" type="checkbox" />
+              {{ t('ui.form.importPackagePresets', { count: preview.windowPresets }) }}
+            </label>
             <label v-if="preview.windowPreset" class="check-row">
               <input v-model="usePackagePreset" type="checkbox" />
               {{

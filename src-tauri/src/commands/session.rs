@@ -12,8 +12,6 @@ use tauri_plugin_dialog::DialogExt;
 
 /// 单页回传数据的体积上限，容纳 IndexedDB 与内嵌的二进制内容。
 const MAX_PAGE_DATA: usize = 24 * 1024 * 1024;
-/// 选择保存位置之后等待页面回传的余量，通常数据已经到达。
-const DATA_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
 /// 导入预览：目录、单文件与页面包走原生选择器，内置示例由应用直接提供。
 ///
@@ -32,6 +30,7 @@ pub async fn import_page(
         let name = |key: &str| i18n::text(locale, key, &Default::default());
         let dialog = app.dialog().file();
         let mut window_preset = None;
+        let mut window_presets = 0;
         let (path, candidates, label, files, bytes) = match mode {
             ImportMode::Directory => {
                 let Some(selected) = dialog
@@ -88,6 +87,7 @@ pub async fn import_page(
                     .map_err(|error| AppMessage::new("errors.filePathInvalid").detail(error))?;
                 let manifest = package::read_manifest(&file)?;
                 window_preset = manifest.window_preset;
+                window_presets = manifest.window_presets.len();
                 let bytes = std::fs::metadata(&file)
                     .map_err(|_| AppMessage::new("errors.readFileFailed"))?
                     .len();
@@ -98,6 +98,7 @@ pub async fn import_page(
             ImportMode::Example => {
                 let (manifest, bytes) = examples::preview(example)?;
                 window_preset = manifest.window_preset;
+                window_presets = manifest.window_presets.len();
                 (
                     std::path::PathBuf::new(),
                     vec![manifest.entry],
@@ -128,13 +129,14 @@ pub async fn import_page(
             files,
             bytes,
             window_preset,
+            window_presets,
         }))
     })
     .await
     .map_err(|error| AppMessage::new("errors.unknown").detail(error))?
 }
 
-/// 把导入页的站点副本与页面数据导出为页面包，取消保存时返回空。
+/// 选择保存位置后调用与 CLI 共用的串行导出服务，取消选择不采集页面数据。
 #[tauri::command]
 pub async fn export_page(
     window: WebviewWindow,
@@ -155,31 +157,9 @@ pub async fn export_page(
     if !matches!(pin.source, PageSource::Bundled { .. }) {
         return Err(AppMessage::new("errors.exportNeedsImport"));
     }
-    // 数据只能从运行中的页面读取，DOM 与脚本状态本就不在导出范围内。
-    let page = app
-        .get_webview_window(&id)
-        .ok_or_else(|| AppMessage::new("errors.exportNeedsOpen"))?;
-    app.state::<AppState>()
-        .export_pending
-        .lock()
-        .unwrap()
-        .insert(id.clone());
-    // 清掉上一次超时后迟到或未取走的数据，避免串到本次导出。
-    app.state::<AppState>()
-        .export_data
-        .lock()
-        .unwrap()
-        .remove(&id);
-    if let Err(error) = page.eval(crate::data::collect_script(&id)) {
-        app.state::<AppState>()
-            .export_pending
-            .lock()
-            .unwrap()
-            .remove(&id);
-        return Err(AppMessage::new("errors.collectDataFailed").detail(error));
+    if app.get_webview_window(&id).is_none() {
+        return Err(AppMessage::new("errors.exportNeedsOpen"));
     }
-
-    // 先让用户选择保存位置，页面数据通常在这段时间内已经回传完成。
     let save_app = app.clone();
     let suggested = format!("{}.pinpage", safe_file_name(&pin.name));
     let target = tauri::async_runtime::spawn_blocking(move || {
@@ -196,61 +176,17 @@ pub async fn export_page(
     .await
     .map_err(|error| AppMessage::new("errors.unknown").detail(error))?;
     let Some(target) = target else {
-        app.state::<AppState>()
-            .export_pending
-            .lock()
-            .unwrap()
-            .remove(&id);
         return Ok(None);
     };
-
-    let wait_app = app.clone();
-    let wait_id = id.clone();
-    let payload = tauri::async_runtime::spawn_blocking(move || {
-        let deadline = std::time::Instant::now() + DATA_TIMEOUT;
-        while std::time::Instant::now() < deadline {
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            if let Some(value) = wait_app
-                .state::<AppState>()
-                .export_data
-                .lock()
-                .unwrap()
-                .remove(&wait_id)
-            {
-                return Some(value);
-            }
-        }
-        None
-    })
-    .await
-    .map_err(|error| AppMessage::new("errors.unknown").detail(error))?;
-    app.state::<AppState>()
-        .export_pending
-        .lock()
-        .unwrap()
-        .remove(&id);
-
     let target = target
         .into_path()
         .map_err(|error| AppMessage::new("errors.savePathInvalid").detail(error))?;
-    let path_text = target.to_string_lossy().into_owned();
-    let with_data = payload.is_some();
-    let data_bytes = payload
-        .as_ref()
-        .map(|value| value.len() as u64)
-        .unwrap_or(0);
-    let pack_app = app.clone();
-    let files = tauri::async_runtime::spawn_blocking(move || {
-        package::write(&pack_app, &pin, payload.as_deref(), &target)
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::services::export::write(&app, &id, &target, true, true)
     })
     .await
-    .map_err(|error| AppMessage::new("errors.unknown").detail(error))??;
-    Ok(Some(ExportResult {
-        path: path_text,
-        files,
-        with_data,
-        data_bytes,
-    }))
+    .map_err(|error| AppMessage::new("errors.unknown").detail(error))?
+    .map(Some)
 }
 
 /// 内容页在导出会话中回传自身 Web 存储，其他时间一律拒绝。

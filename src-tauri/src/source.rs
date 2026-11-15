@@ -3,7 +3,7 @@ use crate::{
     content,
     errors::AppMessage,
     examples, import,
-    models::{ImportMode, PageSource, PresetFields, SourceInput},
+    models::{ImportMode, PageSource, PresetFields, SourceInput, WindowPreset},
     services::{source, transaction::SiteTransaction},
     state::AppState,
 };
@@ -12,6 +12,7 @@ use tauri::{AppHandle, Manager};
 pub struct PreparedSource {
     pub source: PageSource,
     pub preset: Option<PresetFields>,
+    pub presets: Vec<WindowPreset>,
     transaction: Option<SiteTransaction>,
 }
 impl PreparedSource {
@@ -60,6 +61,7 @@ fn prepare_inner(
                 url: content::normalize_url(address)?,
             },
             preset: None,
+            presets: vec![],
             transaction: None,
         });
     };
@@ -80,6 +82,7 @@ fn prepare_inner(
         examples::extract(&incoming, grant.example).map(|p| source::Prepared {
             source: PageSource::Bundled { entry: p.entry },
             preset: p.window_preset,
+            presets: p.window_presets,
             storage: p.storage,
             digest: String::new(),
         })
@@ -127,6 +130,7 @@ fn prepare_inner(
     Ok(PreparedSource {
         source: prepared.source,
         preset: prepared.preset,
+        presets: prepared.presets,
         transaction: Some(transaction),
     })
 }

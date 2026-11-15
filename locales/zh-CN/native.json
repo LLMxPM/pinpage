@@ -106,6 +106,7 @@
     "exportNeedsOpen": "请先开启页面再导出",
     "collectDataFailed": "无法读取页面数据",
     "savePathInvalid": "无法读取保存路径",
+    "exportExists": "导出文件已存在，请选择其他路径或明确允许覆盖",
     "grantExpired": "导入授权已失效，请重新选择",
     "entryMismatch": "入口与所选文件不一致，请重新选择",
     "entryMismatchSource": "入口与导入来源不一致，请重新选择",
@@ -185,6 +186,8 @@
     "presetNameRange": "预设名称需为 1 到 {max} 个字符",
     "presetLimit": "自定义预设最多 {max} 个，请先删除不用的预设",
     "presetFieldsInvalid": "预设尺寸或相对位置超出有效范围",
+    "presetIdInvalid": "预设 ID 需为 1 到 80 位字母、数字、短横线或下划线，且页内不得重复",
+    "presetConflict": "预设 {id} 与已有内容不同，请检查后明确选择替换",
     "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作",
     "automationFailed": "本机控制或技能操作失败，请检查详情",
     "navigationFailed": "页面导航失败：{reason}"

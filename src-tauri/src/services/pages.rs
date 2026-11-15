@@ -1,11 +1,8 @@
 // 功能：实现本机页面安装和同 ID 更新，协调修订、去重与可恢复提交。
-use super::{
-    source::{self, Prepared},
-    transaction::SiteTransaction,
-};
+use super::source::{self, Prepared};
 use crate::{
     automation,
-    models::{PageSource, PinConfig, WindowMode},
+    models::PageSource,
     state::{self, AppState},
 };
 use pinpage_protocol::Failure;
@@ -13,6 +10,9 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
+mod staging;
+pub use staging::new_pin;
+use staging::{begin_stage, prepare};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -24,6 +24,8 @@ pub struct Install {
     client_key: Option<String>,
     closed: bool,
     apply_package_preset: bool,
+    #[serde(default = "import_presets_default")]
+    import_package_presets: bool,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -32,71 +34,12 @@ pub struct Update {
     source: PathBuf,
     entry: Option<String>,
     expected_revision: u64,
+    #[serde(default)]
+    presets: crate::windows::presets::validation::SyncPolicy,
 }
-struct Stage(PathBuf);
-impl Drop for Stage {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-        if let Some(parent) = self.0.parent() {
-            let _ = std::fs::remove_dir(parent);
-        }
-    }
-}
-/// 源码准备在操作锁之外执行；每次独立暂存，互不覆盖并发请求。
-fn prepare(
-    app: &AppHandle,
-    id: &str,
-    path: &std::path::Path,
-    entry: Option<&str>,
-) -> Result<(Stage, Prepared), Failure> {
-    let root = crate::import::site_root(app, id)
-        .map_err(source::native)?
-        .parent()
-        .unwrap()
-        .to_owned();
-    let stage = Stage(root.join(format!("prepared-{}", uuid::Uuid::new_v4())));
-    let prepared = source::prepare(path, entry, &stage.0)?;
-    Ok((stage, prepared))
-}
-/// 页面初始值由管理命令和自动化服务共用；来源和授权由各入口先行校验。
-pub fn new_pin(id: String, name: &str, source: PageSource) -> PinConfig {
-    let fallback = match &source {
-        PageSource::Url { url } => url::Url::parse(url)
-            .ok()
-            .and_then(|u| u.host_str().map(str::to_owned))
-            .unwrap_or_else(|| "网页".into()),
-        PageSource::Bundled { entry } => std::path::Path::new(entry)
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .into_owned(),
-    };
-    PinConfig {
-        id,
-        name: if name.trim().is_empty() {
-            fallback
-        } else {
-            name.trim().chars().take(80).collect()
-        },
-        source,
-        width: 420.,
-        height: 360.,
-        x: None,
-        y: None,
-        scale: 1.,
-        always_on_top: false,
-        decorations: true,
-        enabled: true,
-        mode: WindowMode::Floating,
-        rounded: false,
-        transparent_background: false,
-        position_locked: false,
-        size_locked: false,
-        page_context_menu: false,
-        preset: None,
-        presets: vec![],
-        folder_root: None,
-    }
+/// 安装默认携带命名预设，不与初始窗口布局的选择绑定。
+fn import_presets_default() -> bool {
+    true
 }
 /// 本机安装校验来源互斥与幂等键；首次包数据仅在新记录提交时写入。
 pub fn install(app: &AppHandle, input: Install, operation: &str) -> Result<Value, Failure> {
@@ -132,12 +75,18 @@ pub fn install(app: &AppHandle, input: Install, operation: &str) -> Result<Value
             Prepared {
                 source: PageSource::Url { url: url.clone() },
                 preset: None,
+                presets: vec![],
                 storage: None,
                 digest: pinpage_skills::digest(url.as_bytes()),
             },
         )
     };
-    let digest=pinpage_skills::digest(&serde_json::to_vec(&json!({"source":prepared.digest,"entry":prepared.source,"name":input.name,"closed":input.closed,"preset":input.apply_package_preset})).unwrap());
+    let mut request = json!({"source":prepared.digest,"entry":prepared.source,"name":input.name,"closed":input.closed,"preset":input.apply_package_preset});
+    // 默认导入列表时维持旧摘要，升级后的既有 client key 仍可去重。
+    if !input.import_package_presets {
+        request["presets"] = json!(false);
+    }
+    let digest = pinpage_skills::digest(&serde_json::to_vec(&request).unwrap());
     let state = app.state::<AppState>();
     let _lock = state.operation.lock().unwrap();
     state.ensure_mutable().map_err(source::native)?;
@@ -170,6 +119,9 @@ pub fn install(app: &AppHandle, input: Install, operation: &str) -> Result<Value
         prepared.source,
     );
     pin.enabled = !input.closed;
+    if input.import_package_presets {
+        pin.presets = prepared.presets;
+    }
     if input.apply_package_preset {
         if let Some(preset) = prepared.preset {
             crate::windows::presets::initialize(app, &mut pin, preset);
@@ -237,6 +189,19 @@ pub fn update(
     operation: &str,
 ) -> Result<Value, Failure> {
     let initial = automation::pin(app, &input.id)?;
+    if !matches!(
+        input.presets,
+        crate::windows::presets::validation::SyncPolicy::Keep
+    ) && !input
+        .source
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("pinpage"))
+    {
+        return Err(Failure::new(
+            "invalidArgument",
+            "预设同步只接受 .pinpage 页面包",
+        ));
+    }
     if !matches!(initial.source, PageSource::Bundled { .. }) {
         return Err(Failure::new("invalidSource", "只能更新本地导入页"));
     }
@@ -256,6 +221,9 @@ pub fn update(
         return Err(Failure::new("revisionConflict", "实例或页面修订已变化"));
     }
     let previous = state.settings.lock().unwrap().clone();
+    let mut updated_pin = previous_pin.clone();
+    crate::windows::presets::validation::sync(&mut updated_pin, &prepared.presets, input.presets)
+        .map_err(source::native)?;
     let tx = begin_stage(app, &input.id, Some(&stage))?.unwrap();
     // 更新忽略包快照与布局，包括尚未打开的新安装包遗留快照。
     let pending = crate::import::pages_root(app)
@@ -269,6 +237,8 @@ pub fn update(
         let mut settings = state.settings.lock().unwrap();
         let pin = settings.pins.iter_mut().find(|p| p.id == input.id).unwrap();
         pin.source = prepared.source;
+        pin.presets = updated_pin.presets;
+        pin.preset = updated_pin.preset;
         pin.folder_root = None;
         tx.mark(&mut settings, &input.id);
     }
@@ -297,20 +267,6 @@ pub fn update(
     }
     state::notify(app);
     Ok(result)
-}
-/// 在提交锁内把唯一暂存目录移入固定 incoming，然后创建持久交换记录。
-fn begin_stage(
-    app: &AppHandle,
-    id: &str,
-    stage: Option<&Stage>,
-) -> Result<Option<SiteTransaction>, Failure> {
-    let Some(stage) = stage else { return Ok(None) };
-    let incoming = crate::import::incoming_root(app, id).map_err(source::native)?;
-    if incoming.exists() {
-        return Err(Failure::new("transactionFailed", "已有未恢复的暂存副本"));
-    }
-    std::fs::rename(&stage.0, &incoming).map_err(|e| Failure::new("transactionFailed", e))?;
-    SiteTransaction::begin(incoming.parent().unwrap().to_owned()).map(Some)
 }
 /// 提交事实与加载结果分开表达；关闭页不会因更新而开启。
 pub fn outcome(app: &AppHandle, id: &str) -> Result<Value, Failure> {

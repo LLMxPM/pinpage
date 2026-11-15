@@ -6,7 +6,7 @@ use tauri::AppHandle;
 pub const RESTORE_PAGE: &str = "/__pinpage__/restore.html";
 pub const RESTORE_DATA: &str = "/__pinpage__/data.json";
 
-/// 单个数据库最多采集的记录数，超出后截断并在导出结果中说明。
+/// 每个对象仓库最多采集的记录数，超出后截断并在导出结果中说明。
 const MAX_RECORDS: usize = 3000;
 
 /// 采集脚本模板，用占位符避免在 JS 中转义大量大括号。
