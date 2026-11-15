@@ -79,7 +79,7 @@ pub async fn start(app: &AppHandle, params: Value) -> Result<Value, Failure> {
     {
         let _ = window;
         let _ = stop(app, &id);
-        return Err(Failure::new("unsupported", "当前平台不支持页面诊断"));
+        Err(Failure::new("unsupported", "当前平台不支持页面诊断"))
     }
     #[cfg(windows)]
     {
