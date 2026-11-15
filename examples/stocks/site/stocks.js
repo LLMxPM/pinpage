@@ -3,6 +3,7 @@ import { fetchQuotes, MAX_SYMBOLS, normalizeSymbol } from './provider.js';
 import { loadState, saveState } from './store.js';
 import { formatTime, renderQuotes, renderSelected, renderWatchlist } from './view.js';
 import { createTrendController } from './trend-controller.js';
+import { initializeListControls } from './list-controls.js';
 
 const restored = loadState();
 const state = restored.state;
@@ -72,7 +73,11 @@ function renderRequestState() {
 function schedule() {
   clearTimeout(runtime.timer);
   if (!state.interval || !state.symbols.length) return;
-  const delay = Math.min(300, state.interval * 2 ** Math.min(runtime.failures, 5));
+  if (!navigator.onLine) return;
+  const delay = Math.max(
+    document.visibilityState === 'visible' ? 0 : 60,
+    Math.min(300, state.interval * 2 ** Math.min(runtime.failures, 5)),
+  );
   runtime.timer = setTimeout(refresh, delay * 1000);
 }
 
@@ -228,11 +233,20 @@ function updateLayout() {
 }
 window.addEventListener('resize', updateLayout);
 // 恢复可见、联网或休眠返回时校正，不累积补发已错过的请求。
-window.addEventListener('online', () => refresh());
+window.addEventListener('offline', () => {
+  clearTimeout(runtime.timer);
+  $('#connection-state').textContent = '离线缓存';
+  notice('网络已断开，保留上次行情与趋势。');
+});
+window.addEventListener('online', () => {
+  if (state.interval) void refresh();
+});
 window.addEventListener('pageshow', () => refresh());
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') refresh();
+  if (document.visibilityState === 'visible' && state.interval) refresh();
+  else schedule();
 });
+initializeListControls(state, render, persist);
 applyPreferences();
 render();
 updateLayout();

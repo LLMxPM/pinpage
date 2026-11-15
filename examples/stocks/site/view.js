@@ -1,5 +1,6 @@
 // 功能：渲染自选列表、选中行情与管理操作，使用文本节点并保留滚动和键盘焦点。
 import { renderChart } from './chart.js';
+import { visibleSymbols } from './list-model.js';
 const options = {
   timeZone: 'Asia/Shanghai',
   hour: '2-digit',
@@ -54,7 +55,8 @@ export function renderQuotes(state, runtime, select) {
   const scroll = container.scrollTop;
   const fragment = document.createDocumentFragment();
   const quotes = new Map(state.quotes.map((quote) => [quote.symbol, quote]));
-  for (const symbol of state.symbols) {
+  const visible = visibleSymbols(state);
+  for (const symbol of visible) {
     const quote = quotes.get(symbol);
     const row = node('button', 'quote', '');
     row.type = 'button';
@@ -90,7 +92,10 @@ export function renderQuotes(state, runtime, select) {
     [...container.children]
       .find((row) => row.dataset.symbol === focused)
       ?.focus({ preventScroll: true });
-  document.querySelector('#empty').hidden = state.symbols.length > 0;
+  document.querySelector('#empty').hidden = visible.length > 0;
+  document.querySelector('#empty').textContent = state.symbols.length
+    ? '没有匹配的自选，可尝试名称或市场代码。'
+    : '还没有自选，打开设置添加市场代码。';
   document.querySelector('#watch-count').textContent = state.symbols.length;
 }
 

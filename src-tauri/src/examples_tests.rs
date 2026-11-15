@@ -53,15 +53,17 @@ fn examples_are_reproducible_standard_packages() {
     for example in [
         ExampleId::Timer,
         ExampleId::Notes,
-        ExampleId::Checklist,
-        ExampleId::Clock,
         ExampleId::Folder,
         ExampleId::SystemMonitor,
+        ExampleId::Stocks,
+        ExampleId::Calendar,
+        ExampleId::Kanban,
     ] {
         let bytes = package_bytes(example);
         let (manifest, size) = preview(example).unwrap();
         assert_eq!(size, bytes.len() as u64);
         assert!(manifest.window_preset.is_some());
+        assert!(!manifest.window_presets.is_empty());
         let (id, _) = PACKAGES
             .iter()
             .find(|(_, candidate)| *candidate == bytes)
@@ -91,4 +93,19 @@ fn examples_are_reproducible_standard_packages() {
         );
     }
     assert!(fixture.0.join("timer/presets.json").is_file());
+}
+
+#[test]
+/// 合并后旧白名单标识仍能创建新工具，不需要重复维护旧页面包。
+fn legacy_ids_resolve_to_merged_tools() {
+    assert_eq!(
+        package_bytes(ExampleId::Clock),
+        package_bytes(ExampleId::Timer)
+    );
+    assert_eq!(
+        package_bytes(ExampleId::Checklist),
+        package_bytes(ExampleId::Notes)
+    );
+    assert_eq!(label_key(ExampleId::Clock), label_key(ExampleId::Timer));
+    assert_eq!(label_key(ExampleId::Checklist), label_key(ExampleId::Notes));
 }

@@ -1,0 +1,277 @@
+/* 功能：以可滚动三列展示项目状态，窄窗切换单列并适配透明、深浅配色和长文字。 */
+:root {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --base: 240 243 246;
+  --ink: #344454;
+  --muted: #81909c;
+  --line: #d8e1e7;
+  --panel: #fff;
+  --accent: #587687;
+  color: var(--ink);
+}
+:root[data-theme='dark'] {
+  --base: 25 32 39;
+  --ink: #e0e8ed;
+  --muted: #93a4b1;
+  --line: #3c4e59;
+  --panel: #25313a;
+  --accent: #a0bece;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+[hidden] {
+  display: none !important;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: rgb(var(--base) / var(--pinpage-background-opacity, 1));
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  white-space: nowrap;
+}
+button:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.board-app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 16px;
+}
+.toolbar,
+footer,
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.toolbar > div,
+footer > div {
+  display: flex;
+  gap: 4px;
+}
+#board-title {
+  min-width: 0;
+  width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 3px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.primary {
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--accent);
+}
+#column-tabs {
+  display: flex;
+  gap: 4px;
+}
+#column-tabs button {
+  flex: 1;
+  border-color: transparent;
+  color: var(--muted);
+}
+#column-tabs [aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  color: var(--ink);
+}
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+}
+.column {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.column h2 span {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 5px;
+}
+.column ul {
+  list-style: none;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+.card-title {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  font-size: 13px;
+}
+.card-detail {
+  margin: 6px 0;
+  font-size: 11px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.card-actions {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.card-actions button {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-color: transparent;
+}
+.empty {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 12px 0;
+  line-height: 1.7;
+  text-align: center;
+}
+footer {
+  font-size: 10px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+footer button {
+  font-size: 10px;
+  padding: 3px 5px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+dialog {
+  width: min(340px, calc(100vw - 16px));
+  max-width: none;
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.2);
+}
+dialog label {
+  display: block;
+  font-size: 12px;
+  margin: 12px 0 6px;
+}
+dialog input,
+dialog textarea,
+dialog select {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+dialog textarea {
+  resize: vertical;
+}
+.save-card {
+  margin-top: 16px;
+}
+::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 620px) {
+  .board-app {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  #column-tabs {
+    display: none;
+  }
+}
+@media (max-width: 619px) {
+  .board-grid {
+    display: block;
+  }
+  .column {
+    height: 100%;
+  }
+  :root[data-column='todo'] .column:not([data-column='todo']),
+  :root[data-column='doing'] .column:not([data-column='doing']),
+  :root[data-column='done'] .column:not([data-column='done']) {
+    display: none;
+  }
+}
+@media (max-height: 320px), (max-width: 260px) {
+  .board-app {
+    padding: 8px;
+    gap: 7px;
+  }
+  #board-title {
+    font-size: 15px;
+  }
+  .card {
+    padding: 7px;
+  }
+}

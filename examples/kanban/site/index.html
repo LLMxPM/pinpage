@@ -1,0 +1,76 @@
+<!-- 功能：提供离线三列项目看板，宽窗同屏、窄窗按状态切换，并支持卡片编辑和撤销删除。 -->
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-column="todo">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>轻量看板</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="board-app">
+      <header class="toolbar">
+        <label class="sr-only" for="board-title">看板名称</label
+        ><input id="board-title" maxlength="40" value="我的项目" aria-label="看板名称" />
+        <div>
+          <button id="theme" aria-label="切换深浅配色" title="切换配色">◐</button
+          ><button id="add-card" class="primary">＋ 卡片</button>
+        </div>
+      </header>
+      <nav id="column-tabs" aria-label="查看状态">
+        <button data-column-button="todo" aria-pressed="true">待开始</button
+        ><button data-column-button="doing" aria-pressed="false">进行中</button
+        ><button data-column-button="done" aria-pressed="false">已完成</button>
+      </nav>
+      <div class="board-grid">
+        <section class="column" data-column="todo" aria-labelledby="todo-title">
+          <h2 id="todo-title">待开始 <span id="todo-count">0</span></h2>
+          <ul id="todo-cards" tabindex="0" aria-label="待开始卡片"></ul>
+          <p class="empty" id="todo-empty">留下一件准备开始的事</p>
+        </section>
+        <section class="column" data-column="doing" aria-labelledby="doing-title">
+          <h2 id="doing-title">进行中 <span id="doing-count">0</span></h2>
+          <ul id="doing-cards" tabindex="0" aria-label="进行中卡片"></ul>
+          <p class="empty" id="doing-empty">一次专注推进一件事</p>
+        </section>
+        <section class="column" data-column="done" aria-labelledby="done-title">
+          <h2 id="done-title">已完成 <span id="done-count">0</span></h2>
+          <ul id="done-cards" tabindex="0" aria-label="已完成卡片"></ul>
+          <p class="empty" id="done-empty">完成的进展会出现在这里</p>
+        </section>
+      </div>
+      <footer>
+        <span id="save-status" role="status">本地保存 · 无需账号</span>
+        <div>
+          <button id="undo" hidden>撤销删除</button><button id="clear-done">清理已完成</button>
+        </div>
+      </footer>
+    </main>
+    <dialog id="card-dialog" aria-labelledby="dialog-title">
+      <form id="card-form">
+        <div class="dialog-heading">
+          <h2 id="dialog-title">卡片内容</h2>
+          <button id="close-dialog" type="button" aria-label="关闭编辑">×</button>
+        </div>
+        <label for="card-title">事项</label
+        ><input id="card-title" maxlength="160" required placeholder="这一步要完成什么？" /><label
+          for="card-detail"
+          >补充说明</label
+        ><textarea
+          id="card-detail"
+          maxlength="1000"
+          rows="4"
+          placeholder="可选，记下完成条件或下一步"
+        ></textarea
+        ><label for="card-status">状态</label
+        ><select id="card-status">
+          <option value="todo">待开始</option>
+          <option value="doing">进行中</option>
+          <option value="done">已完成</option></select
+        ><button type="submit" class="primary save-card">保存卡片</button>
+      </form>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

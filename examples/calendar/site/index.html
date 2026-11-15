@@ -1,0 +1,68 @@
+<!-- 功能：提供离线月历、最多三个重要日期及按本地日期计算的倒数日。 -->
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>日历与倒数日</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="calendar-app">
+      <header class="toolbar">
+        <div>
+          <p class="eyebrow">把重要的日子留在眼前</p>
+          <h1 id="today-label">今天</h1>
+        </div>
+        <button id="theme" aria-label="切换深浅配色" title="切换配色">◐</button>
+      </header>
+      <section class="month-panel" aria-label="月历">
+        <div class="month-heading">
+          <h2 id="month-label"></h2>
+          <div>
+            <button id="previous-month" aria-label="上个月">‹</button
+            ><button id="today">今天</button><button id="next-month" aria-label="下个月">›</button>
+          </div>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span
+          ><span>日</span>
+        </div>
+        <div id="days" class="days" aria-label="日期选择"></div>
+      </section>
+      <section class="events-panel" aria-label="重要日期">
+        <div class="events-heading">
+          <h2>重要日期</h2>
+          <button id="add-event">＋ 添加</button>
+        </div>
+        <ul id="events" tabindex="0" aria-label="倒数日列表"></ul>
+        <p id="empty" class="hint">添加一个值得期待的日子</p>
+      </section>
+      <footer>
+        <span id="save-status" role="status">本地日历 · 离线可用</span
+        ><button id="undo" hidden>撤销删除</button>
+      </footer>
+    </main>
+    <dialog id="event-dialog" aria-labelledby="event-dialog-title">
+      <form id="event-form">
+        <div class="dialog-heading">
+          <h2 id="event-dialog-title">重要日期</h2>
+          <button id="close-dialog" type="button" aria-label="关闭编辑">×</button>
+        </div>
+        <label for="event-title">名称</label
+        ><input id="event-title" maxlength="60" required placeholder="例如：项目交付" /><label
+          for="event-date"
+          >日期</label
+        ><input id="event-date" type="date" min="1900-01-01" max="2199-12-31" required /><button
+          class="primary"
+          type="submit"
+        >
+          保存日期
+        </button>
+        <p class="hint">按本地日历日计算，不包含日程同步和提醒服务。</p>
+      </form>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

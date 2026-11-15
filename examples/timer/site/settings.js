@@ -3,7 +3,7 @@ const storageKey = 'pinpage-clock-preferences-v2';
 const defaults = {
   style: 'digital',
   theme: 'light',
-  surface: 'bare',
+  surface: 'card',
   seconds: false,
   date: true,
   hour12: false,
@@ -58,6 +58,7 @@ export function initializeSettings(onChange) {
   }
   apply();
   open.addEventListener('click', () => dialog.showModal());
+  document.querySelector('#tool-settings').addEventListener('click', () => dialog.showModal());
   close.addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', (event) => {
     const bounds = dialog.getBoundingClientRect();

@@ -1,28 +1,86 @@
-<!-- 功能：提供可自动保存的桌面便签，数据跟随导入页保存在本地。 -->
+<!-- 功能：在单窗切换或同屏使用便签和待办，提供轻量外观设置与本地保存反馈。 -->
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="paper" data-view="notes">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>随手便签</title>
-    <link rel="stylesheet" href="./style.css" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>便签与待办</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./base.css" />
+    <link rel="stylesheet" href="./tasks.css" />
   </head>
-  <body class="notes-page">
-    <main class="widget">
-      <header>
-        <span class="eyebrow">随手记</span
-        ><span id="save-status" class="subtle" role="status">自动保存在本地</span>
+  <body>
+    <main class="notebook" aria-label="便签与待办">
+      <header class="toolbar">
+        <nav aria-label="内容视图">
+          <button data-view-button="notes" aria-pressed="true">便签</button
+          ><button data-view-button="tasks" aria-pressed="false">待办</button
+          ><button data-view-button="both" aria-pressed="false">同屏</button>
+        </nav>
+        <button id="open-settings" aria-label="外观设置" title="外观设置">⚙</button>
       </header>
-      <label class="sr-only" for="note-title">便签标题</label
-      ><input
-        id="note-title"
-        class="note-title"
-        placeholder="给灵感一个标题"
-        maxlength="60"
-      /><label class="sr-only" for="note-content">便签内容</label
-      ><textarea id="note-content" placeholder="输入便签内容" maxlength="10000"></textarea>
-      <footer><span id="note-count">0 / 10000</span></footer>
+      <div class="panes">
+        <section id="note-pane" class="pane" aria-label="便签">
+          <div class="pane-heading">
+            <span>随手记</span><span id="note-save-status" role="status">自动保存在本地</span>
+          </div>
+          <label class="sr-only" for="note-title">便签标题</label
+          ><input
+            id="note-title"
+            class="note-title"
+            maxlength="60"
+            placeholder="给灵感一个标题"
+          /><label class="sr-only" for="note-content">便签内容</label
+          ><textarea id="note-content" maxlength="10000" placeholder="记下此刻的想法…"></textarea>
+          <footer><span id="note-count">0 / 10000</span></footer>
+        </section>
+        <section id="task-pane" class="pane" aria-label="待办清单">
+          <div class="pane-heading">
+            <h1>待办清单</h1>
+            <span id="task-progress" role="status"></span>
+          </div>
+          <form id="task-form">
+            <label class="sr-only" for="task-input">新的待办事项</label
+            ><input
+              id="task-input"
+              maxlength="160"
+              placeholder="接下来要做什么？"
+              required
+              autocomplete="off"
+            /><button id="add-task" type="submit" class="primary">添加</button>
+          </form>
+          <div class="task-tools">
+            <label><input id="hide-completed" type="checkbox" />隐藏已完成</label
+            ><button id="clear-completed">清理已完成</button>
+          </div>
+          <ul id="tasks" aria-label="待办事项" tabindex="0"></ul>
+          <p id="empty-hint" class="empty-hint">暂无待办，开始添加第一件事吧</p>
+          <footer class="task-footer">
+            <span id="task-save-status" role="status">自动保存在本地</span
+            ><button id="undo-task" hidden>撤销删除</button>
+          </footer>
+        </section>
+      </div>
     </main>
-    <script src="./notes.js" defer></script>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-heading">
+        <h2 id="settings-title">便签外观</h2>
+        <button id="close-settings" aria-label="关闭设置">×</button>
+      </div>
+      <label for="theme">配色</label
+      ><select id="theme">
+        <option value="paper">暖纸</option>
+        <option value="sage">苔绿</option>
+        <option value="dark">深色</option></select
+      ><label for="font-size">正文字号</label
+      ><select id="font-size">
+        <option value="14">14</option>
+        <option value="16">16</option>
+        <option value="18">18</option>
+        <option value="20">20</option>
+      </select>
+      <p id="preferences-status" role="status">设置自动保存</p>
+    </dialog>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 [
-  { "label": "专注 25 分钟", "minutes": 25 },
-  { "label": "休息 5 分钟", "minutes": 5 },
-  { "label": "深度 50 分钟", "minutes": 50 }
+  { "label": "专注 25 分", "minutes": 25, "kind": "focus" },
+  { "label": "休息 5 分", "minutes": 5, "kind": "rest" },
+  { "label": "深度 50 分", "minutes": 50, "kind": "focus" }
 ]

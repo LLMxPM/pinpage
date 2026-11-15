@@ -192,14 +192,30 @@
   },
   "examples": {
     "title": "示例库",
-    "timer": "专注计时器",
-    "notes": "随手便签",
-    "checklist": "今日待办",
-    "clock": "数字时钟",
+    "timer": "时间工具",
+    "notes": "便签与待办",
     "folder": "文件夹",
     "systemMonitor": "系统监控",
     "add": "添加",
-    "addAria": "添加{name}示例"
+    "addAria": "添加{name}示例",
+    "stocks": "自选行情",
+    "calendar": "日历与倒数日",
+    "kanban": "轻量看板",
+    "descriptions": {
+      "timer": "专注倒计时、时钟与秒表",
+      "notes": "随手记录，逐项推进",
+      "stocks": "自选报价与分时趋势",
+      "folder": "常用目录随手可达",
+      "systemMonitor": "随时查看系统状态",
+      "calendar": "今天与重要的日子",
+      "kanban": "一眼掌握项目进展"
+    },
+    "badges": {
+      "offline": "离线可用",
+      "network": "需要联网",
+      "permission": "需授权文件夹",
+      "host": "使用宿主数据"
+    }
   },
   "updates": {
     "currentVersion": "当前版本 v{version}",

@@ -25,6 +25,8 @@ export function defaults() {
     trends: [],
     quotes: [],
     requestedAt: null,
+    sort: 'manual',
+    colors: 'redUp',
   };
 }
 
@@ -51,6 +53,8 @@ export function loadState() {
     )
       state.surfaceOpacity = raw.surfaceOpacity;
     if (typeof raw.showTrend === 'boolean') state.showTrend = raw.showTrend;
+    if (['manual', 'name', 'percent'].includes(raw.sort)) state.sort = raw.sort;
+    if (['redUp', 'greenUp'].includes(raw.colors)) state.colors = raw.colors;
     state.selectedSymbol = state.symbols.includes(raw.selectedSymbol)
       ? raw.selectedSymbol
       : (state.symbols[0] ?? null);
@@ -99,7 +103,7 @@ function validTimestamp(value) {
 /** 同步保存小体积状态；调用方负责展示存储失败，当前会话仍可继续使用。 */
 export function saveState(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(KEY, JSON.stringify({ ...state, filter: undefined }));
     return true;
   } catch {
     return false;

@@ -9,13 +9,13 @@ English | [简体中文](README.zh-CN.md)
 ## Screenshots
 
 ![Floating pages over the desktop](docs/screenshots/desktop.jpg)
-*Pages pinned above the desktop, always in view.*
+_Pages pinned above the desktop, always in view._
 
 ![Workspace](docs/screenshots/workspace.png)
-*The on-demand workspace: page cards, status, and quick actions.*
+_The on-demand workspace: page cards, status, and quick actions._
 
 ![Page settings](docs/screenshots/pin-settings.png)
-*Source, window appearance, and size.*
+_Source, window appearance, and size._
 
 ## Highlights
 
@@ -32,8 +32,8 @@ English | [简体中文](README.zh-CN.md)
 - **Page native capabilities** — content pages can read host info and a shared once-per-second system sample by default; read-only folder access is bounded to the granted root and never exported with packages. Page scripts stay same-origin while HTTPS outbound is allowed. See [architecture notes](docs/architecture.md).
 - **Bilingual UI** — Simplified Chinese and English, or follow the system UI language on Windows; switching does not reload open pages.
 - **GitHub Release updates** — check, download, verify, and install signed updates from this repository; installation requires confirmation. End-to-end Windows upgrade acceptance is pending; see [versioning and updates](docs/releases.md).
-- **Six tools built in** — focus timer, quick notes, daily checklist, digital clock, folder browser, and system monitor, each added as an independent imported page. The clock offers minimal, flip-style, and analog faces, color themes, and responsive transparent layouts; the folder browser needs a per-page grant, and the monitor reads the shared system sample.
-- **Online quote validation example** — a separately importable [stock watchlist](examples/stocks/README.md) offers three responsive layouts, actual intraday minute charts, watchlist management, and transparent panels. It is not registered in the built-in gallery and depends on external website endpoints.
+- **Seven built-in tools** — time tools (focus timer, clock and stopwatch), notes & tasks, calendar & countdown, Kanban board, market watch, folder browser, and system monitor. Each creates an independent page with named window layouts; market watch requires the internet, and folder access requires per-page authorization.
+- **Market watch** — available in the built-in gallery with intraday charts, local watchlist filtering, display sorting, color conventions, and transparent panels. Failed requests keep cached data; see [data sources and limitations](examples/stocks/README.md).
 - **Measured footprint** — first-round Release sampling measured about 205 / 291 / 377 MiB of private commit memory for 1 / 3 / 5 idle timers across the whole process group. Details are in the [architecture notes](docs/architecture.md).
 
 ## Quick start

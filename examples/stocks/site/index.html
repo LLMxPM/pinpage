@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="./chart.css" />
     <link rel="stylesheet" href="./responsive.css" />
     <link rel="stylesheet" href="./settings.css" />
+    <link rel="stylesheet" href="./list-controls.css" />
   </head>
   <body>
     <main class="widget">
@@ -93,6 +94,18 @@
             <h2>自选<span id="watch-count">0</span></h2>
             <span>点击查看走势</span>
           </div>
+          <div class="list-controls">
+            <label class="sr-only" for="quote-filter">筛选自选名称或代码</label
+            ><input id="quote-filter" type="search" maxlength="80" placeholder="筛选自选…" /><label
+              class="sr-only"
+              for="list-sort"
+              >自选排序</label
+            ><select id="list-sort">
+              <option value="manual">自选顺序</option>
+              <option value="name">名称</option>
+              <option value="percent">涨幅优先</option>
+            </select>
+          </div>
           <div class="columns" aria-hidden="true">
             <span>名称 / 行情时间</span><span>最新价</span><span>涨跌幅</span>
           </div>
@@ -140,6 +153,13 @@
         ><select id="surface">
           <option value="card">柔光底板</option>
           <option value="bare">无底板</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="colors">涨跌配色</label
+        ><select id="colors">
+          <option value="redUp">红涨绿跌</option>
+          <option value="greenUp">绿涨红跌</option>
         </select>
       </div>
       <div id="opacity-row" class="setting-row">

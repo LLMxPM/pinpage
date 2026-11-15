@@ -13,7 +13,7 @@
         <h1>系统监控</h1>
         <span class="live" id="live-flag"
           ><i class="live-dot" aria-hidden="true"></i><span id="live-text">实时</span></span
-        >
+        ><button id="monitor-settings" aria-label="监控设置" title="监控设置">⚙</button>
       </header>
       <p id="demo-banner" class="demo-banner" hidden>浏览器预览 · 演示数据</p>
       <section class="cpu-row" aria-label="处理器">
@@ -31,10 +31,10 @@
         <div class="bar"><i id="memory-bar"></i></div>
       </section>
       <section class="net-row" aria-label="网络速率">
-        <span class="net-item"
+        <span class="net-item network-item"
           ><b class="net-arrow down" aria-hidden="true">↓</b><span id="net-rx">--</span></span
         >
-        <span class="net-item"
+        <span class="net-item network-item"
           ><b class="net-arrow up" aria-hidden="true">↑</b><span id="net-tx">--</span></span
         >
         <span class="net-item disk" id="disk-text"></span>
@@ -45,6 +45,23 @@
       </footer>
       <p id="error-text" class="error-text" role="alert" hidden></p>
     </main>
-    <script type="module" src="./app.js"></script>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-head">
+        <h2 id="settings-title">监控设置</h2>
+        <button id="close-settings" aria-label="关闭设置">×</button>
+      </div>
+      <label for="monitor-theme">配色</label
+      ><select id="monitor-theme">
+        <option value="dark">深色</option>
+        <option value="light">浅色</option></select
+      ><label for="disk-select">显示磁盘</label
+      ><select id="disk-select"></select
+      ><label><input id="show-network" type="checkbox" />网络速率</label
+      ><label><input id="show-showDisk" type="checkbox" />磁盘用量</label
+      ><label><input id="show-battery" type="checkbox" />电池信息</label
+      ><label><input id="show-uptime" type="checkbox" />系统运行时长</label>
+      <p id="settings-status" role="status">设置自动保存</p>
+    </dialog>
+    <script type="module" src="./controller.js"></script>
   </body>
 </html>

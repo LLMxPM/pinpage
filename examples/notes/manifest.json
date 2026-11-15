@@ -1,19 +1,69 @@
 {
   "schemaVersion": 1,
-  "name": "随手便签",
+  "name": "便签与待办",
   "entry": "index.html",
   "windowPreset": {
     "mode": "floating",
     "alwaysOnTop": true,
     "decorations": false,
-    "rounded": false,
+    "rounded": true,
     "transparentBackground": false,
     "positionLocked": false,
     "sizeLocked": false,
-    "width": 360,
-    "height": 360,
+    "width": 420,
+    "height": 480,
     "fx": 0.5,
     "fy": 0.5,
     "fullscreen": false
-  }
+  },
+  "windowPresets": [
+    {
+      "id": "standard",
+      "name": "标准",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 420,
+      "height": 480,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "compact",
+      "name": "紧凑",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 320,
+      "height": 400,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "wide",
+      "name": "同屏宽窗",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 760,
+      "height": 460,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    }
+  ]
 }

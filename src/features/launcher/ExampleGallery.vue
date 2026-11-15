@@ -1,4 +1,4 @@
-<!-- 功能：以统一的示例卡片展示六种本地工具，并反馈具体示例的创建状态。 -->
+<!-- 功能：展示合并后的七种示例、用途与使用条件，以静态预览反馈创建状态。 -->
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
@@ -27,10 +27,23 @@ const { t } = useI18n();
             ><AppIcon name="note" :size="18" />
             <div class="preview-lines"><i /><i /><i /></div
           ></template>
-          <template v-else-if="example.id === 'checklist'"
-            ><span
-              ><i class="checked"><AppIcon name="check" :size="10" /></i><b /></span
-            ><span><i /><b /></span><span><i /><b /></span
+          <template v-else-if="example.id === 'calendar'"
+            ><small>11 月</small><strong>15</strong>
+            <div class="preview-dots"><i /><i /><i /><i /><i /><i /><i /></div
+          ></template>
+          <template v-else-if="example.id === 'kanban'"
+            ><div class="preview-board">
+              <span><i /><i /></span><span><i /></span><span><i /><i /></span></div
+          ></template>
+          <template v-else-if="example.id === 'stocks'"
+            ><strong>+1.28<span>%</span></strong
+            ><svg class="preview-spark" viewBox="0 0 70 20" aria-hidden="true">
+              <polyline
+                points="0,18 10,12 20,15 30,9 40,11 50,4 60,7 70,2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              /></svg
           ></template>
           <template v-else-if="example.id === 'folder'"
             ><span class="preview-folder-icon"></span>
@@ -46,12 +59,13 @@ const { t } = useI18n();
                 stroke-width="1.5"
               /></svg
           ></template>
-          <template v-else-if="example.id === 'clock'"
-            ><strong>09<span>:</span>41</strong></template
-          >
         </div>
         <div class="example-details">
           <h3>{{ t(example.title) }}</h3>
+          <p class="example-description">{{ t(`ui.examples.descriptions.${example.id}`) }}</p>
+          <span class="example-badge" :class="example.badge">{{
+            t(`ui.examples.badges.${example.badge}`)
+          }}</span>
           <button
             class="secondary compact"
             :disabled="busy"

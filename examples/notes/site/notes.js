@@ -1,7 +1,7 @@
 // 功能：恢复便签内容并在输入时同步保存；存储不可用时明确提示，保持编辑可用。
 const title = document.querySelector('#note-title');
 const content = document.querySelector('#note-content');
-const status = document.querySelector('#save-status');
+const status = document.querySelector('#note-save-status');
 const count = document.querySelector('#note-count');
 const storageKey = 'pinpage-notes-v1';
 

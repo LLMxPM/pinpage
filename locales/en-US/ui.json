@@ -192,14 +192,30 @@
   },
   "examples": {
     "title": "Samples",
-    "timer": "Focus timer",
-    "notes": "Quick notes",
-    "checklist": "Daily checklist",
-    "clock": "Digital clock",
+    "timer": "Time tools",
+    "notes": "Notes & tasks",
     "folder": "Folder",
     "systemMonitor": "System monitor",
     "add": "Add",
-    "addAria": "Add {name} sample"
+    "addAria": "Add {name} sample",
+    "stocks": "Market watch",
+    "calendar": "Calendar & countdown",
+    "kanban": "Kanban board",
+    "descriptions": {
+      "timer": "Focus timer, clock and stopwatch",
+      "notes": "Capture thoughts and track tasks",
+      "stocks": "Watchlist quotes and intraday trends",
+      "folder": "Keep a working folder close",
+      "systemMonitor": "Glance at system activity",
+      "calendar": "Today and the dates that matter",
+      "kanban": "Track progress at a glance"
+    },
+    "badges": {
+      "offline": "Works offline",
+      "network": "Internet required",
+      "permission": "Folder access required",
+      "host": "Uses host data"
+    }
   },
   "updates": {
     "currentVersion": "Current version v{version}",

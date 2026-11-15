@@ -37,13 +37,16 @@
     "folderAccessTitle": "选择要授权给此页面的文件夹"
   },
   "names": {
-    "example": "专注计时器",
+    "example": "时间工具",
     "webPage": "网页",
-    "notes": "随手便签",
-    "checklist": "今日待办",
-    "clock": "数字时钟",
+    "notes": "便签与待办",
+    "checklist": "便签与待办",
+    "clock": "时间工具",
     "folder": "文件夹",
-    "systemMonitor": "系统监控"
+    "systemMonitor": "系统监控",
+    "stocks": "自选行情",
+    "calendar": "日历与倒数日",
+    "kanban": "轻量看板"
   },
   "restore": {
     "title": "正在恢复页面数据",

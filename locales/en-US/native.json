@@ -37,13 +37,16 @@
     "folderAccessTitle": "Pick the folder to grant to this page"
   },
   "names": {
-    "example": "Focus Timer",
+    "example": "Time tools",
     "webPage": "Web page",
-    "notes": "Quick notes",
-    "checklist": "Daily checklist",
-    "clock": "Digital clock",
+    "notes": "Notes & tasks",
+    "checklist": "Notes & tasks",
+    "clock": "Time tools",
     "folder": "Folder",
-    "systemMonitor": "System monitor"
+    "systemMonitor": "System monitor",
+    "stocks": "Market watch",
+    "calendar": "Calendar & countdown",
+    "kanban": "Kanban board"
   },
   "restore": {
     "title": "Restoring page data",

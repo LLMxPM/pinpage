@@ -1,0 +1,238 @@
+/* 功能：安排时间工具的模式导航与紧凑交互，支持透明、矮窗和长时间读数。 */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+.time-app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 8px;
+  gap: 4px;
+}
+.tool-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+.mode-tabs {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+.time-app button {
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+  color: var(--ink);
+}
+.mode-tabs button {
+  border-color: transparent;
+  background: transparent;
+  padding: 6px 12px;
+  color: var(--muted);
+}
+.mode-tabs [aria-selected='true'] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.time-app .icon-button {
+  padding: 4px;
+  border: 0;
+  background: transparent;
+}
+.time-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 12px;
+  gap: 12px;
+  border-radius: 16px;
+  scrollbar-width: none;
+}
+[data-surface='card'] .time-panel {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line);
+}
+.time-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 130px;
+}
+#time,
+.large-time {
+  font-family: 'Bahnschrift', 'Segoe UI', sans-serif;
+  font-size: clamp(28px, 15vw, 88px);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+#status,
+.muted {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+.time-actions,
+#presets,
+.timer-options,
+#custom-duration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.time-app .primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+  padding-inline: 22px;
+}
+#presets button {
+  font-size: 11px;
+  padding: 5px 9px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+#presets [aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--line);
+}
+.timer-options {
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+#custom-minutes {
+  width: 58px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 4px;
+}
+#custom-duration button {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.sound-option {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.time-footer {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.6;
+}
+.tool-notice {
+  margin: 0;
+  padding: 2px 8px;
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.tool-notice:empty {
+  display: none;
+}
+.mode-tabs .has-completed::after {
+  content: '✓';
+  margin-left: 3px;
+}
+.completion {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 12px;
+}
+.finished #time {
+  color: var(--accent);
+}
+.clock-stage {
+  height: 100%;
+  min-height: 0;
+  padding: 2px;
+}
+.clock-stage .settings-trigger {
+  display: none;
+}
+::-webkit-scrollbar {
+  display: none;
+}
+@media (max-height: 300px) {
+  .time-panel {
+    gap: 6px;
+    padding: 6px;
+  }
+  .time-center {
+    min-height: 100px;
+    gap: 8px;
+  }
+  .time-footer {
+    font-size: 9px;
+  }
+  #time,
+  .large-time {
+    font-size: min(16vw, 25vh);
+  }
+}
+@media (max-height: 230px) {
+  .time-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  #presets,
+  .timer-options,
+  .time-footer {
+    display: none;
+  }
+  .time-center {
+    min-height: 0;
+    gap: 6px;
+  }
+  .time-actions button {
+    padding-block: 4px;
+  }
+  #status,
+  .muted {
+    display: none;
+  }
+}
+@media (max-width: 240px) {
+  .time-panel {
+    padding: 6px;
+  }
+  .mode-tabs button {
+    padding-inline: 7px;
+  }
+  .timer-options {
+    justify-content: center;
+  }
+  .completion {
+    font-size: 10px;
+  }
+}

@@ -76,11 +76,24 @@
         <p class="hint">授权后只读浏览该文件夹，可随时更换；不会写入或删除文件。</p>
         <button id="pick-folder" class="primary">选择文件夹</button>
       </section>
-      <ul id="entry-list" class="entry-list" aria-label="文件列表"></ul>
+      <div class="filter-row">
+        <label class="sr-only" for="filter">筛选当前目录</label
+        ><input id="filter" type="search" maxlength="100" placeholder="筛选当前目录…" /><label
+          class="sr-only"
+          for="sort"
+          >排序方式</label
+        ><select id="sort">
+          <option value="name">名称</option>
+          <option value="modified">最近修改</option>
+          <option value="size">文件大小</option>
+        </select>
+      </div>
+      <ul id="entry-list" class="entry-list" aria-label="文件列表" tabindex="0"></ul>
+      <p id="empty-list" class="hint" hidden></p>
       <footer class="status-line">
         <span id="status-text" role="status"></span>
       </footer>
     </main>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./controller.js"></script>
   </body>
 </html>

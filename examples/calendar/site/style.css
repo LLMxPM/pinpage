@@ -1,0 +1,271 @@
+/* 功能：以月历和倒数卡片组织日期工具，在紧凑窗口优先展示最近的重要日期。 */
+:root {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --base: 247 245 238;
+  --ink: #3b463b;
+  --muted: #85917e;
+  --line: #dce2d2;
+  --accent: #6b8359;
+  --panel: #fffef8;
+  color: var(--ink);
+}
+:root[data-theme='dark'] {
+  --base: 27 34 30;
+  --ink: #e4eddb;
+  --muted: #9aa992;
+  --line: #43533e;
+  --accent: #b0c99c;
+  --panel: #263227;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+[hidden] {
+  display: none !important;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: rgb(var(--base) / var(--pinpage-background-opacity, 1));
+}
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+button:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.calendar-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+.toolbar,
+.month-heading,
+.events-heading,
+.dialog-heading,
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  margin: 0 0 5px;
+}
+h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 500;
+}
+h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+.month-panel {
+  flex: none;
+}
+.month-heading {
+  margin-bottom: 10px;
+}
+.month-heading > div {
+  display: flex;
+  gap: 3px;
+}
+.weekdays,
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.weekdays {
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.day {
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+.day.outside {
+  color: var(--muted);
+  opacity: 0.4;
+}
+.day.is-today {
+  background: var(--accent);
+  color: var(--panel);
+}
+.day.has-event::after {
+  content: '';
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  position: absolute;
+  bottom: 2px;
+  left: calc(50% - 1px);
+}
+.events-panel {
+  flex: 1;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+#events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  min-height: 0;
+}
+.event {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+}
+.event-identity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.event-identity strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.count {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.count.past {
+  color: var(--muted);
+  font-size: 12px;
+}
+.event-actions {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.event-actions button {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-color: transparent;
+}
+.hint,
+footer {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+}
+footer {
+  flex: none;
+  margin-top: auto;
+}
+dialog {
+  color: var(--ink);
+  background: var(--panel);
+  width: min(320px, calc(100vw - 16px));
+  max-width: none;
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.2);
+}
+dialog label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 12px;
+}
+dialog input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+}
+.primary {
+  margin: 16px 0 10px;
+  background: var(--accent);
+  color: var(--panel);
+}
+::-webkit-scrollbar {
+  display: none;
+}
+@media (max-height: 280px) {
+  .calendar-app {
+    gap: 7px;
+    padding: 10px 12px;
+  }
+  .month-panel,
+  .eyebrow {
+    display: none;
+  }
+  .events-panel {
+    min-height: 0;
+  }
+  .event {
+    padding: 7px 0;
+  }
+}
+@media (max-width: 260px) {
+  .calendar-app {
+    padding: 10px;
+  }
+  h1 {
+    font-size: 15px;
+  }
+  .eyebrow {
+    display: none;
+  }
+  .count {
+    font-size: 12px;
+  }
+  .day {
+    padding: 4px 1px;
+  }
+}

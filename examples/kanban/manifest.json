@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "轻量看板",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": true,
+    "transparentBackground": false,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 760,
+    "height": 480,
+    "fx": 0.5,
+    "fy": 0.5,
+    "fullscreen": false
+  },
+  "windowPresets": [
+    {
+      "id": "standard",
+      "name": "三列看板",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 760,
+      "height": 480,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "compact",
+      "name": "单列侧栏",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 340,
+      "height": 460,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    }
+  ]
+}

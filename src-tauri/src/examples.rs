@@ -5,28 +5,34 @@ use std::path::Path;
 
 include!(concat!(env!("OUT_DIR"), "/example_packages.rs"));
 
-/// IPC 仅接受已登记的示例标识，旧调用省略标识时仍使用计时器。
+/// IPC 仅接受已登记的示例标识，旧调用省略标识时使用合并后的时间工具。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ExampleId {
     #[default]
     Timer,
     Notes,
+    /// 兼容旧调用，映射到便签与待办，不作为独立卡片展示。
     Checklist,
+    /// 兼容旧调用，映射到时间工具，不作为独立卡片展示。
     Clock,
     Folder,
     SystemMonitor,
+    Stocks,
+    Calendar,
+    Kanban,
 }
 
 /// 白名单标识映射到构建时生成的标准包，不从调用方输入拼接文件路径。
 fn package_bytes(example: ExampleId) -> &'static [u8] {
     let id = match example {
-        ExampleId::Timer => "timer",
-        ExampleId::Notes => "notes",
-        ExampleId::Checklist => "checklist",
-        ExampleId::Clock => "clock",
+        ExampleId::Timer | ExampleId::Clock => "timer",
+        ExampleId::Notes | ExampleId::Checklist => "notes",
         ExampleId::Folder => "folder",
         ExampleId::SystemMonitor => "system-monitor",
+        ExampleId::Stocks => "stocks",
+        ExampleId::Calendar => "calendar",
+        ExampleId::Kanban => "kanban",
     };
     PACKAGES
         .iter()
@@ -38,12 +44,13 @@ fn package_bytes(example: ExampleId) -> &'static [u8] {
 /// 示例名称按当前应用语言解析，页面内容仍使用包内的默认语言。
 pub fn label_key(example: ExampleId) -> &'static str {
     match example {
-        ExampleId::Timer => "names.example",
-        ExampleId::Notes => "names.notes",
-        ExampleId::Checklist => "names.checklist",
-        ExampleId::Clock => "names.clock",
+        ExampleId::Timer | ExampleId::Clock => "names.example",
+        ExampleId::Notes | ExampleId::Checklist => "names.notes",
         ExampleId::Folder => "names.folder",
         ExampleId::SystemMonitor => "names.systemMonitor",
+        ExampleId::Stocks => "names.stocks",
+        ExampleId::Calendar => "names.calendar",
+        ExampleId::Kanban => "names.kanban",
     }
 }
 

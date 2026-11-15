@@ -20,7 +20,7 @@
 新工具使用 `examples/<工具名>/manifest.json` 和 `site/`。清单入口相对于 `site/`，通常为 `index.html`，也可使用安全子目录；源码清单可省略 `files` 和 `exportedAt`，打包器会统计文件数并固定示例时间戳。字段和数值约束以公共页面包参考为准。
 
 - 示例是独立静态站点，不经过工作台 Vue/Vite 构建。优先使用浏览器原生 HTML、CSS 和 JavaScript，运行文件不直接引用工作台 `src/` 或依赖包名。
-- 内置示例默认离线可用，必要资源随站点提供；明确要求联网的页面按公共制作指南处理数据来源、CORS、缓存和失败状态，并说明依赖。独立的[自选行情](../examples/stocks/README.md)用于联网验证，尚未注册到示例库。
+- 示例的脚本、样式和必要资源随站点提供；时间工具、便签与待办、日历和看板离线可用，文件夹与监控使用宿主能力。[自选行情](../examples/stocks/README.md)已接入内置示例库并明确标记需要联网，按公共制作指南处理数据来源、CORS、缓存和失败状态。
 - 页面内容默认中文，不随工作台语言切换。示例库卡片标题和新建页面名称属于宿主文案，需要维护中英文资源。
 - `src-tauri/build/examples.rs` 递归收集 `site/` 下的真实文件，保留相对目录，生成可复现的标准 `.pinpage`。新增 CSS、模块、JSON 和图片自动打包；不维护逐文件 Rust 映射，不使用符号链接或目录联接。
 - `pnpm examples:pack` 将包写到 `dist/examples/`，用于独立导入和分享。不要混入其他工具资源或个人存储快照，不提交生成包。
@@ -31,14 +31,17 @@
 
 按任务选择最接近的现有实现：
 
-| 示例                                               | 参考内容                            |
-| -------------------------------------------------- | ----------------------------------- |
-| [计时器](../examples/timer/site/index.html)        | ES 模块、JSON、截止时间和 IndexedDB |
-| [便签](../examples/notes/site/notes.js)            | 编辑即保存                          |
-| [待办](../examples/checklist/site/checklist.js)    | 输入校验和安全渲染                  |
-| [时钟](../examples/clock/site/clock.js)            | 基于真实时间刷新                    |
-| [文件夹](../examples/folder/site/app.js)           | 逐页授权、导航、打开和定位          |
-| [系统监控](../examples/system-monitor/site/app.js) | 共享采样轮询、迷你曲线与演示降级    |
+| 示例                                                      | 参考内容                                 |
+| --------------------------------------------------------- | ---------------------------------------- |
+| [计时器](../examples/timer/site/index.html)               | ES 模块、JSON、截止时间和 IndexedDB      |
+| [便签](../examples/notes/site/notes.js)                   | 编辑即保存                               |
+| [待办](../examples/notes/site/tasks.js)                   | 旧数据迁移、编辑、排序和撤销删除         |
+| [时钟](../examples/timer/site/clock.js)                   | 基于真实时间刷新                         |
+| [文件夹](../examples/folder/site/controller.js)           | 能力探测、逐页授权、导航竞态、打开和定位 |
+| [系统监控](../examples/system-monitor/site/controller.js) | 共享采样串行轮询、时效判断与演示降级     |
+| [日历与倒数日](../examples/calendar/site/date-state.js)   | 本地日历日计算与跨夏令时边界             |
+| [轻量看板](../examples/kanban/site/board-state.js)        | 卡片校验和状态流转                       |
+| [自选行情](../examples/stocks/site/list-model.js)         | 缓存名称筛选、展示排序与联网缓存         |
 
 宿主接入可复用 [folder-api.js](../examples/folder/site/folder-api.js) 或 [monitor-api.js](../examples/system-monitor/site/monitor-api.js) 的薄封装；调用方式、能力版本、错误结构、权限和出站限制以公共宿主契约为准，不自行发明 IPC 通道。普通浏览器中的演示数据应明确标注。
 
@@ -71,6 +74,8 @@ Rust 枚举使用 `#[serde(rename_all = "camelCase")]`，前端 ID 与实际序�
 
 每次添加生成独立副本和页面来源，可复用同一工具的存储键。修改源码或升级应用不会覆盖旧副本；验证新版时重新添加或重新导入，保留用户数据。相同页面更换来源仍保留同源存储，数据结构修改需要兼容旧数据。
 
+合并后的规范入口为 `timer`（时间工具）和 `notes`（便签与待办）；旧 `clock`、`checklist` 白名单标识映射到对应新包，不重复分发旧源码。新页面读取旧计时、时钟、便签和待办的存储键，只能迁移当前页面来源中的数据，不能跨独立副本自动合并。窗口预设只管理原生布局，计时模式、同屏视图和外观偏好由页面分别保存。
+
 ## 按改动验证
 
 先检查并复用已有开发服务，静态预览可访问 `/examples/<工具名>/site/index.html`；使用模块或 `fetch` 时不要用 `file://` 判断加载结果。按目录导入选择 `site/`，只有按页面包导入才携带源码清单的布局和预设。
@@ -81,6 +86,7 @@ Rust 枚举使用 `#[serde(rename_all = "camelCase")]`，前端 ID 与实际序�
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | 技能、公共参考或仓库接入文档 | `pnpm check:skill`；检查改动文档与格式                                                                                       |
 | 页面资源                     | `pnpm exec prettier --check <改动文件...>`；纯 JS 可用 `node --check <文件>` 检查语法，预览核心交互                          |
+| 示例状态、日期和行情逻辑     | `pnpm test:examples`：覆盖旧数据恢复、真实截止时间、日期边界、状态流转、行情解析与请求竞态                                   |
 | 卡片、类型与宿主文案         | `pnpm check`；新增宿主文案时运行 `pnpm check:i18n`                                                                           |
 | 包源码、注册或打包器         | `pnpm examples:pack`；`cargo test --manifest-path src-tauri/Cargo.toml --lib examples::tests`                                |
 | 包格式或随包布局             | `cargo test --manifest-path src-tauri/Cargo.toml --lib package::tests` 及相关预设、来源测试                                  |

@@ -13,7 +13,16 @@ export type AppLocale = 'zh-CN' | 'en-US';
 export type GestureModifier = 'ctrl' | 'shift' | 'disabled';
 
 /// 内置示例来源，与 Rust 的 ExampleId 白名单一致，不接受任意资源路径。
-export type ExampleId = 'timer' | 'notes' | 'checklist' | 'clock' | 'folder' | 'systemMonitor';
+export type ExampleId =
+  | 'timer'
+  | 'notes'
+  | 'checklist'
+  | 'clock'
+  | 'folder'
+  | 'systemMonitor'
+  | 'stocks'
+  | 'calendar'
+  | 'kanban';
 
 export type PageSource = { kind: 'url'; url: string } | { kind: 'bundled'; entry: string };
 
