@@ -1,4 +1,5 @@
 // 功能：声明各平台窗口能力、执行统一校验，并提供 Windows 原生策略与安全回退。
+pub mod navigation;
 #[cfg(windows)]
 use crate::models::PlatformDragModifier;
 use crate::{
@@ -6,6 +7,9 @@ use crate::{
     models::{GestureModifier, PinConfig, PlatformCapabilities, PresetFields, WindowMode},
 };
 use tauri::AppHandle;
+#[cfg(windows)]
+mod appearance;
+pub mod autostart;
 #[cfg(windows)]
 mod caption;
 #[cfg(windows)]
@@ -32,6 +36,7 @@ pub fn capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: true,
         rounded: true,
+        transparent_background: true,
         position_lock: true,
         size_lock: true,
         window_gestures: true,
@@ -61,6 +66,7 @@ fn floating_capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: false,
         rounded: false,
+        transparent_background: false,
         position_lock: false,
         size_lock: false,
         window_gestures: false,
@@ -72,6 +78,7 @@ fn floating_capabilities() -> PlatformCapabilities {
 fn supports_pin(capabilities: PlatformCapabilities, pin: &PinConfig) -> bool {
     (pin.mode == WindowMode::Floating || capabilities.desktop_mode)
         && (!pin.rounded || capabilities.rounded)
+        && (!pin.transparent_background || capabilities.transparent_background)
         && (!pin.position_locked || capabilities.position_lock)
         && (!pin.size_locked || capabilities.size_lock)
 }
@@ -80,6 +87,7 @@ fn supports_pin(capabilities: PlatformCapabilities, pin: &PinConfig) -> bool {
 fn supports_preset(capabilities: PlatformCapabilities, fields: &PresetFields) -> bool {
     (fields.mode == WindowMode::Floating || capabilities.desktop_mode)
         && (!fields.rounded || capabilities.rounded)
+        && (!fields.transparent_background || capabilities.transparent_background)
         && (!fields.position_locked || capabilities.position_lock)
         && (!fields.size_locked || capabilities.size_lock)
 }
@@ -111,6 +119,7 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
         pin.mode,
         pin.decorations,
         pin.rounded,
+        pin.transparent_background,
         pin.position_locked,
         pin.size_locked,
     );
@@ -121,6 +130,9 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
         pin.rounded = false;
         pin.position_locked = false;
         pin.size_locked = false;
+    }
+    if !capabilities.transparent_background {
+        pin.transparent_background = false;
     }
     if !capabilities.rounded {
         pin.rounded = false;
@@ -136,6 +148,7 @@ pub fn fallback_pin(capabilities: PlatformCapabilities, pin: &mut PinConfig) -> 
             pin.mode,
             pin.decorations,
             pin.rounded,
+            pin.transparent_background,
             pin.position_locked,
             pin.size_locked,
         );
@@ -155,7 +168,8 @@ pub fn apply(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(), AppMe
 /// Windows 使用完整窗口策略，包括桌面宿主、圆角与几何锁。
 #[cfg(windows)]
 fn apply_supported(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage> {
-    window_policy::apply(window, pin)
+    window_policy::apply(window, pin)?;
+    appearance::apply(window, pin)
 }
 
 /// 其他平台只应用 Tauri 通用的浮动窗口属性，不支持项已在上层校验。
@@ -175,6 +189,14 @@ fn apply_supported(window: &tauri::WebviewWindow, pin: &PinConfig) -> Result<(),
             _ => Ok(()),
         })
         .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))
+}
+
+/// 内容窗口关闭浏览器默认右键菜单，避免放行右键时冒出浏览器菜单；其他平台保留系统行为。
+pub fn suppress_context_menu(window: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    appearance::suppress_context_menu(window);
+    #[cfg(not(windows))]
+    let _ = window;
 }
 
 /// 原生读取屏幕物理坐标，避免桌面子窗口被保存成父窗口局部坐标。
@@ -200,7 +222,7 @@ pub fn position(window: &tauri::WebviewWindow) -> Result<tauri::PhysicalPosition
         .map_err(|error| AppMessage::new("errors.readPosition").detail(error))
 }
 
-/// 启动桌面恢复与唯一鼠标输入线程，不再轮询 Alt + 左键。
+/// 启动桌面恢复与唯一鼠标手势输入线程。
 #[cfg(windows)]
 pub fn start(app: &AppHandle) {
     recovery::start(app);

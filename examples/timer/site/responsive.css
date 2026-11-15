@@ -1,0 +1,269 @@
+/* 功能：按可用宽高将时钟调整为横条、方形、竖排和微型布局，保留设置入口。 */
+@container (aspect-ratio > 2.3) {
+  .clock-content {
+    flex-direction: row;
+    gap: 6cqw;
+    padding: 10px 30px 10px 14px;
+  }
+  .clock-caption {
+    display: none;
+  }
+  .digital-face,
+  [data-seconds='true'] .digital-face {
+    font-size: min(23cqw, 65cqh);
+  }
+  .flip-face,
+  [data-seconds='true'] .flip-face {
+    font-size: min(16cqw, 47cqh);
+  }
+  .clock-calendar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: clamp(9px, 10cqh, 14px);
+  }
+  .calendar-divider {
+    display: none;
+  }
+  .analog-face {
+    width: min(70cqh, 28cqw);
+  }
+  [data-style='analog'] .clock-content {
+    gap: 7cqw;
+  }
+}
+@container (aspect-ratio < 0.7) and (height > 180px) {
+  .clock-content {
+    gap: 8cqh;
+    padding-top: 20px;
+  }
+  .local-label {
+    display: none;
+  }
+  .digital-face {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.13em;
+    font-size: min(54cqw, 25cqh);
+  }
+  .time-colon {
+    display: none;
+  }
+  [data-seconds='true'] .digital-face {
+    font-size: min(51cqw, 23cqh);
+  }
+  .digital-seconds {
+    align-self: center;
+    flex-direction: row;
+    align-items: baseline;
+    padding: 0;
+    gap: 0.3em;
+    font-size: 0.22em;
+  }
+  .clock-calendar {
+    flex-wrap: wrap;
+    gap: 7px 10px;
+    font-size: clamp(9px, 7cqw, 13px);
+    max-width: 90%;
+  }
+  .calendar-divider {
+    display: none;
+  }
+  .flip-face {
+    flex-direction: column;
+    align-items: center;
+    font-size: min(48cqw, 22cqh);
+    gap: 0.15em;
+  }
+  .flip-colon {
+    display: none;
+  }
+  [data-seconds='true'] .flip-face {
+    font-size: min(44cqw, 18cqh);
+  }
+  .flip-second {
+    font-size: 0.5em;
+    margin: 0;
+    height: 1.2em;
+  }
+  .flip-second .tile-label {
+    display: none;
+  }
+  .analog-face {
+    width: min(86cqw, 55cqh);
+  }
+}
+@container (width < 220px) {
+  .local-label {
+    display: none;
+  }
+  .clock-caption {
+    font-size: 9px;
+  }
+  .clock-content {
+    padding-inline: 6px;
+  }
+  .clock-calendar {
+    font-size: 10px;
+    gap: 7px;
+  }
+  .settings-trigger {
+    width: 22px;
+    height: 22px;
+    top: -3px;
+    right: -3px;
+  }
+}
+@container (height < 145px) and (aspect-ratio <= 2.3) {
+  .clock-content {
+    gap: 9px;
+    padding: 8px;
+  }
+  .clock-caption {
+    display: none;
+  }
+  .digital-face,
+  [data-seconds='true'] .digital-face {
+    font-size: min(23cqw, 52cqh);
+  }
+  .flip-face,
+  [data-seconds='true'] .flip-face {
+    font-size: min(18cqw, 41cqh);
+  }
+  .clock-calendar {
+    font-size: 10px;
+  }
+  .analog-face {
+    width: min(60cqw, 65cqh);
+  }
+}
+@container (width < 145px) and (aspect-ratio >= 0.7) {
+  .clock-content {
+    padding-inline: 2px;
+    padding-top: 18px;
+  }
+  .settings-trigger {
+    width: 20px;
+    height: 20px;
+    padding: 4px;
+  }
+  .clock-caption,
+  .clock-calendar {
+    display: none;
+  }
+  .digital-face,
+  [data-seconds='true'] .digital-face {
+    font-size: min(28cqw, 65cqh);
+  }
+  .digital-seconds {
+    display: none;
+  }
+  .flip-face,
+  [data-seconds='true'] .flip-face {
+    font-size: min(26cqw, 45cqh);
+  }
+  .flip-second {
+    display: none;
+  }
+  .analog-face {
+    width: min(80cqw, 60cqh);
+  }
+}
+@container (height < 72px) {
+  .clock-content {
+    padding: 16px 2px 2px;
+    gap: 0;
+  }
+  .settings-trigger {
+    width: 18px;
+    height: 18px;
+    padding: 4px;
+    top: -4px;
+    right: -4px;
+  }
+  .clock-caption,
+  .clock-calendar {
+    display: none;
+  }
+  .digital-face,
+  [data-seconds='true'] .digital-face {
+    font-size: min(26cqw, 54cqh);
+  }
+  .flip-face,
+  [data-seconds='true'] .flip-face {
+    font-size: min(23cqw, 35cqh);
+  }
+  .analog-face {
+    width: min(80cqw, 54cqh);
+  }
+}
+@container (width < 145px) or (height < 72px) {
+  .clock-caption {
+    display: none;
+  }
+  .date-detail {
+    display: none;
+  }
+  [data-hour12='false'] .clock-calendar {
+    display: none;
+  }
+  [data-hour12='true'] .clock-calendar {
+    display: flex;
+    font-size: 8px;
+  }
+}
+@container ((width < 145px) and (aspect-ratio >= 0.7)) or (height < 72px) {
+  [data-hour12='true'] .digital-face {
+    font-size: min(26cqw, 42cqh);
+  }
+  [data-hour12='true'] .flip-face {
+    font-size: min(23cqw, 27cqh);
+  }
+  [data-hour12='true'] .analog-face {
+    width: min(80cqw, 42cqh);
+  }
+}
+@media (max-width: 240px) {
+  dialog {
+    padding: 14px;
+    border-radius: 12px;
+  }
+  .settings-heading {
+    margin-bottom: 16px;
+  }
+  .choice-grid {
+    gap: 4px;
+  }
+  .theme-choices {
+    grid-template-columns: 1fr;
+  }
+  .sample-digital {
+    font-size: 16px;
+  }
+  .sample-flip i {
+    font-size: 11px;
+    padding: 4px 2px;
+  }
+}
+@media (max-width: 140px) {
+  dialog {
+    padding: 8px;
+  }
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-heading {
+    align-items: flex-start;
+  }
+  .settings-eyebrow {
+    display: none;
+  }
+  h1 {
+    font-size: 13px;
+  }
+  .toggle-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding-block: 7px;
+  }
+}

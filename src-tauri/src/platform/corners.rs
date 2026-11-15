@@ -15,12 +15,11 @@ const CORNER_RADIUS: f64 = 6.;
 /// 系统边框使用系统外观，无边框按配置启用 6 逻辑像素圆角或完全直角。
 pub fn apply(window: HWND, rounded: bool, decorated: bool, scale: f64) -> Result<(), AppMessage> {
     unsafe {
-        let preference: i32 = if decorated {
-            0
-        } else if rounded {
-            2
+        // 无边框统一禁用系统圆角，只由下面的区域控制轮廓，避免再次引入系统外框。
+        let preference = if decorated {
+            DWMWCP_DEFAULT
         } else {
-            1
+            DWMWCP_DONOTROUND
         };
         // Windows 10 不支持该属性，下面的窗口区域裁剪仍然生效。
         let _ = DwmSetWindowAttribute(

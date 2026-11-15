@@ -31,6 +31,8 @@ static INSTANCE: AtomicUsize = AtomicUsize::new(0);
 static NEXT_INSTANCE: AtomicUsize = AtomicUsize::new(1);
 static HELD: AtomicBool = AtomicBool::new(false);
 static PRIMARY: AtomicU8 = AtomicU8::new(0);
+/// 当前手势是否为无修饰键的裸右键；菜单在手势关闭时仍要放行裸右键。
+static BARE: AtomicBool = AtomicBool::new(false);
 static CANCELLED: AtomicUsize = AtomicUsize::new(0);
 static BROKER: AtomicUsize = AtomicUsize::new(0);
 
@@ -40,6 +42,7 @@ struct Target {
     id: String,
     instance: usize,
     draggable: bool,
+    page_context_menu: bool,
 }
 
 /// 菜单票据始终绑定一次手势和一次窗口实例，而不是可重用的裸 HWND。
@@ -50,6 +53,7 @@ pub(crate) struct MenuRequest {
     pub y: i32,
     instance: usize,
     token: usize,
+    bare: bool,
 }
 
 impl MenuRequest {
@@ -58,16 +62,12 @@ impl MenuRequest {
         current(self.token)
             && INSTANCE.load(Ordering::SeqCst) == self.instance
             && !HELD.load(Ordering::SeqCst)
-            && modifier() != GestureModifier::Disabled
+            // 裸右键菜单不依赖修饰键设置；手势关闭时它仍是鼠标找回入口。
+            && (self.bare || modifier() != GestureModifier::Disabled)
             && target_for(self.instance)
                 .is_some_and(|target| target.id == self.id && target.hwnd == self.hwnd)
             && !input::input_busy()
             && !input::any_button_down()
-    }
-
-    /// 最终弹出前额外要求 Alt 已松开，避免重新按下后的自动重复再次关闭菜单。
-    pub fn ready(&self) -> bool {
-        self.valid() && !(modifier() == GestureModifier::Alt && input::alt_held())
     }
 }
 
@@ -101,10 +101,9 @@ pub fn stop() {
 pub fn set_modifier(modifier: GestureModifier) {
     MODIFIER.store(
         match modifier {
-            GestureModifier::Alt => 0,
-            GestureModifier::Ctrl => 1,
-            GestureModifier::Shift => 2,
-            GestureModifier::Disabled => 3,
+            GestureModifier::Ctrl => 0,
+            GestureModifier::Shift => 1,
+            GestureModifier::Disabled => 2,
         },
         Ordering::SeqCst,
     );
@@ -113,9 +112,8 @@ pub fn set_modifier(modifier: GestureModifier) {
 /// 钩子只读原子值，绝不争抢应用配置或磁盘写入锁。
 fn modifier() -> GestureModifier {
     match MODIFIER.load(Ordering::SeqCst) {
-        0 => GestureModifier::Alt,
-        1 => GestureModifier::Ctrl,
-        2 => GestureModifier::Shift,
+        0 => GestureModifier::Ctrl,
+        1 => GestureModifier::Shift,
         _ => GestureModifier::Disabled,
     }
 }
@@ -146,6 +144,7 @@ pub fn register(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessag
         id: pin.id.clone(),
         instance,
         draggable: !pin.effective_decorations() && !pin.position_locked,
+        page_context_menu: pin.page_context_menu,
     });
     Ok(())
 }

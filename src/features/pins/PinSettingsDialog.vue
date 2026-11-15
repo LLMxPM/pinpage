@@ -12,12 +12,10 @@ import type {
   PlatformCapabilities,
   UiMessage,
   WindowPatch,
-  WindowPreset,
 } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   busy: boolean;
   error: UiMessage | null;
@@ -113,7 +111,6 @@ function close() {
         v-show="tab === 'window'"
         ref="windowSettings"
         :pin="pin"
-        :presets="presets"
         :capabilities="capabilities"
         :open="open"
         :apply="applyWindow"

@@ -1,0 +1,172 @@
+/* 功能：提供可滚动的自选与刷新设置，适应窄窗口和独立页面预览。 */
+dialog {
+  width: min(400px, calc(100vw - 20px));
+  max-height: calc(100dvh - 20px);
+  padding: 18px;
+  color: var(--text);
+  background: rgb(var(--base));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: auto;
+}
+dialog::backdrop {
+  background: #0008;
+}
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.add-form > label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.add-form {
+  margin-top: 22px;
+}
+.size-section {
+  padding: 0 0 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.size-section h3 {
+  font-size: 12px;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.size-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 7px;
+}
+.size-grid b {
+  font-size: 11px;
+  font-weight: 500;
+}
+.size-grid span {
+  font-size: 10px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.size-grid small {
+  color: var(--muted);
+  font-size: 9px;
+}
+#surface-opacity {
+  width: 110px;
+  max-width: 45%;
+  padding: 0;
+  accent-color: var(--accent);
+}
+#opacity-value {
+  color: var(--muted);
+  font-size: 10px;
+}
+input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+}
+.input-row {
+  display: flex;
+  gap: 6px;
+}
+input,
+select {
+  min-width: 0;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px;
+}
+input {
+  width: 100%;
+}
+.input-row button {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  color: var(--accent);
+}
+.hint {
+  margin: 9px 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+#settings-message {
+  color: var(--accent);
+}
+.watchlist {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+.watchlist li {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.watch-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.mini-button {
+  width: 25px;
+  height: 27px;
+  flex-shrink: 0;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.setting-row select {
+  max-width: 145px;
+}
+@media (max-width: 280px) {
+  dialog {
+    padding: 12px;
+  }
+  .input-row {
+    flex-wrap: wrap;
+  }
+  .setting-row {
+    flex-wrap: wrap;
+  }
+  .size-grid {
+    gap: 4px;
+  }
+  .size-grid > div {
+    padding: 7px 4px;
+  }
+  .size-grid span {
+    font-size: 8px;
+  }
+  .size-grid small {
+    font-size: 8px;
+  }
+}

@@ -1,0 +1,3 @@
+# 功能：工作区继续复用原有 Tauri 构建目录，保持脚本与验证实例输出位置。
+[build]
+target-dir = "src-tauri/target"

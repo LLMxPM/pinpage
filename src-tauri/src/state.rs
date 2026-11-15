@@ -19,12 +19,19 @@ pub struct AppState {
     pub operation: Mutex<()>,
     pub settings: Mutex<Settings>,
     pub runtime: Mutex<HashMap<String, PinRuntime>>,
+    /// WebView2 外观脚本的注册 ID；关闭窗口后清理，不写入配置。
+    #[cfg(windows)]
+    pub appearances: Mutex<HashMap<String, (bool, crate::models::WindowMode, String)>>,
     /// 原生选择器签发的一次性导入授权，创建成功后不再复用。
     pub grants: Mutex<HashMap<String, ImportGrant>>,
     /// 正在导出的页面 ID，只有这些页面可以回传数据。
     pub export_pending: Mutex<HashSet<String>>,
+    /// 窗口菜单签发的「页面设置」直达意图；管理窗口取走后立即清空，不写入配置。
+    pub pending_pin_settings: Mutex<Option<String>>,
     /// 已回传的页面数据，导出命令取走后立即清空。
     pub export_data: Mutex<HashMap<String, String>>,
+    /// 共享系统采样器的最新快照；内容页监控命令只读缓存，不触发采样。
+    pub stats: Mutex<Option<crate::host::SystemStats>>,
     pub notices: Mutex<Vec<AppMessage>>,
     /// Rust 解析后的有效语言，是原生界面与快照的唯一来源。
     pub locale: Mutex<AppLocale>,
@@ -50,14 +57,19 @@ impl AppState {
                 if serde_json::from_slice::<serde_json::Value>(&bytes)
                     .ok()
                     .and_then(|value| value.get("schemaVersion").and_then(|value| value.as_u64()))
-                    .is_some_and(|version| version > 1) =>
+                    .is_some_and(|version| version > crate::models::SCHEMA_VERSION as u64) =>
             {
                 read_only = true;
                 notices.push(AppMessage::new("errors.configNewer"));
                 Settings::default()
             }
             Ok(bytes) => match serde_json::from_slice::<Settings>(&bytes) {
-                Ok(value) if value.schema_version == 1 => value,
+                Ok(value)
+                    if value.schema_version == crate::models::SCHEMA_VERSION
+                        || value.schema_version == 1 =>
+                {
+                    value
+                }
                 _ => {
                     let backup =
                         path.with_extension(format!("backup-{}.json", uuid::Uuid::new_v4()));
@@ -79,6 +91,24 @@ impl AppState {
                 Settings::default()
             }
         };
+        // v1 → v2：预设从全局库迁移到页面。只把被页面引用的模板复制进该页自己的
+        // 列表，未被引用的模板丢弃；外观与几何不发生任何变化。
+        if settings.schema_version == 1 {
+            for pin in &mut settings.pins {
+                if let Some(id) = pin.preset.clone() {
+                    if let Some(preset) = settings
+                        .window_presets
+                        .iter()
+                        .find(|preset| preset.id == id)
+                        .cloned()
+                    {
+                        pin.presets.push(preset);
+                    }
+                }
+            }
+            settings.schema_version = crate::models::SCHEMA_VERSION;
+        }
+        settings.window_presets.clear();
         // 配置可能来自 Windows：加载时先降级到当前平台可用的组合，避免恢复会话反复失败。
         let mut fallback = false;
         for pin in &mut settings.pins {
@@ -87,14 +117,28 @@ impl AppState {
         if fallback {
             notices.push(AppMessage::new("errors.platformFallback"));
         }
+        // 指向页内不存在模板的标记收敛为“自定义”，窗口外观保持不变。
+        for pin in &mut settings.pins {
+            if pin
+                .preset
+                .as_deref()
+                .is_some_and(|id| !pin.presets.iter().any(|preset| preset.id == id))
+            {
+                pin.preset = None;
+            }
+        }
         let locale = i18n::resolve(settings.locale);
         Self {
             operation: Mutex::new(()),
+            #[cfg(windows)]
+            appearances: Mutex::new(HashMap::new()),
             settings: Mutex::new(settings),
             runtime: Mutex::new(HashMap::new()),
             grants: Mutex::new(HashMap::new()),
             export_pending: Mutex::new(HashSet::new()),
+            pending_pin_settings: Mutex::new(None),
             export_data: Mutex::new(HashMap::new()),
+            stats: Mutex::new(None),
             notices: Mutex::new(notices),
             locale: Mutex::new(locale),
             exiting: AtomicBool::new(false),
@@ -112,7 +156,6 @@ impl AppState {
     pub fn snapshot(&self) -> Snapshot {
         let settings = self.settings.lock().unwrap().clone();
         Snapshot {
-            presets: crate::windows::presets::all(&settings.window_presets),
             settings,
             runtime: self.runtime.lock().unwrap().clone(),
             notices: self.notices.lock().unwrap().clone(),
@@ -240,6 +283,7 @@ pub fn schedule_save(app: &AppHandle) {
                 continue;
             }
             if !state.installing.load(Ordering::SeqCst) {
+                let _operation = state.operation.lock().unwrap();
                 if let Err(error) = state.save() {
                     report(&app, error);
                 }

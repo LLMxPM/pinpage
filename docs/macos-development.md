@@ -45,11 +45,11 @@ pnpm tauri dev --features experimental-macos-drag
 ```sh
 pnpm build
 pnpm test:ui
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all
-cargo test --locked --manifest-path src-tauri/Cargo.toml
-cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --features experimental-macos-drag -- -D clippy::all
-cargo test --locked --manifest-path src-tauri/Cargo.toml --features experimental-macos-drag
+cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+cargo clippy --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D clippy::all
+cargo test --locked --manifest-path src-tauri/Cargo.toml --workspace
+cargo clippy --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets --features experimental-macos-drag -- -D clippy::all
+cargo test --locked --manifest-path src-tauri/Cargo.toml --workspace --features experimental-macos-drag
 ```
 
 能力规则测试使用显式的完整／受限能力组合，避免以当前测试机为 Windows。平台声明测试单独检查默认与实验 feature。Windows 隐藏原生窗口集成测试只在 Windows 上运行；macOS 的 `cargo test` 通过不代表鼠标、窗口层级或 Retina 行为已验收。

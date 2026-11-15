@@ -1,0 +1,77 @@
+/* 功能：用纯 CSS 图形表示文件夹与文件，扩展名以文字徽章区分，不使用表情符号。 */
+.icon-folder,
+.icon-file {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 18px;
+  height: 15px;
+}
+.icon-folder {
+  margin-top: 2px;
+  border-radius: 2px 3px 3px 3px;
+  background: #d9b45c;
+}
+.icon-folder::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 8px;
+  height: 4px;
+  border-radius: 2px 2px 0 0;
+  background: #c9a44c;
+}
+.icon-file {
+  width: 14px;
+  height: 17px;
+  border-radius: 2px;
+  background: #eef0ea;
+  border: 1px solid #c6ccc2;
+  box-sizing: border-box;
+}
+.icon-file::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 5px;
+  height: 5px;
+  background: linear-gradient(225deg, transparent 50%, #c6ccc2 50%);
+  border-radius: 0 2px 0 2px;
+}
+
+.ext-badge {
+  flex: none;
+  align-self: center;
+  min-width: 30px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-align: center;
+  text-transform: uppercase;
+  background: rgb(43 48 43 / 0.08);
+  color: #5c665c;
+}
+.ext-badge.ext-code {
+  background: rgb(122 143 105 / 0.2);
+  color: #4c5f3f;
+}
+.ext-badge.ext-image {
+  background: rgb(125 145 180 / 0.2);
+  color: #46608c;
+}
+.ext-badge.ext-doc {
+  background: rgb(181 154 77 / 0.2);
+  color: #7a6528;
+}
+.ext-badge.ext-media {
+  background: rgb(165 120 160 / 0.2);
+  color: #7c4f78;
+}
+.ext-badge.ext-archive {
+  background: rgb(185 110 82 / 0.18);
+  color: #96543c;
+}

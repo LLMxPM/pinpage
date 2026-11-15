@@ -19,20 +19,10 @@
     "managerTitle": "PinPage · 网页悬浮工作台",
     "titleSuffix": "{title} · PinPage",
     "menu": {
-      "top": "始终置顶",
-      "desktop": "桌面模式",
-      "border": "显示系统边框",
-      "rounded": "无边框圆角",
-      "positionLock": "锁定位置",
-      "sizeLock": "锁定大小",
-      "hide": "隐藏页面",
-      "presets": "窗口预设"
-    },
-    "presets": {
-      "fullscreen": "全屏悬浮",
-      "standard": "标准窗口",
-      "topRight": "右上角悬浮",
-      "bottomRight": "右下角桌面"
+      "settings": "页面设置…",
+      "custom": "自定义",
+      "noPresets": "暂无预设，可在页面设置中保存",
+      "hide": "隐藏页面"
     }
   },
   "picker": {
@@ -43,14 +33,20 @@
     "filterWeb": "网页文件",
     "filterPackage": "PinPage 页面包",
     "folderLabel": "网页目录",
-    "packageLabel": "页面包"
+    "packageLabel": "页面包",
+    "folderAccessTitle": "选择要授权给此页面的文件夹"
   },
   "names": {
-    "example": "专注计时器",
+    "example": "时间工具",
     "webPage": "网页",
-    "notes": "随手便签",
-    "checklist": "今日待办",
-    "clock": "数字时钟"
+    "notes": "便签与待办",
+    "checklist": "便签与待办",
+    "clock": "时间工具",
+    "folder": "文件夹",
+    "systemMonitor": "系统监控",
+    "stocks": "自选行情",
+    "calendar": "日历与倒数日",
+    "kanban": "轻量看板"
   },
   "restore": {
     "title": "正在恢复页面数据",
@@ -97,15 +93,23 @@
     "tooManyFiles": "导入文件超过 {max} 个，请先精简目录再导入",
     "tooLarge": "导入体积超过 {max} MiB，请先精简目录再导入",
     "pathEscaped": "导入路径越界",
-    "folderPathInvalid": "无法读取所选目录路径",
+    "folderPathInvalid": "无法读取所选文件夹路径",
     "filePathInvalid": "无法读取所选文件路径",
     "noRootHtml": "所选目录根目录下没有 HTML 文件，请改用导入单文件",
     "measureFailed": "导入统计失败，也可以改用导入单文件",
     "pinNotFound": "页面不存在",
+    "folderNoGrant": "此页面尚未获得文件夹访问授权，请先选择文件夹",
+    "folderRootMissing": "授权的文件夹已失效，请重新选择",
+    "folderOutside": "目标路径超出授权文件夹范围",
+    "folderNotFound": "文件或文件夹不存在",
+    "folderReadFailed": "读取文件夹内容失败",
+    "folderOpenFailed": "打开文件失败",
+    "statsUnavailable": "系统采样数据尚未就绪，请稍后重试",
     "exportNeedsImport": "只有导入页面可以导出为页面包",
     "exportNeedsOpen": "请先开启页面再导出",
     "collectDataFailed": "无法读取页面数据",
     "savePathInvalid": "无法读取保存路径",
+    "exportExists": "导出文件已存在，请选择其他路径或明确允许覆盖",
     "grantExpired": "导入授权已失效，请重新选择",
     "entryMismatch": "入口与所选文件不一致，请重新选择",
     "entryMismatchSource": "入口与导入来源不一致，请重新选择",
@@ -139,6 +143,10 @@
     "rollbackFailed": "窗口设置回滚失败",
     "trayRefreshFailed": "托盘菜单更新失败",
     "settingsSavedTrayFailed": "设置已保存，但托盘菜单更新失败，下一次窗口操作会重试",
+    "autostartReadFailed": "读取开机自启状态失败，请重新打开工作台重试",
+    "autostartWriteFailed": "修改开机自启失败，已保留原有设置",
+    "autostartRollbackFailed": "开机自启回滚失败，请检查系统启动项",
+    "autostartUnsupported": "当前平台不支持开机自启",
     "platformUnsupported": "当前平台不支持此窗口能力，已保留原有窗口配置",
     "readPosition": "无法读取窗口位置",
     "taskInterrupted": "窗口配置任务已中断",
@@ -180,8 +188,11 @@
     "presetNotFound": "预设不存在或已被删除",
     "presetNameRange": "预设名称需为 1 到 {max} 个字符",
     "presetLimit": "自定义预设最多 {max} 个，请先删除不用的预设",
-    "presetReadonly": "内置预设只读，请创建副本后修改",
     "presetFieldsInvalid": "预设尺寸或相对位置超出有效范围",
-    "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作"
+    "presetIdInvalid": "预设 ID 需为 1 到 80 位字母、数字、短横线或下划线，且页内不得重复",
+    "presetConflict": "预设 {id} 与已有内容不同，请检查后明确选择替换",
+    "windowUndoExpired": "窗口已再次调整，无法撤销这条旧操作",
+    "automationFailed": "本机控制或技能操作失败，请检查详情",
+    "navigationFailed": "页面导航失败：{reason}"
   }
 }

@@ -5,11 +5,10 @@ import { useI18n } from 'vue-i18n';
 import AppIcon from '../../components/AppIcon.vue';
 import { supportedPresets } from './platform';
 import { presetLabel } from './presets';
-import type { PinConfig, PinRuntime, PlatformCapabilities, WindowPreset } from '../../types';
+import type { PinConfig, PinRuntime, PlatformCapabilities } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   runtime?: PinRuntime;
   busy: boolean;
@@ -17,7 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{ action: [operation: string]; export: [] }>();
 const { t } = useI18n();
 /// 卡片菜单与设置页使用同一过滤规则，避免从快捷入口应用不可支持的预设。
-const visiblePresets = computed(() => supportedPresets(props.presets, props.capabilities));
+const visiblePresets = computed(() => supportedPresets(props.pin.presets, props.capabilities));
 const menu = ref<HTMLDetailsElement>();
 const opensUp = ref(false);
 const menuHeight = ref('');

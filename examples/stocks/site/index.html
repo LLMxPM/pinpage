@@ -1,0 +1,209 @@
+<!-- 功能：提供自适应自选行情、真实分时趋势和透明桌面外观设置。 -->
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-surface="card" data-trend="true">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://qt.gtimg.cn https://web.ifzq.gtimg.cn; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>自选行情</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./quotes.css" />
+    <link rel="stylesheet" href="./chart.css" />
+    <link rel="stylesheet" href="./responsive.css" />
+    <link rel="stylesheet" href="./settings.css" />
+    <link rel="stylesheet" href="./list-controls.css" />
+  </head>
+  <body>
+    <main class="widget">
+      <header class="heading">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"
+            ><svg viewBox="0 0 24 24"><path d="m3 16 5-5 4 3 7-8M14 6h5v5" /></svg
+          ></span>
+          <div>
+            <p class="eyebrow">MARKET WATCH</p>
+            <h1>自选行情</h1>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="refresh" class="icon-button" aria-label="刷新行情" title="刷新行情">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8 8 0 1 0-2 6M20 4v7h-7" />
+            </svg>
+          </button>
+          <button id="settings" class="icon-button" aria-label="行情设置" title="行情设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="9" cy="7" r="2.5" />
+              <circle cx="15" cy="17" r="2.5" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <div class="connection">
+        <span id="connection-state" role="status">正在连接</span
+        ><span id="layout-label">标准布局</span>
+      </div>
+      <p id="notice" class="notice" role="status" hidden></p>
+      <div class="dashboard">
+        <section id="market-panel" class="market-panel" aria-label="选中标的与趋势">
+          <div class="market-heading">
+            <div>
+              <p id="selected-market" class="market-code">—</p>
+              <h2 id="selected-name">等待行情</h2>
+            </div>
+            <span class="session-tag">分时</span>
+          </div>
+          <div class="selected-value">
+            <strong id="selected-price">—</strong>
+            <div class="selected-changes">
+              <span id="selected-change">—</span><span id="selected-percent">—</span>
+            </div>
+          </div>
+          <div class="chart-heading">
+            <span id="trend-status">正在读取分时</span><span class="baseline-key">昨收基线</span>
+          </div>
+          <div class="chart-stage">
+            <svg
+              id="trend-chart"
+              viewBox="0 0 600 180"
+              preserveAspectRatio="none"
+              role="img"
+              tabindex="0"
+              aria-label="分时趋势"
+            ></svg
+            ><span id="chart-high" class="chart-price-label chart-high"></span
+            ><span id="chart-low" class="chart-price-label chart-low"></span>
+            <p id="chart-empty" class="chart-empty">正在读取走势…</p>
+            <output id="chart-tooltip" class="chart-tooltip"></output>
+          </div>
+          <div class="chart-axis" aria-hidden="true">
+            <span>09:30</span><span>11:30 / 13:00</span><span>15:00</span>
+          </div>
+          <dl id="selected-details" class="selected-details"></dl>
+          <div class="trend-caption">
+            <span id="trend-meta">腾讯财经 · 当日分钟价格</span><span id="selected-time">—</span>
+          </div>
+        </section>
+        <section class="list-panel" aria-label="自选行情">
+          <div class="list-heading">
+            <h2>自选<span id="watch-count">0</span></h2>
+            <span>点击查看走势</span>
+          </div>
+          <div class="list-controls">
+            <label class="sr-only" for="quote-filter">筛选自选名称或代码</label
+            ><input id="quote-filter" type="search" maxlength="80" placeholder="筛选自选…" /><label
+              class="sr-only"
+              for="list-sort"
+              >自选排序</label
+            ><select id="list-sort">
+              <option value="manual">自选顺序</option>
+              <option value="name">名称</option>
+              <option value="percent">涨幅优先</option>
+            </select>
+          </div>
+          <div class="columns" aria-hidden="true">
+            <span>名称 / 行情时间</span><span>最新价</span><span>涨跌幅</span>
+          </div>
+          <div
+            id="quotes"
+            class="quotes"
+            aria-label="自选行情列表"
+            aria-live="off"
+            tabindex="0"
+          ></div>
+          <p id="empty" class="empty" hidden>还没有自选，打开设置添加市场代码。</p>
+        </section>
+      </div>
+      <footer>
+        <p id="request-state">等待首次报价</p>
+        <span title="以行情时间为准，网页报价可能延迟。">腾讯财经</span>
+      </footer>
+    </main>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">按你的桌面习惯</p>
+          <h2 id="settings-title">行情设置</h2>
+        </div>
+        <button id="close-settings" class="icon-button" aria-label="关闭设置">×</button>
+      </div>
+      <section class="size-section" aria-labelledby="size-title">
+        <h3 id="size-title">推荐窗口尺寸</h3>
+        <div class="size-grid">
+          <div><b>紧凑</b><span>280 × 420</span><small>轻量盯盘</small></div>
+          <div><b>标准</b><span>400 × 640</span><small>行情与趋势</small></div>
+          <div><b>宽屏</b><span>720 × 440</span><small>左右分栏</small></div>
+        </div>
+        <p class="hint">在 PinPage「窗口设置」中调整宽高，页面会自动适配。</p>
+      </section>
+      <div class="setting-row">
+        <label for="theme">配色</label
+        ><select id="theme">
+          <option value="dark">深色</option>
+          <option value="light">浅色</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="surface">透明背景外观</label
+        ><select id="surface">
+          <option value="card">柔光底板</option>
+          <option value="bare">无底板</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="colors">涨跌配色</label
+        ><select id="colors">
+          <option value="redUp">红涨绿跌</option>
+          <option value="greenUp">绿涨红跌</option>
+        </select>
+      </div>
+      <div id="opacity-row" class="setting-row">
+        <label for="surface-opacity">底板不透明度 <output id="opacity-value">82%</output></label
+        ><input id="surface-opacity" type="range" min="25" max="100" step="1" value="82" />
+      </div>
+      <p class="hint">在 PinPage 开启「背景透明」后生效，文字保持清晰；关闭透明时使用完整底色。</p>
+      <div class="setting-row">
+        <label for="show-trend">显示分时趋势</label
+        ><input id="show-trend" type="checkbox" role="switch" checked />
+      </div>
+      <div class="setting-row">
+        <label for="interval">行情刷新</label
+        ><select id="interval">
+          <option value="15">每 15 秒</option>
+          <option value="30">每 30 秒</option>
+          <option value="60">每 60 秒</option>
+          <option value="0">仅手动</option>
+        </select>
+      </div>
+      <form id="add-symbol" class="add-form">
+        <label for="symbol">添加市场代码</label>
+        <div class="input-row">
+          <input
+            id="symbol"
+            name="symbol"
+            placeholder="sh600519 / 600519.SH"
+            maxlength="16"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          /><button id="add" type="submit">添加</button>
+        </div>
+        <p class="hint">
+          使用 sh / sz / bj 区分市场，如 sh000001 为上证指数，sz000001 为平安银行。最多 12 个。
+        </p>
+      </form>
+      <p id="settings-message" class="hint" role="status"></p>
+      <ol id="watchlist" class="watchlist" aria-label="自选管理"></ol>
+      <p class="hint">
+        报价与分时各有更新时间。分时默认每分钟更新当前标的，接口失败会保留缓存；网页数据可能延迟或不可用。
+      </p>
+      <p id="storage-state" class="hint" role="status">自选与外观自动保存在本页。</p>
+    </dialog>
+    <script type="module" src="./stocks.js"></script>
+  </body>
+</html>

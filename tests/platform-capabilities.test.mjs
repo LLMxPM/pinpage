@@ -15,6 +15,7 @@ import {
 const full = {
   desktopMode: true,
   rounded: true,
+  transparentBackground: true,
   positionLock: true,
   sizeLock: true,
   windowGestures: true,
@@ -28,10 +29,38 @@ const limited = {
 };
 
 const presets = [
-  { id: 'fullscreen', mode: 'floating', rounded: true, positionLocked: false, sizeLocked: false },
-  { id: 'standard', mode: 'floating', rounded: false, positionLocked: false, sizeLocked: false },
-  { id: 'topRight', mode: 'floating', rounded: true, positionLocked: true, sizeLocked: false },
-  { id: 'bottomRight', mode: 'desktop', rounded: true, positionLocked: true, sizeLocked: true },
+  {
+    id: 'fullscreen',
+    mode: 'floating',
+    transparentBackground: false,
+    rounded: true,
+    positionLocked: false,
+    sizeLocked: false,
+  },
+  {
+    id: 'standard',
+    mode: 'floating',
+    transparentBackground: false,
+    rounded: false,
+    positionLocked: false,
+    sizeLocked: false,
+  },
+  {
+    id: 'topRight',
+    mode: 'floating',
+    transparentBackground: false,
+    rounded: true,
+    positionLocked: true,
+    sizeLocked: false,
+  },
+  {
+    id: 'bottomRight',
+    mode: 'desktop',
+    transparentBackground: false,
+    rounded: true,
+    positionLocked: true,
+    sizeLocked: true,
+  },
 ];
 
 test('完整能力保留全部预设，受限平台只保留完全可应用的预设', () => {
@@ -58,6 +87,7 @@ test('旧桌面配置回退为带系统边框的浮动窗口并保留几何内�
       mode: 'desktop',
       decorations: false,
       rounded: true,
+      transparentBackground: false,
       positionLocked: true,
       sizeLocked: true,
       width: 420,
@@ -71,6 +101,7 @@ test('旧桌面配置回退为带系统边框的浮动窗口并保留几何内�
     mode: 'floating',
     decorations: true,
     rounded: false,
+    transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
     width: 420,
@@ -99,4 +130,15 @@ test('拖动提示按能力选择，受限平台说明可从托盘或管理器�
   assert.equal(hasNativeDrag(full), true);
   assert.equal(hasNativeDrag({ ...limited, dragModifier: 'option' }), true);
   assert.equal(hasNativeDrag(limited), false);
+});
+
+test('透明预设被受限平台过滤，回退仅清除不支持的透明偏好', () => {
+  const transparent = { ...presets[1], id: 'transparent', transparentBackground: true };
+  assert.equal(supportsWindow(transparent, full), true);
+  assert.equal(supportsWindow(transparent, limited), false);
+  assert.deepEqual(supportedPresets([transparent, presets[1]], limited), [presets[1]]);
+  assert.deepEqual(fallbackWindowFields(transparent, limited), {
+    ...transparent,
+    transparentBackground: false,
+  });
 });

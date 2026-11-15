@@ -1,4 +1,4 @@
-// 功能：独立消息线程只拦截已匹配的鼠标按键对，移动永远放行，不记录或拦截键盘。
+// 功能：独立消息线程只拦截修饰键组合与裸右键的鼠标按键对，移动永远放行，不记录或拦截键盘。
 use super::{
     input,
     sequence::{Button, Sequence},
@@ -107,7 +107,7 @@ unsafe extern "system" fn callback(code: i32, wparam: WPARAM, lparam: LPARAM) ->
     }
 }
 
-/// 每次新的物理点击使旧菜单票据过期；只在按下沿识别组合，不中途抢走网页拖动。
+/// 每次新的物理点击使旧菜单票据过期；只在按下沿识别组合或裸右键，不中途抢走网页拖动。
 fn process(slot: &mut Option<Owned>, message: u32, event: &MSLLHOOKSTRUCT) -> bool {
     let edge = button(message, event.mouseData);
     if let Some(owned) = slot.as_mut() {
@@ -122,17 +122,26 @@ fn process(slot: &mut Option<Owned>, message: u32, event: &MSLLHOOKSTRUCT) -> bo
     };
     let token = CURRENT.fetch_add(1, Ordering::SeqCst) + 1;
     if !matches!(button, Button::Left | Button::Right)
-        || !input::modifier_matches(modifier())
         || input::another_button_down(button)
         || input::input_busy()
     {
         return false;
     }
+    let gesture = input::modifier_matches(modifier());
+    // 左键必须带修饰键；裸右键只在零修饰键时接管，其他组合放行给页面。
+    if !gesture && !(button == Button::Right && input::no_modifiers()) {
+        return false;
+    }
     let Some(target) = target_at(event.pt, button == Button::Left) else {
         return false;
     };
+    // 页面选择自己处理右键时放行裸右键；修饰键组合不受开关影响。
+    if !gesture && target.page_context_menu {
+        return false;
+    }
     INSTANCE.store(target.instance, Ordering::SeqCst);
     PRIMARY.store(button as u8, Ordering::SeqCst);
+    BARE.store(!gesture, Ordering::SeqCst);
     HELD.store(true, Ordering::SeqCst);
     if !post(BEGIN, token, event.pt) {
         HELD.store(false, Ordering::SeqCst);

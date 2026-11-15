@@ -23,9 +23,11 @@ pnpm tauri dev
 ## 目录结构
 
 ```text
+crates/                  CLI、协议与离线技能管理模块（共享根 Cargo.lock）
+skills/pinpage-pages/     唯一页面技能及仓库共用的随包参考
 src/
   features/launcher/      添加页面、来源导入
-  features/pins/          工作台、即时窗口设置、独立内容保存与共用预设管理器
+  features/pins/          工作台、即时窗口设置、独立内容保存与页面级预设管理器
   features/updates/       版本、下载进度与安装确认
   components/             通用组件
   services/               Tauri 调用封装
@@ -36,19 +38,19 @@ src-tauri/src/
   commands/               前端命令入口
   windows/                窗口生命周期、事件与几何
   windows/editor.rs       窗口局部事务与内容独立保存
-  windows/presets/         内置定义、相对几何、预设读写及测试
+  windows/presets/         页面级预设查找、相对几何、读写及测试
   platform.rs / platform/ 跨平台能力、回退校验、Windows 适配与 macOS 实验拖动
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
   import.rs               导入复制与站点副本
   package.rs              页面包导入导出
-  examples.rs             内置示例
+  examples.rs             内置标准页面包索引
   data.rs                 页面数据采集与回填
   state.rs                配置读写与运行态
   tray.rs                 托盘
   lib.rs / main.rs        应用装配与入口
 locales/                  中英文界面与原生消息
-examples/                 四个离线示例源码
+examples/                 七个内置工具（行情需要联网）的 manifest.json + site/ 标准包源码
 scripts/                  版本同步、发布、签名构建、文案检查与性能采样
 tests/                    UI 表单测试与本地路径样例
 docs/                     用户、架构、开发、平台与发布文档
@@ -56,21 +58,30 @@ docs/                     用户、架构、开发、平台与发布文档
 
 按实际复杂度拆分模块，不为占位提前生成空文件。单个代码文件接近 300 行时检查是否需要拆分。
 
+## 创建示例库页面
+
+仓库只维护 [pinpage-pages](../skills/pinpage-pages/SKILL.md) 一份页面技能。示例任务由根 [AGENTS.md](../AGENTS.md) 与 [examples/AGENTS.md](../examples/AGENTS.md) 引导，按[示例开发与接入](examples-development.md)直接复用公共页面制作、宿主能力和包格式参考；示例注册、预览卡片、中英文文案与 Rust 打包由接入文档说明。仅编写源码无需先连接应用或安装页面。
+
+页面包清单和默认窗口布局见[页面包与示例制作](page-packages.md)。运行 `pnpm examples:pack` 在 `dist/examples/` 生成标准 `.pinpage`；Rust 构建自动使用同一打包器生成内嵌包，`site/` 中的资源按相对目录自动收集。修改 Rust 构建内嵌的示例后需使用对应新构建验证，已添加的独立副本不会自动更新。
+
 ## 检查与测试
 
-| 命令 | 覆盖范围 |
-| --- | --- |
-| `pnpm check:i18n` | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库 |
-| `pnpm check:limits` | 前端与原生窗口尺寸上下限是否一致 |
-| `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
-| `pnpm build` | 文案与尺寸限制检查、类型检查及 Vite 生产构建 |
-| `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待、操作队列及平台能力过滤与回退，不连接真实配置 |
-| `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
-| `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
-| `pnpm test:release` | 版本同步、标签约束与 GitHub 更新清单 |
-| `cargo fmt --manifest-path src-tauri/Cargo.toml --check` | Rust 格式检查 |
-| `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D clippy::all` | Rust 静态检查 |
-| `pnpm format:check` | 前端、语言资源、脚本、配置与样例文件的 Prettier 检查 |
+| 命令                                                                                            | 覆盖范围                                                                                       |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm examples:pack`                                                                            | 将标准示例源码打包到 `dist/examples/`，不启动桌面应用                                          |
+| `pnpm check:i18n`                                                                               | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库                             |
+| `pnpm check:limits`                                                                             | 前端与原生窗口尺寸上下限是否一致                                                               |
+| `pnpm check:skill`                                                                              | 唯一技能、随包资源完整性、自包含文件与章节引用、示例接入文档链接                               |
+| `pnpm check`                                                                                    | TypeScript 类型检查（`vue-tsc --noEmit`）                                                      |
+| `pnpm build`                                                                                    | 文案、尺寸限制、技能资源与引用、类型检查及 Vite 生产构建                                       |
+| `pnpm test:examples`                                                                            | 示例旧数据、计时、日期、看板状态、行情解析和请求竞态                                           |
+| `pnpm test:ui`                                                                                  | 设置表单回传合并、连续输入、失败保留、另存前等待、操作队列及平台能力过滤与回退，不连接真实配置 |
+| `pnpm test:rust`                                                                                | Rust 单元测试与原生窗口集成测试                                                                |
+| `pnpm version:check`                                                                            | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性                                             |
+| `pnpm test:release`                                                                             | 版本同步、标签约束与 GitHub 更新清单                                                           |
+| `cargo fmt --manifest-path src-tauri/Cargo.toml --all --check`                                  | Rust 格式检查                                                                                  |
+| `cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D clippy::all` | Rust 静态检查                                                                                  |
+| `pnpm format:check`                                                                             | 前端、语言资源、脚本、配置与样例文件的 Prettier 检查                                           |
 
 只运行与改动相关的检查；既有检查通过后，除非发现新问题，不重复扩大测试范围。涉及 URL 校验、本地资源路径边界、状态迁移和窗口恢复时，优先补充对应测试。
 
@@ -78,63 +89,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-08，应用版本 `0.2.0`，配置格式 `schemaVersion = 1`。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 默认与显式 Option 拖动实验构建均通过 ARM64 CI 检查、测试和验证包构建，核心窗口流程已在一台 Apple Silicon Mac 上实机通过，Intel、Retina、多显示器与手势边界仍待验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
-
-### 已实现
-
-- **页面来源**：HTTP/HTTPS、目录与单文件导入、页面包导入导出、四个内置示例。
-- **窗口**：浮动与桌面模式、置顶、系统边框、无边框圆角、独立位置锁和大小锁、窗口预设、修饰键拖动与右键菜单、会话恢复。
-- **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
-- **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新。
-- **macOS 协作基线**：默认与 `experimental-macos-drag` 能力声明、原生拖动监视器生命周期、平台无关能力测试、独立 `.app` 配置和 CI 验证包；两种 ARM64 构建已通过 CI，核心窗口流程已在一台 Apple Silicon Mac 上实机通过，Intel 与其余场景仍待验收，不代表已正式支持。
-
-### 最近自动检查
-
-以下为 2026-11-08 最近一次相关检查的记录，分布在不同改动上，未在单一提交上重跑全部命令。
-
-| 检查 | 结果 |
-| --- | --- |
-| `pnpm build` | 通过：中英文 ui 217 键 / native 169 键校验、尺寸限制、Vue/TypeScript 与 Vite 生产构建 |
-| `pnpm test:ui` | 24 项通过：设置表单回传合并、连续输入、失败保留、另存前等待、操作队列、平台能力过滤与回退 |
-| `pnpm test:rust` | 85 项单元测试与 3 项隐藏原生窗口集成测试通过 |
-| `pnpm check` / `pnpm check:i18n` / `pnpm check:limits` | 通过；类型检查、中英文键与参数、前后端尺寸上下限一致 |
-| `pnpm test:release` | 5 项通过：版本同步、标签约束、更新清单边界、草稿分页查询与 API 错误中止 |
-| `pnpm release:build` | 本地 NSIS 安装包与 `.sig` 生成成功；Windows 代码签名未配置 |
-| `pnpm format:check` / `cargo fmt --check` | 通过 |
-| `cargo clippy --all-targets -- -D clippy::all` | 通过 |
-
-2026-11-08，[主分支 CI](https://github.com/LLMxPM/pinpage/actions/runs/42462223685) 与 [v0.2.0 发布工作流](https://github.com/LLMxPM/pinpage/actions/runs/42462225046) 均通过。四项 Release 附件已公开，固定更新入口返回 `0.2.0`；重新下载的安装包通过 SHA-256、离线签名及版本绑定校验，篡改包与错误版本被拒绝。发布时修复了只查询已发布版本而读不到草稿的问题，保留原标签并使用工作流版本的发布脚本完成补发。安装交互、应用内升级与重启数据保留仍待验收。
-
-macOS 协作基线在 Windows 上通过前端构建、24 项 UI 测试、85 项 Rust 单元测试、3 项隐藏原生窗口测试、5 项发布测试、版本检查、Rustfmt、Prettier 与 `Clippy --all-targets --all-features`。[提交 `f113fc8` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42459516022) 与 [合并提交 `cf3baf3` 的 CI](https://github.com/LLMxPM/pinpage/actions/runs/42460248653) 验证了 Windows、前端以及 macOS 默认／Option 实验构建：两种 ARM64 构建各通过 73 项单元测试、Clippy、Debug `.app` 打包和验证包上传。CI 不替代真实窗口交互、Intel 或多显示器验收。
-
-### 已完成桌面验收
-
-使用独立标识的验证实例完成，未修改正常应用会话：
-
-- 窗口设置即时生效：宽度 420 → 520 后窗口、表单和配置文件一致；拖动窗口后坐标同步；撤销尺寸调整恢复原宽度。
-- 预设管理：另存、改名与删除模板；模板改名和改宽不改变现有窗口；删除后页面记录和开关保持。
-- 已关闭页面的置顶偏好可保存，`enabled` 保持 `false`，不创建内容窗口。
-- 早期版本完成内置计时器与 HTTPS 页面渲染、无边框缩放与找回、管理窗口重建、1 / 3 / 5 页会话恢复，以及中英文原生标题验证。
-
-以上结果来自 125% DPI 的 Windows 桌面；早期版本结果不能直接视为当前构建的完整回归。
-
-### 已完成 macOS 实机验收
-
-2026-11-08，一台 Apple M4 Pro、macOS 15.7.1 使用触控板验证了 `cf3baf3` 的默认与 Option 实验验证包：工作台／托盘启动、关闭重开与退出，页面创建／关闭／重开，置顶、边框、尺寸与 X/Y、撤销，托盘／卡片找回，以及系统边框拖动均通过；Option 构建的触控板按压拖动通过。
-
-未覆盖页面删除、隐藏后找回、重启读数一致性、导入与页面包、语言切换、配置回退、Retina、多显示器、Intel、物理鼠标与手势边界。完整记录见[macOS 开发与社区验收](macos-development.md#已记录的实机验收)。
-
-### 待验收
-
-- **窗口手势**：真实鼠标的持续拖动、快速点击、越界松开、Esc、混合按键、捕获丢失、手势中关闭或重建窗口、系统菜单冲突；连续 Alt+右键、Alt 释放后的菜单时延与常驻；网页 pointer / mouse / contextmenu 事件隔离；有边框、无边框、锁定、桌面、遮挡、负坐标多屏与各 DPI 下的菜单定位。
-- **窗口层级与几何**：悬浮页隐藏任务栏、工作台保留任务栏入口的实际效果；桌面层显示、显示桌面后的交互、Explorer 重启恢复、原生标题栏关闭；「带到最前」对被遮挡、最小化和完全离屏窗口的最终层级与焦点；80 宽窗口的鼠标缩放下限；5120 超宽屏的全屏预设；跨显示器与 150% / 200% DPI 的预设和贴边偏差；桌面与浮动往返的闪烁和父窗口重建。
-- **设置与预设**：来源重新导入、落盘失败回滚、覆盖更新和过期撤销的完整桌面交互；预设切换后继续撤销字段调整的组合操作；英文和窄窗口下的预设管理器分支；设置单页章节在真实 WebView2、不同 DPI 与窄窗口下的滚动定位。
-- **导入与页面包**：目录导入 → 切换边框 → 移动 → 删除 → 副本清理；导出 → 删除 → 导入还原 → 数据回填；内容页数据回传通道；含 IndexedDB 的复合主键与 Blob 还原。
-- **更新与安装**：从已发布 GitHub Release 完成旧版 → 下载 → 验签 → 安装 → 重启；安装取消、权限拒绝、installer 启动后失败；重启后的页面开关、几何、导入副本和登录数据；干净环境安装与卸载；Windows 代码签名。
-- **多语言**：真实设置保存语言后的托盘、tooltip 与通知重渲染；管理页重建、重启和 `--tray` 启动的一致性；切换语言不重载内容页；英文在 760 × 620 与 100% / 150% / 200% DPI 的排版；安装器语言选择。
-- **性能**：使用优化后的计时器按 Release 构建重采样 1 / 3 / 5 页；复杂看板、长时间运行和创建销毁循环的资源趋势。统计口径见[架构与数据](architecture.md#性能与资源)。
-- **平台**：macOS 的 Intel、Retina、多显示器、导入与页面包、语言切换及 Option 手势边界，详见[平台支持](platforms.md#macos-待验收)。
-- **常见场景**：真实看板的登录、断网重连、睡眠恢复；多显示器与 DPI 的组合切换。
+实现状态、历次检查、桌面实测与待验收项已独立维护在[当前状态与验收](acceptance.md)。本节保留原链接入口，验收结果以独立文档为准。
 
 ## 打包
 
@@ -196,6 +151,28 @@ pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 
 - [README.md](../README.md)（英文）与 [README.zh-CN.md](../README.zh-CN.md)（中文）只保留项目概览、特点、快速开始与文档索引；使用细节、架构和开发说明放在 `docs/`。
 - 功能、命令或验收结论变化时同步更新对应文档与中英文版本，并检查链接和内容一致性。
-- 平台能力、回退规则或 macOS 验收结论变化时，同步更新[平台支持](platforms.md)与本文「当前状态与验收」。
+- 平台能力、回退规则或 macOS 验收结论变化时，同步更新[平台支持](platforms.md)与[当前状态与验收](acceptance.md)。
 - [docs/screenshots](../docs/screenshots) 存放 README 与用户指南的界面截图，更新界面后按同名文件替换即可。
 - 协作规范见 [AGENTS.md](../AGENTS.md)。
+
+## CLI 独立验收脚本
+
+先构建独立标识的验证应用或安装测试包，然后运行：
+
+```powershell
+# 功能：验证新目录页面、存储、冲突、诊断和 1／3／5 页资源，保留报告与源码。
+./scripts/verify-agent-cli.ps1 -CliPath <CLI绝对路径> -AppPath <应用绝对路径> -Instance com.pinpage.verification
+```
+
+脚本拒绝正式实例标识，只关闭自己创建的页面并停止自己的诊断，不删除记录。默认截图失败即失败；无桌面环境可显式传 -AllowCaptureUnavailable 继续功能采样，但报告仍保留截图失败且 ok 为 false。报告在 runtime-data/agent-cli/acceptance 的独立子目录。测量工具新增 -AppPath 与 -BuildMode，可精确选择隔离实例，额外记录句柄与线程。
+
+## 窗口预设与页面包独立验收
+
+复用或构建独立标识的验证应用与同版 CLI，再执行：
+
+```powershell
+# 功能：验证命名预设、包往返、冲突保留与真实桌面效果，不操作正式或开发实例。
+./scripts/verify-window-presets.ps1 -CliPath <CLI绝对路径> -AppPath <应用绝对路径> -Instance com.pinpage.preset-verification
+```
+
+脚本保留源码、页面包、截图与报告到忽略的 runtime-data/window-presets，结束时关闭自己创建的页面。无桌面采集能力时可加 `-AllowCaptureUnavailable`，报告会保留原因；截图需要实际打开检查后才能形成视觉结论。

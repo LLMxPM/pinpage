@@ -69,19 +69,19 @@ export function updateContent(id: string, input: PinContentInput): Promise<void>
   return invoke('update_content', { id, input });
 }
 
-/// 编辑自定义预设或创建副本，不联动现有窗口。
-export function writePreset(input: PresetInput, presetId?: string): Promise<string> {
-  return invoke('write_preset', { input, presetId: presetId ?? null });
+/// 编辑页面自己的预设或创建副本，不联动现有窗口。
+export function writePreset(pinId: string, input: PresetInput, presetId?: string): Promise<string> {
+  return invoke('write_preset', { pinId, input, presetId: presetId ?? null });
 }
 
-/// 删除自定义预设；内置预设由 Rust 拒绝删除。
-export function deletePreset(presetId: string): Promise<void> {
-  return invoke('delete_preset', { presetId });
+/// 删除页面自己的预设。
+export function deletePreset(pinId: string, presetId: string): Promise<void> {
+  return invoke('delete_preset', { pinId, presetId });
 }
 
-/// 更新语言、启动恢复与窗口手势。
-export function updateSettings(input: SettingsInput): Promise<void> {
-  return invoke('update_settings', { input });
+/// 更新全局设置；仅明确编辑自启开关时才修改系统注册。
+export function updateSettings(input: SettingsInput, autostart: boolean | null): Promise<void> {
+  return invoke('update_settings', { input, autostart });
 }
 
 /// 退出应用并保留仍打开的会话。
@@ -92,4 +92,14 @@ export function quitApp(): Promise<void> {
 /// 订阅仅发往管理界面的状态通知，返回生命周期清理函数。
 export function onPinsChanged(callback: () => void) {
   return listen('pins-changed', callback);
+}
+
+/// 取走原生窗口菜单签发的「页面设置」意图，无意图时返回 null。
+export function takePendingPinSettings(): Promise<string | null> {
+  return invoke('take_pending_pin_settings');
+}
+
+/// 管理窗口已打开时原生菜单签发「页面设置」的即时通知；创建中的窗口由挂载后的 take 兜底。
+export function onOpenPinSettings(callback: () => void) {
+  return listen('open-pin-settings', callback);
 }

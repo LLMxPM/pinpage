@@ -18,7 +18,8 @@ use crate::{
 };
 use std::{collections::BTreeMap, sync::atomic::Ordering};
 use tauri::{
-    webview::NewWindowResponse, AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    webview::NewWindowResponse, AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder,
 };
 use tauri_plugin_opener::OpenerExt;
 
@@ -31,6 +32,21 @@ pub fn ensure_manager(window: &WebviewWindow) -> Result<(), AppMessage> {
         return Err(AppMessage::new("errors.notManager"));
     }
     Ok(())
+}
+
+/// 内容页命令的身份校验：标签必须对应现存页面记录，并返回其配置。
+/// 逐页能力以此为第一道闸门；capability 匹配只决定命令是否可达。
+pub fn ensure_content(window: &WebviewWindow, app: &AppHandle) -> Result<PinConfig, AppMessage> {
+    let label = window.label();
+    app.state::<AppState>()
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .find(|pin| pin.id == label)
+        .cloned()
+        .ok_or_else(|| AppMessage::new("errors.windowNotAuthorized"))
 }
 
 /// 内容窗口与管理窗口的系统标题：用户名称或应用标题按当前语言加后缀。
@@ -99,6 +115,25 @@ pub fn show_manager(app: &AppHandle) {
     });
 }
 
+/// 窗口菜单「页面设置」直达：先记录意图再激活或创建管理窗口。
+/// 管理窗口可能尚未挂载，事件会丢失，前端挂载后另经 take 命令兜底取走意图。
+pub fn open_pin_settings(app: &AppHandle, id: &str) {
+    let state = app.state::<AppState>();
+    if !state
+        .settings
+        .lock()
+        .unwrap()
+        .pins
+        .iter()
+        .any(|pin| pin.id == id)
+    {
+        return;
+    }
+    *state.pending_pin_settings.lock().unwrap() = Some(id.to_string());
+    show_manager(app);
+    let _ = app.emit_to("main", "open-pin-settings", ());
+}
+
 /// 按当前配置校验导航目标；来源可以随时被修改，因此不能沿用建窗时的快照。
 /// 页面记录已不存在时一律拒绝，宁可不加载也不给已删除的窗口留白名单。
 fn navigation_allowed_now(app: &AppHandle, id: &str, url: &url::Url) -> bool {
@@ -148,8 +183,9 @@ pub fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<(), AppMessa
     let window = app
         .get_webview_window(id)
         .ok_or_else(|| AppMessage::new("errors.pageClosed"))?;
+    crate::automation::begin_load(app, id);
     window
-        .navigate(url)
+        .navigate(crate::platform::navigation::runtime_url(url)?)
         .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
     events::watch_load(app, id);
     Ok(())
@@ -172,6 +208,9 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         return Ok(());
     }
     let url = initial_url(app, pin)?;
+    crate::automation::begin_load(app, &pin.id);
+    #[cfg(windows)]
+    state.appearances.lock().unwrap().remove(&pin.id);
     let navigation_id = pin.id.clone();
     let navigation_app = app.clone();
     let popup_app = app.clone();
@@ -196,6 +235,11 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
         .always_on_top(pin.mode == crate::models::WindowMode::Floating && pin.always_on_top)
         .decorations(pin.effective_decorations())
         .shadow(pin.effective_decorations())
+        // 透明能力在创建时准备好；之后仅切换 WebView2 底色，不销毁页面运行态。
+        .transparent(cfg!(windows))
+        // 桌面挂载后成为子窗口，不能依赖顶层窗口的 DWM 透明；避免宿主位图铺出黑底。
+        .no_redirection_bitmap(cfg!(windows))
+        .visible(false)
         .disable_drag_drop_handler()
         .on_navigation(move |url| {
             let allowed = navigation_allowed_now(&navigation_app, &navigation_id, url);
@@ -239,13 +283,23 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
             return Err(message);
         }
     };
-    geometry::restore(&window, pin)?;
-    let mut positioned = pin.clone();
-    let position = crate::platform::position(&window)?;
-    positioned.x = Some(position.x);
-    positioned.y = Some(position.y);
-    if let Err(error) = crate::platform::apply(&window, &positioned) {
+    #[cfg(windows)]
+    crate::automation::lifecycle::attach(&window);
+    let setup = (|| {
+        geometry::restore(&window, pin)?;
+        let mut positioned = pin.clone();
+        let position = crate::platform::position(&window)?;
+        positioned.x = Some(position.x);
+        positioned.y = Some(position.y);
+        crate::platform::apply(&window, &positioned)?;
+        window
+            .show()
+            .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))
+    })();
+    if let Err(error) = setup {
         let _ = window.destroy();
+        #[cfg(windows)]
+        state.appearances.lock().unwrap().remove(&pin.id);
         events::set_error(app, &pin.id, error.clone());
         if let Some(runtime) = state.runtime.lock().unwrap().get_mut(&pin.id) {
             runtime.open = false;
@@ -262,6 +316,7 @@ pub fn open_pin(app: &AppHandle, pin: &PinConfig) -> Result<(), AppMessage> {
     {
         saved.enabled = true;
     }
+    crate::platform::suppress_context_menu(&window);
     events::attach(&window);
     events::watch_load(app, &pin.id);
     state::notify(app);

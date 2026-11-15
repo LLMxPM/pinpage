@@ -16,7 +16,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ save: [input: PresetInput]; dirty: [value: boolean] }>();
 const { t } = useI18n();
-const { id: _id, builtin: _builtin, ...fields } = props.preset;
+const { id: _id, ...fields } = props.preset;
 // 旧平台预设先回退到当前能力组合；只有显式保存后才替换原模板。
 const supported = fallbackWindowFields(fields, props.capabilities);
 const input = reactive<PresetInput>({

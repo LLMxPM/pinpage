@@ -2,7 +2,9 @@
 param(
     [ValidateSet(1, 3, 5)] [int]$WindowCount = 1,
     [ValidateRange(2, 30)] [int]$Seconds = 5,
-    [string]$Label = 'timer-idle'
+    [string]$Label = 'timer-idle',
+    [string]$AppPath,
+    [ValidateSet('Release', 'Debug')] [string]$BuildMode
 )
 $ErrorActionPreference = 'Stop'
 $taskWorkspace = Split-Path -Parent $PSScriptRoot
@@ -10,6 +12,7 @@ $taskApplicationPaths = @(
     (Join-Path $taskWorkspace 'src-tauri\target\release\pinpage.exe'),
     (Join-Path $taskWorkspace 'src-tauri\target\debug\pinpage.exe')
 )
+if ($AppPath) { $taskApplicationPaths = @((Resolve-Path -LiteralPath $AppPath).Path) }
 $taskProcesses = @(Get-CimInstance Win32_Process)
 $taskRootProcesses = @($taskProcesses | Where-Object { $_.ExecutablePath -in $taskApplicationPaths })
 if ($taskRootProcesses.Count -ne 1) { throw '请只运行一个本仓库的 PinPage 实例后重试。' }
@@ -34,11 +37,15 @@ $taskPrivateBytes = 0L
 $taskWorkingSet = 0L
 $taskCpuDelta = 0.0
 $taskAliveCount = 0
+$taskHandles = 0L
+$taskThreads = 0L
 foreach ($taskProcessId in $taskProcessIds) {
     $taskProcess = Get-Process -Id $taskProcessId -ErrorAction SilentlyContinue
     if (-not $taskProcess) { continue }
     $taskPrivateBytes += $taskProcess.PrivateMemorySize64
     $taskWorkingSet += $taskProcess.WorkingSet64
+    $taskHandles += $taskProcess.HandleCount
+    $taskThreads += $taskProcess.Threads.Count
     if ($taskCpuBefore.ContainsKey($taskProcessId)) { $taskCpuDelta += [Math]::Max([double]0, [double]($taskProcess.CPU - $taskCpuBefore[$taskProcessId])) }
     $taskAliveCount++
 }
@@ -48,9 +55,11 @@ $taskResult = [PSCustomObject]@{
     timestamp = (Get-Date -Format o)
     label = $Label
     windowCount = $WindowCount
-    build = if ($taskRoot.ExecutablePath -like '*\release\*') { 'Release' } else { 'Debug' }
+    build = if ($BuildMode) { $BuildMode } elseif ($taskRoot.ExecutablePath -like '*\release\*') { 'Release' } else { 'Debug' }
     sampleSeconds = $Seconds
     processCount = $taskAliveCount
+    handleCount = $taskHandles
+    threadCount = $taskThreads
     privateMiB = [Math]::Round($taskPrivateBytes / 1MB, 2)
     rawWorkingSetMiB = [Math]::Round($taskWorkingSet / 1MB, 2)
     cpuPercentOfOneCore = [Math]::Round($taskCpuDelta / $Seconds * 100, 2)

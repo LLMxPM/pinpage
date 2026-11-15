@@ -3,16 +3,18 @@ use super::{LocalePreference, PinConfig, WindowPreset};
 use crate::errors::AppMessage;
 use serde::{Deserialize, Serialize};
 
-/// 左右鼠标手势共用的修饰键；Alt 仅接受左 Alt，Ctrl 与 Shift 接受左右两侧键。
+/// 左右鼠标手势共用的修饰键；Ctrl 与 Shift 接受左右两侧键。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GestureModifier {
     #[default]
-    Alt,
     Ctrl,
     Shift,
     Disabled,
 }
+
+/// 当前配置结构版本；更高版本按“未来配置”只读保护，更低版本在加载时迁移。
+pub const SCHEMA_VERSION: u32 = 2;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -21,15 +23,21 @@ pub struct Settings {
     /// 语言偏好未知或类型不符时只回退该字段，不影响页面与启动恢复。
     #[serde(deserialize_with = "lenient_locale")]
     pub locale: LocalePreference,
-    /// 磁盘上的坏字段只回退 Alt，不能让已有页面丢失。
+    /// 磁盘上的坏字段只回退 Ctrl，不能让已有页面丢失；旧版 Alt 取值同样落到 Ctrl。
     #[serde(deserialize_with = "lenient_gesture_modifier")]
     pub gesture_modifier: GestureModifier,
     pub restore_session: bool,
+    /// 本机控制默认开启；只允许受信任工作台修改，CLI 不能自启权限。
+    pub local_control: bool,
+    /// 自动化安装的持久去重映射，不随页面包导出。
+    pub automation_clients: std::collections::BTreeMap<String, serde_json::Value>,
+    /// 已提交站点事务的持久标记，与站点恢复记录协调。
+    pub site_commits: std::collections::BTreeMap<String, String>,
     /// 单条无法识别的记录只被跳过，不会让整份配置回退为默认值。
     #[serde(deserialize_with = "lenient_pins")]
     pub pins: Vec<PinConfig>,
-    /// 用户自定义预设；内置预设定义在代码中，不写入配置。
-    #[serde(default, deserialize_with = "lenient_presets")]
+    /// v1 的全局预设库，仅在加载迁移时读取，迁移后不再写出。
+    #[serde(default, deserialize_with = "lenient_presets", skip_serializing)]
     pub window_presets: Vec<WindowPreset>,
 }
 
@@ -45,7 +53,7 @@ where
         .collect())
 }
 
-/// 逐条解析自定义预设，跳过字段缺失或取值非法的条目。
+/// 逐条解析 v1 全局预设，跳过字段缺失或取值非法的条目；仅用于加载迁移。
 fn lenient_presets<'de, D>(deserializer: D) -> Result<Vec<WindowPreset>, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -79,10 +87,13 @@ impl Default for Settings {
     /// 提供首版配置与默认手势，允许旧配置缺失新增字段。
     fn default() -> Self {
         Self {
-            schema_version: 1,
+            schema_version: SCHEMA_VERSION,
             locale: LocalePreference::default(),
             gesture_modifier: GestureModifier::default(),
             restore_session: true,
+            local_control: true,
+            automation_clients: Default::default(),
+            site_commits: Default::default(),
             pins: Vec::new(),
             window_presets: Vec::new(),
         }
@@ -94,7 +105,7 @@ impl Default for Settings {
 pub struct SettingsInput {
     /// 严格校验：只接受三个约定值字符串，非法输入由命令层返回明确错误。
     pub locale: String,
-    /// 不使用磁盘配置的容错规则，避免错误输入被静默保存为 Alt。
+    /// 不使用磁盘配置的容错规则，避免错误输入被静默保存为 Ctrl。
     pub gesture_modifier: String,
     pub restore_session: bool,
 }
@@ -117,7 +128,6 @@ impl WorkspaceSettings {
             _ => return Err(AppMessage::new("errors.localeInvalid")),
         };
         let gesture_modifier = match input.gesture_modifier.as_str() {
-            "alt" => GestureModifier::Alt,
             "ctrl" => GestureModifier::Ctrl,
             "shift" => GestureModifier::Shift,
             "disabled" => GestureModifier::Disabled,
@@ -155,10 +165,9 @@ mod tests {
     }
 
     #[test]
-    /// IPC 四个合法值必须准确映射，且保留其他可编辑字段。
+    /// IPC 三个合法值必须准确映射，且保留其他可编辑字段。
     fn input_accepts_all_gesture_modifiers() {
         for (text, expected) in [
-            ("alt", GestureModifier::Alt),
             ("ctrl", GestureModifier::Ctrl),
             ("shift", GestureModifier::Shift),
             ("disabled", GestureModifier::Disabled),
@@ -172,10 +181,10 @@ mod tests {
     }
 
     #[test]
-    /// 未知值、大小写和额外空白均明确报错，不按磁盘规则回退。
+    /// 未知值、已移除的 Alt、大小写和额外空白均明确报错，不按磁盘规则回退。
     fn input_rejects_invalid_gesture_strings() {
         for text in [
-            "", "Alt", "CTRL", "control", "meta", "none", " alt", "shift ",
+            "", "alt", "Alt", "CTRL", "control", "meta", "none", " ctrl", "shift ",
         ] {
             let input = serde_json::from_value(input_value(json!(text))).unwrap();
             let error = WorkspaceSettings::from_input(&input).unwrap_err();
@@ -189,7 +198,7 @@ mod tests {
         for value in [json!(null), json!(123), json!(true), json!([]), json!({})] {
             assert!(serde_json::from_value::<SettingsInput>(input_value(value)).is_err());
         }
-        let mut missing = input_value(json!("alt"));
+        let mut missing = input_value(json!("ctrl"));
         missing.as_object_mut().unwrap().remove("gestureModifier");
         assert!(serde_json::from_value::<SettingsInput>(missing).is_err());
     }

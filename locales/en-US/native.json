@@ -19,20 +19,10 @@
     "managerTitle": "PinPage · floating web workspace",
     "titleSuffix": "{title} · PinPage",
     "menu": {
-      "top": "Always on top",
-      "desktop": "Desktop mode",
-      "border": "Show system frame",
-      "rounded": "Rounded borderless corners",
-      "positionLock": "Lock position",
-      "sizeLock": "Lock size",
-      "hide": "Hide page",
-      "presets": "Window presets"
-    },
-    "presets": {
-      "fullscreen": "Full-screen overlay",
-      "standard": "Standard window",
-      "topRight": "Top-right overlay",
-      "bottomRight": "Bottom-right desktop"
+      "settings": "Page settings…",
+      "custom": "Custom",
+      "noPresets": "No presets yet; save one in page settings",
+      "hide": "Hide page"
     }
   },
   "picker": {
@@ -43,14 +33,20 @@
     "filterWeb": "Web files",
     "filterPackage": "PinPage package",
     "folderLabel": "Web folder",
-    "packageLabel": "Page package"
+    "packageLabel": "Page package",
+    "folderAccessTitle": "Pick the folder to grant to this page"
   },
   "names": {
-    "example": "Focus Timer",
+    "example": "Time tools",
     "webPage": "Web page",
-    "notes": "Quick notes",
-    "checklist": "Daily checklist",
-    "clock": "Digital clock"
+    "notes": "Notes & tasks",
+    "checklist": "Notes & tasks",
+    "clock": "Time tools",
+    "folder": "Folder",
+    "systemMonitor": "System monitor",
+    "stocks": "Market watch",
+    "calendar": "Calendar & countdown",
+    "kanban": "Kanban board"
   },
   "restore": {
     "title": "Restoring page data",
@@ -102,10 +98,18 @@
     "noRootHtml": "No HTML file sits in the root of the selected folder. Import a single file instead",
     "measureFailed": "Measuring the import failed. You can import a single file instead",
     "pinNotFound": "The page does not exist",
+    "folderNoGrant": "This page has no folder access yet. Pick a folder first",
+    "folderRootMissing": "The granted folder is no longer available. Pick it again",
+    "folderOutside": "The target path is outside the granted folder",
+    "folderNotFound": "The file or folder does not exist",
+    "folderReadFailed": "Reading the folder contents failed",
+    "folderOpenFailed": "Opening the file failed",
+    "statsUnavailable": "System sampling is not ready yet. Try again shortly",
     "exportNeedsImport": "Only imported pages can be exported as a package",
     "exportNeedsOpen": "Open the page before exporting it",
     "collectDataFailed": "The page data could not be read",
     "savePathInvalid": "The save path could not be read",
+    "exportExists": "The export file exists; choose another path or explicitly allow overwriting",
     "grantExpired": "The import grant expired. Please choose again",
     "entryMismatch": "The entry does not match the selected file. Please choose again",
     "entryMismatchSource": "The entry does not match the import source. Please choose again",
@@ -139,6 +143,10 @@
     "rollbackFailed": "Rolling back the window settings failed",
     "trayRefreshFailed": "The tray menu could not be updated",
     "settingsSavedTrayFailed": "Settings were saved, but the tray menu could not be updated. The next window action retries it",
+    "autostartReadFailed": "Could not read startup registration. Reopen the workspace to retry",
+    "autostartWriteFailed": "Could not change startup registration. Previous settings were kept",
+    "autostartRollbackFailed": "Could not restore startup registration. Check your system startup apps",
+    "autostartUnsupported": "Launch at startup is not supported on this platform",
     "platformUnsupported": "This window feature is not supported on this platform. The existing window settings were kept",
     "readPosition": "The window position could not be read",
     "taskInterrupted": "The window configuration task was interrupted",
@@ -180,8 +188,11 @@
     "presetNotFound": "That preset does not exist or was deleted",
     "presetNameRange": "Preset names must be 1 to {max} characters",
     "presetLimit": "You can keep up to {max} custom presets; delete one first",
-    "presetReadonly": "Built-in presets are read-only. Create a copy to edit.",
     "presetFieldsInvalid": "Preset size or relative position is outside the allowed range",
-    "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone."
+    "presetIdInvalid": "Preset IDs must be 1 to 80 ASCII letters, digits, hyphens or underscores and unique within the page",
+    "presetConflict": "Preset {id} differs from the existing preset; review it before choosing replace",
+    "windowUndoExpired": "The window changed again. This earlier adjustment can no longer be undone.",
+    "automationFailed": "Local control or skill operation failed; check the details",
+    "navigationFailed": "Page navigation failed: {reason}"
   }
 }

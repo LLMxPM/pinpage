@@ -14,29 +14,60 @@ interface PositionValues {
   positionLocked: boolean;
 }
 const props = defineProps<{
-  values: Omit<WindowValues, 'x' | 'y' | 'positionLocked'>;
+  /// 右键开关是页面行为，不属于预设共享字段，由页面设置单独渲染。
+  values: Omit<WindowValues, 'x' | 'y' | 'positionLocked' | 'pageContextMenu'>;
   position?: PositionValues;
   capabilities: PlatformCapabilities;
   fullscreen?: boolean;
   disabled?: boolean;
 }>();
-const emit = defineEmits<{ commit: [key: keyof WindowValues] }>();
+const emit = defineEmits<{ commit: [key: keyof WindowValues | (keyof WindowValues)[]] }>();
 const { t } = useI18n();
 const dragHint = computed(() => t(dragHintKey(props.capabilities)));
 const limited = computed(() => hasLimitedWindowFeatures(props.capabilities));
-const borderless = computed(() => props.values.mode === 'desktop' || !props.values.decorations);
-const showBorder = computed({
-  get: () => props.values.mode === 'floating' && props.values.decorations,
-  set: (value: boolean) => {
-    props.values.decorations = value;
-  },
-});
 const showOnTop = computed({
   get: () => props.values.mode === 'floating' && props.values.alwaysOnTop,
   set: (value: boolean) => {
     props.values.alwaysOnTop = value;
   },
 });
+
+/// 边框样式三态：系统边框 / 无边框 / 无边框圆角，替代原先两个互斥勾选。
+type FrameStyle = 'system' | 'borderless' | 'rounded';
+const frameOptions = [
+  { value: 'system', key: 'ui.pinSettings.frameSystem' },
+  { value: 'borderless', key: 'ui.pinSettings.frameBorderless' },
+  { value: 'rounded', key: 'ui.pinSettings.frameRounded' },
+] as const;
+const frameStyle = computed<FrameStyle>({
+  get: () => {
+    if (props.values.mode === 'floating' && props.values.decorations) return 'system';
+    return props.values.rounded ? 'rounded' : 'borderless';
+  },
+  set: (style) => {
+    if (style === 'system') {
+      props.values.decorations = true;
+      props.values.rounded = false;
+    } else {
+      // 桌面模式固定无边框，但保留浮动时的系统边框偏好，切回浮动可沿用。
+      if (props.values.mode === 'floating') props.values.decorations = false;
+      props.values.rounded = style === 'rounded';
+    }
+  },
+});
+/// 桌面模式禁用系统边框；圆角受平台能力裁剪，其余样式始终可选。
+function frameDisabled(style: FrameStyle): boolean {
+  if (style === 'system') return props.values.mode === 'desktop';
+  if (style === 'rounded') return !props.capabilities.rounded;
+  return false;
+}
+function frameTitle(style: FrameStyle): string | undefined {
+  if (style === 'system' && props.values.mode === 'desktop')
+    return t('ui.pinSettings.frameDesktopHint');
+  if (style === 'rounded' && !props.capabilities.rounded)
+    return t('ui.pinSettings.platformLimited');
+  return undefined;
+}
 
 /// 尺寸与坐标允许临时空值，仅在回车或失焦且合法时提交。
 function commitInteger(event: Event, key: 'width' | 'height' | 'x' | 'y') {
@@ -79,6 +110,27 @@ function blurField(event: Event) {
           }}</strong>
         </label>
       </fieldset>
+      <fieldset class="mode-picker frame-picker">
+        <legend>
+          {{ t('ui.pinSettings.frameStyle') }}
+          <HintTip :text="dragHint" />
+        </legend>
+        <label
+          v-for="option in frameOptions"
+          :key="option.value"
+          :class="{ active: frameStyle === option.value }"
+          :title="frameTitle(option.value)"
+        >
+          <input
+            v-model="frameStyle"
+            type="radio"
+            :value="option.value"
+            :disabled="frameDisabled(option.value)"
+            @change="emit('commit', ['decorations', 'rounded'])"
+          />
+          <strong>{{ t(option.key) }}</strong>
+        </label>
+      </fieldset>
       <div class="pin-setting-checks">
         <label class="check-row"
           ><input
@@ -88,26 +140,20 @@ function blurField(event: Event) {
             @change="emit('commit', 'alwaysOnTop')"
           />{{ t('ui.pinSettings.top') }}</label
         >
-        <label class="check-row"
-          ><input
-            v-model="showBorder"
-            type="checkbox"
-            :disabled="values.mode === 'desktop'"
-            @change="emit('commit', 'decorations')"
-          />{{ t('ui.pinSettings.border') }}</label
-        >
         <span class="check-with-tip">
           <label
             class="check-row"
-            :title="!capabilities.rounded ? t('ui.pinSettings.platformLimited') : undefined"
+            :title="
+              !capabilities.transparentBackground ? t('ui.pinSettings.platformLimited') : undefined
+            "
             ><input
-              v-model="values.rounded"
+              v-model="values.transparentBackground"
               type="checkbox"
-              :disabled="!borderless || !capabilities.rounded"
-              @change="emit('commit', 'rounded')"
-            />{{ t('ui.pinSettings.rounded') }}</label
+              :disabled="!capabilities.transparentBackground"
+              @change="emit('commit', 'transparentBackground')"
+            />{{ t('ui.pinSettings.transparentBackground') }}</label
           >
-          <HintTip :text="dragHint" />
+          <HintTip :text="t('ui.pinSettings.transparentHint')" />
         </span>
       </div>
       <p v-if="limited" class="settings-hint">{{ t('ui.pinSettings.platformLimited') }}</p>

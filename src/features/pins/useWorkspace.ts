@@ -19,16 +19,16 @@ import type {
 /// 空快照与 Rust 默认配置保持一致，浏览器预览按中文呈现。
 function emptySnapshot(): Snapshot {
   return {
+    autostart: { supported: false, enabled: false, error: null },
     settings: {
       schemaVersion: 1,
       locale: 'zh-CN',
-      gestureModifier: 'alt',
+      gestureModifier: 'ctrl',
       restoreSession: true,
       pins: [],
     },
     runtime: {},
     notices: [],
-    presets: [],
     resolvedLocale: 'zh-CN',
     // 浏览器预览没有原生能力，按最保守的平台裁剪入口。
     capabilities: disabledCapabilities,
@@ -51,6 +51,7 @@ export function useWorkspace() {
   let revision = 0;
   let disposed = false;
   let unlisten: (() => void) | undefined;
+  let unlistenSettings: (() => void) | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -150,16 +151,24 @@ export function useWorkspace() {
         source: { kind: 'import', ticket: preview.ticket, entry: preview.candidates[0] },
         alwaysOnTop: true,
         decorations: !hasNativeDrag(snapshot.value.capabilities),
+        usePackagePreset: true,
       });
     }, `example:${example}`);
   }
 
   /// 保存设置成功后关闭弹层；失败时保留用户的输入和当前语言。
-  function saveSettings(input: SettingsInput) {
+  function saveSettings(input: SettingsInput, autostart: boolean | null) {
     return run(async () => {
-      await desktop.updateSettings(input);
+      await desktop.updateSettings(input, autostart);
       settingsOpen.value = false;
     });
+  }
+
+  /// 打开设置前刷新系统自启状态，反映任务管理器等外部入口的修改。
+  async function openSettings() {
+    error.value = null;
+    await refresh();
+    settingsOpen.value = true;
   }
 
   /// 内容保存成功后保持弹窗打开，失败时保留正在编辑的草稿。
@@ -171,6 +180,19 @@ export function useWorkspace() {
     });
   }
 
+  /// 取走原生菜单的「页面设置」意图并打开对应弹窗；事件与挂载两路共用，取走即清空不会重复打开。
+  async function consumePendingPinSettings() {
+    try {
+      const id = await desktop.takePendingPinSettings();
+      if (id && !disposed) {
+        error.value = null;
+        editingPinId.value = id;
+      }
+    } catch {
+      // 意图取走失败不阻塞管理界面，用户仍可从卡片进入页面设置。
+    }
+  }
+
   onMounted(async () => {
     if (!desktop.desktopAvailable) return;
     try {
@@ -180,16 +202,24 @@ export function useWorkspace() {
           void refresh();
         }, 80);
       });
-      if (disposed) unlisten();
+      unlistenSettings = await desktop.onOpenPinSettings(() => {
+        void consumePendingPinSettings();
+      });
+      if (disposed) {
+        unlisten();
+        unlistenSettings();
+      }
     } catch (reason) {
       error.value = toUiMessage(reason);
     }
     await refresh();
+    await consumePendingPinSettings();
     if (!disposed) ready.value = true;
   });
   onUnmounted(() => {
     disposed = true;
     unlisten?.();
+    unlistenSettings?.();
     clearTimeout(refreshTimer);
     clearTimeout(toastTimer);
   });
@@ -216,9 +246,9 @@ export function useWorkspace() {
     ...windowActions,
     dismissToast,
     saveSettings,
+    openSettings,
     quit: () => run(desktop.quitApp),
     pins: computed(() => snapshot.value.settings.pins),
-    presets: computed(() => snapshot.value.presets),
     openCount: computed(
       () => Object.values(snapshot.value.runtime).filter((pin) => pin.open).length,
     ),

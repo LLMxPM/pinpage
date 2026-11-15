@@ -10,10 +10,19 @@ export type LocalePreference = 'zh-CN' | 'en-US' | 'system';
 export type AppLocale = 'zh-CN' | 'en-US';
 
 /// 窗口左右鼠标手势共用的修饰键，与 Rust `GestureModifier` 一致。
-export type GestureModifier = 'alt' | 'ctrl' | 'shift' | 'disabled';
+export type GestureModifier = 'ctrl' | 'shift' | 'disabled';
 
 /// 内置示例来源，与 Rust 的 ExampleId 白名单一致，不接受任意资源路径。
-export type ExampleId = 'timer' | 'notes' | 'checklist' | 'clock';
+export type ExampleId =
+  | 'timer'
+  | 'notes'
+  | 'checklist'
+  | 'clock'
+  | 'folder'
+  | 'systemMonitor'
+  | 'stocks'
+  | 'calendar'
+  | 'kanban';
 
 export type PageSource = { kind: 'url'; url: string } | { kind: 'bundled'; entry: string };
 
@@ -34,10 +43,15 @@ export interface PinConfig {
   enabled: boolean;
   mode: 'floating' | 'desktop';
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
+  /// 让页面处理裸右键；默认 false 时右键打开窗口菜单。
+  pageContextMenu: boolean;
   /// 当前匹配的预设 ID；窗口参数调整后清空，修改内容不影响它。
   preset: string | null;
+  /// 页面自己的预设列表，ID 只需在本页内唯一。
+  presets: WindowPreset[];
 }
 
 export interface PinSettingsInput {
@@ -46,8 +60,10 @@ export interface PinSettingsInput {
   alwaysOnTop: boolean;
   decorations: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
+  pageContextMenu: boolean;
   width: number;
   height: number;
   x: number;
@@ -85,6 +101,7 @@ export interface PresetFields {
   alwaysOnTop: boolean;
   decorations: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLocked: boolean;
   sizeLocked: boolean;
   width: number;
@@ -96,11 +113,10 @@ export interface PresetFields {
   fullscreen: boolean;
 }
 
-/// 窗口预设；内置项 name 为 null，由语言资源提供显示名。
+/// 窗口预设；均为用户自定义项，名称直接使用用户输入。
 export interface WindowPreset extends PresetFields {
   id: string;
-  name: string | null;
-  builtin: boolean;
+  name: string;
 }
 
 /// 无边框窗口的默认或固定拖动修饰键，与 Rust `PlatformDragModifier` 一致。
@@ -110,6 +126,7 @@ export type PlatformDragModifier = 'alt' | 'option';
 export interface PlatformCapabilities {
   desktopMode: boolean;
   rounded: boolean;
+  transparentBackground: boolean;
   positionLock: boolean;
   sizeLock: boolean;
   /// 是否允许配置手势修饰键；固定手势由 dragModifier 表达。
@@ -139,15 +156,21 @@ export interface Settings extends SettingsInput {
 }
 
 export interface Snapshot {
+  /// 系统登录自启注册的实际状态，不随页面配置迁移。
+  autostart: AutostartStatus;
   settings: Settings;
   runtime: Record<string, PinRuntime>;
   notices: AppMessage[];
-  /// 内置与自定义预设，由 Rust 统一定义，前端只负责渲染。
-  presets: WindowPreset[];
   /// 启动时由 Rust 解析，前端不再自行猜测系统语言。
   resolvedLocale: AppLocale;
   /// 当前构建支持的窗口能力，所有窗口入口共用同一来源。
   capabilities: PlatformCapabilities;
+}
+
+export interface AutostartStatus {
+  supported: boolean;
+  enabled: boolean;
+  error: AppMessage | null;
 }
 
 export interface CreatePin {
@@ -156,6 +179,9 @@ export interface CreatePin {
   alwaysOnTop: boolean;
   decorations: boolean;
   mode?: PinConfig['mode'];
+  /// 仅在新建导入页时应用原生校验后的随包默认窗口布局。
+  usePackagePreset?: boolean;
+  importPackagePresets?: boolean;
 }
 
 /// 原生选择器扫描后的导入预览，用户确认入口后才真正复制文件。
@@ -166,10 +192,14 @@ export interface ImportPreview {
   candidates: string[];
   files: number;
   bytes: number;
+  windowPreset: PresetFields | null;
+  windowPresets: number;
 }
 
 /// 导出结果；withData 为 false 表示只打包了站点副本。
 export interface ExportResult {
+  presetCount: number;
+  revision: number;
   path: string;
   files: number;
   withData: boolean;

@@ -9,7 +9,7 @@ import { parseVersion } from '../scripts/release/shared.mjs';
 import { createManifest } from '../scripts/release/artifacts.mjs';
 import { findRelease } from '../scripts/release/publish.mjs';
 
-test('版本同步只修改应用字段，保持依赖版本；标签和锁文件不一致必须报错', async () => {
+test('版本同步更新应用与技能系列，保持依赖版本；标签和锁文件不一致必须报错', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'pinpage-version-'));
   try {
     await mkdir(path.join(root, 'src-tauri'));
@@ -18,18 +18,27 @@ test('版本同步只修改应用字段，保持依赖版本；标签和锁文�
       JSON.stringify({ version: '0.1.0', dependencies: { demo: '1.0.0' } }),
     );
     await writeFile(path.join(root, 'src-tauri/tauri.conf.json'), '{"version":"0.1.0"}');
+    await mkdir(path.join(root, 'crates/pinpage-skills/src'), { recursive: true });
+    await writeFile(
+      path.join(root, 'crates/pinpage-skills/src/lib.rs'),
+      'pub const VERSION: &str = "0.1.7";\n',
+    );
     await writeFile(
       path.join(root, 'src-tauri/Cargo.toml'),
       '[package]\nname = "pinpage"\nversion = "0.1.0"\n[dependencies]\ndemo = "1.0.0"\n',
     );
     await writeFile(
-      path.join(root, 'src-tauri/Cargo.lock'),
+      path.join(root, 'Cargo.lock'),
       '[[package]]\nname = "demo"\nversion = "1.0.0"\n[[package]]\nname = "pinpage"\nversion = "0.1.0"\n',
     );
     await setVersion('0.2.0', root);
     assert.equal(await checkVersion('v0.2.0', root), '0.2.0');
     assert.match(
-      await readFile(path.join(root, 'src-tauri/Cargo.lock'), 'utf8'),
+      await readFile(path.join(root, 'crates/pinpage-skills/src/lib.rs'), 'utf8'),
+      /VERSION: &str = "0\.2\.0"/,
+    );
+    assert.match(
+      await readFile(path.join(root, 'Cargo.lock'), 'utf8'),
       /name = "demo"\nversion = "1.0.0"/,
     );
     assert.equal(
@@ -38,10 +47,40 @@ test('版本同步只修改应用字段，保持依赖版本；标签和锁文�
     );
     await assert.rejects(checkVersion('v0.1.0', root));
     await writeFile(
-      path.join(root, 'src-tauri/Cargo.lock'),
+      path.join(root, 'Cargo.lock'),
       '[[package]]\nname = "pinpage"\nversion = "0.1.0"\n',
     );
     await assert.rejects(checkVersion(undefined, root));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('技能主次版本跟随应用，同系列保留独立补丁号，不一致时拒绝构建', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'pinpage-skill-version-'));
+  try {
+    await mkdir(path.join(root, 'src-tauri'), { recursive: true });
+    await mkdir(path.join(root, 'crates/pinpage-skills/src'), { recursive: true });
+    await writeFile(path.join(root, 'package.json'), '{"version":"0.2.0"}');
+    await writeFile(path.join(root, 'src-tauri/tauri.conf.json'), '{"version":"0.2.0"}');
+    await writeFile(
+      path.join(root, 'src-tauri/Cargo.toml'),
+      '[package]\nname = "pinpage"\nversion = "0.2.0"\n',
+    );
+    await writeFile(
+      path.join(root, 'Cargo.lock'),
+      '[[package]]\nname = "pinpage"\nversion = "0.2.0"\n',
+    );
+    const skill = path.join(root, 'crates/pinpage-skills/src/lib.rs');
+    await writeFile(skill, 'pub const VERSION: &str = "0.2.4";\n');
+    assert.equal(await checkVersion(undefined, root), '0.2.0');
+    await setVersion('0.2.1', root);
+    assert.match(await readFile(skill, 'utf8'), /"0\.2\.4"/);
+    await setVersion('0.3.0', root);
+    assert.equal(await checkVersion(undefined, root), '0.3.0');
+    assert.match(await readFile(skill, 'utf8'), /"0\.3\.0"/);
+    await writeFile(skill, 'pub const VERSION: &str = "0.2.5";\n');
+    await assert.rejects(checkVersion(undefined, root), /主版本、次版本必须一致/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

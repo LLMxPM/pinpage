@@ -33,7 +33,16 @@ async function prepare(tag) {
     ]);
   const release = findRelease(tag);
   if (!release?.draft) throw new Error('未找到可写的 Release 草稿，停止发布');
-  const body = (release.body || '').split('<!-- pinpage-installation -->')[0].trimEnd();
+  const authoredNotes = await readFile(
+    path.join(ROOT, 'docs/release-notes', `${tag.slice(1)}.md`),
+    'utf8',
+  ).catch((error) => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
+  const body = (authoredNotes ?? release.body ?? '')
+    .split('<!-- pinpage-installation -->')[0]
+    .trimEnd();
   const notes = `${body}\n\n<!-- pinpage-installation -->\n---\n\n- 下载 Windows x64 的 \`*-setup.exe\` 安装包，或使用应用内更新\n- 更新仅通过本 GitHub Release 分发，升级包使用 updater 密钥签名\n- 安装包暂未进行 Windows 代码签名，系统可能提示未知发布者\n- 安装更新会关闭页面，网页尚未保存的状态可能丢失\n`;
   await writeFile(path.join(ROOT, 'release-notes.md'), notes);
   command('gh', ['release', 'edit', tag, '--repo', REPOSITORY, '--notes-file', 'release-notes.md']);

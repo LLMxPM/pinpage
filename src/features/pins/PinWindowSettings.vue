@@ -2,14 +2,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import HintTip from '../../components/HintTip.vue';
 import WindowFields from './WindowFields.vue';
 import PinPresetPicker from './PinPresetPicker.vue';
 import { useLiveWindow } from './useLiveWindow';
-import type { PinConfig, PlatformCapabilities, WindowPatch, WindowPreset } from '../../types';
+import type { PinConfig, PlatformCapabilities, WindowPatch } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   open: boolean;
   apply: (patch: WindowPatch) => Promise<PinConfig | null>;
@@ -67,7 +67,6 @@ defineExpose({ resetInput: () => live.reset() });
     </p>
     <PinPresetPicker
       :pin="pin"
-      :presets="presets"
       :capabilities="capabilities"
       :apply="applyPreset"
       :save="savePreset"
@@ -81,5 +80,17 @@ defineExpose({ resetInput: () => live.reset() });
       :capabilities="capabilities"
       @commit="live.commit"
     />
+    <div v-if="capabilities.windowGestures" class="pin-setting-checks">
+      <span class="check-with-tip">
+        <label class="check-row"
+          ><input
+            v-model="live.input.pageContextMenu"
+            type="checkbox"
+            @change="live.commit('pageContextMenu')"
+          />{{ t('ui.pinSettings.pageContextMenu') }}</label
+        >
+        <HintTip :text="t('ui.pinSettings.pageContextMenuHint')" />
+      </span>
+    </div>
   </div>
 </template>

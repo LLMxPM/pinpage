@@ -1,0 +1,17 @@
+# 功能：提供不依赖 Tauri 的本机控制协议与 Windows 安全传输。
+[package]
+name = "pinpage-protocol"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", features = ["net", "io-util", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_System_Pipes", "Win32_Storage_FileSystem", "Win32_System_Memory", "Win32_System_RemoteDesktop"] }

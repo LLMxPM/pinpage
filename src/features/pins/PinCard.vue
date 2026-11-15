@@ -7,11 +7,10 @@ import PinMenu from './PinMenu.vue';
 import { canBringToFront, primaryAction } from './pinActions';
 import { presetLabel } from './presets';
 import { fromAppMessage, text } from '../../i18n/messages';
-import type { PinConfig, PinRuntime, PlatformCapabilities, WindowPreset } from '../../types';
+import type { PinConfig, PinRuntime, PlatformCapabilities } from '../../types';
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   runtime?: PinRuntime;
   busy: boolean;
@@ -49,7 +48,7 @@ const hideable = computed(() => !!props.runtime?.open && !!props.runtime.visible
 const closable = computed(() => !!props.runtime?.open);
 /// 只在预设仍存在时展示来源标记，删除后的悬挂引用不会留下空标签。
 const activePreset = computed(() => {
-  const found = props.presets.find((preset) => preset.id === props.pin.preset);
+  const found = props.pin.presets.find((preset) => preset.id === props.pin.preset);
   return found ? presetLabel(found) : '';
 });
 </script>
@@ -67,7 +66,6 @@ const activePreset = computed(() => {
       <span class="status-pill" :class="status.tone"><i />{{ t(status.key) }}</span
       ><PinMenu
         :pin="pin"
-        :presets="presets"
         :capabilities="capabilities"
         :runtime="runtime"
         :busy="busy"

@@ -208,28 +208,14 @@ fn finish(token: usize, point: POINT) {
         y: point.y,
         instance: target.instance,
         token,
+        bare: BARE.load(Ordering::SeqCst),
     };
     let Some(app) = APP.get().filter(|_| request.valid()) else {
         return;
     };
     let app = app.clone();
-    // Alt 按住时的自动重复会触发原生菜单的 VK_MENU 退出路径，松开后再展示。
+    // 菜单构造移出捕获释放路径；弹出前再次校验票据，避免旧菜单抢占新手势。
     std::thread::spawn(move || {
-        let mut waited = false;
-        if modifier() == GestureModifier::Alt && input::alt_held() {
-            waited = true;
-            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-            while input::alt_held() {
-                if std::time::Instant::now() >= deadline || !request.valid() {
-                    return;
-                }
-                std::thread::sleep(std::time::Duration::from_millis(10));
-            }
-        }
-        // 先让松开前已排队的自动重复键消息在主线程处理，再开始菜单跟踪。
-        if waited {
-            std::thread::sleep(std::time::Duration::from_millis(60));
-        }
         if !request.valid() {
             return;
         }

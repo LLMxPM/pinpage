@@ -1,4 +1,4 @@
-<!-- 功能：以页面管理为中心组织工作台、示例库、新建流程和统一的设置与删除弹窗。 -->
+<!-- 功能：组织页面工作台、示例库、新建流程、智能体入口和统一的管理弹窗。 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import AppIcon from './components/AppIcon.vue';
 import AppDialog from './components/AppDialog.vue';
 import SettingsDialog from './components/SettingsDialog.vue';
+import AutomationDialog from './features/automation/AutomationDialog.vue';
 import NewPinForm from './features/launcher/NewPinForm.vue';
 import ExampleGallery from './features/launcher/ExampleGallery.vue';
 import PinCard from './features/pins/PinCard.vue';
@@ -22,7 +23,6 @@ const { updateAvailable } = useUpdateSubscription();
 const {
   snapshot,
   pins,
-  presets,
   busy,
   pending,
   loading,
@@ -48,10 +48,16 @@ const {
   undoState,
   dismissToast,
   saveSettings,
+  openSettings,
   quit,
 } = useWorkspace();
 const creatingOpen = ref(false);
-const presetManagerOpen = ref(false);
+const automationOpen = ref(false);
+/// 预设管理器始终属于某个页面：从该页的设置弹窗进入，非空即打开。
+const presetManagerPinId = ref<string | null>(null);
+const presetManagerPin = computed(() =>
+  presetManagerPinId.value ? pins.value.find((pin) => pin.id === presetManagerPinId.value) : null,
+);
 const launchMode = ref<'url' | 'import'>('url');
 const deletingPin = ref<PinConfig | null>(null);
 /// 设置按钮保留固定文字，有更新时通过角标和读屏标签补充状态。
@@ -67,10 +73,11 @@ let unwatchResize: (() => void) | null = null;
 const modalOpen = computed(
   () =>
     creatingOpen.value ||
+    automationOpen.value ||
     settingsOpen.value ||
     !!editingPin.value ||
     !!deletingPin.value ||
-    presetManagerOpen.value,
+    !!presetManagerPin.value,
 );
 
 /// 顶栏空白处按下左键拖动窗口，双击在最大化与还原之间切换；按钮和链接保持自身行为。
@@ -120,10 +127,10 @@ function cardAction(id: string, operation: string) {
   else void action(id, operation);
 }
 
-/// 两处入口共用同一个预设管理器，打开时清除上一次操作错误。
+/// 预设管理器只从页面设置进入，操作目标始终是当前编辑的页面。
 function managePresets() {
   error.value = null;
-  presetManagerOpen.value = true;
+  presetManagerPinId.value = editingPinId.value;
 }
 
 /// 仅在原生删除成功后关闭确认框，删除失败的原因留在框内。
@@ -135,12 +142,6 @@ async function confirmDelete() {
 function editPin(id: string) {
   error.value = null;
   editingPinId.value = id;
-}
-
-/// 应用设置只有一个入口，打开时清除其他任务遗留的错误。
-function openSettings() {
-  error.value = null;
-  settingsOpen.value = true;
 }
 </script>
 
@@ -155,6 +156,14 @@ function openSettings() {
       >
       <span v-if="!desktopAvailable" class="preview-badge">{{ t('ui.desktop.preview') }}</span>
       <div class="topbar-actions">
+        <button
+          class="secondary compact automation-entry"
+          :title="t('ui.automation.title')"
+          :aria-label="t('ui.automation.title')"
+          @click="automationOpen = true"
+        >
+          <AppIcon name="terminal" :size="16" /><span>{{ t('ui.automation.title') }}</span>
+        </button>
         <button
           class="secondary compact"
           :title="updateAvailable ? t('ui.updates.availableBadge') : undefined"
@@ -256,7 +265,6 @@ function openSettings() {
               v-for="pin in pins"
               :key="pin.id"
               :pin="pin"
-              :presets="presets"
               :capabilities="snapshot.capabilities"
               :runtime="snapshot.runtime[pin.id]"
               :busy="busy"
@@ -286,24 +294,23 @@ function openSettings() {
       @error="error = $event"
       @close="creatingOpen = false"
     />
+    <AutomationDialog v-if="automationOpen" @close="automationOpen = false" />
     <SettingsDialog
       v-if="settingsOpen"
       :settings="snapshot.settings"
-      :presets="presets"
+      :autostart="snapshot.autostart"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
       :update-available="updateAvailable"
       @close="settingsOpen = false"
       @save="saveSettings"
-      @manage-presets="managePresets"
       @quit="quit"
     />
     <PinSettingsDialog
       v-if="editingPin"
       :key="editingPin.id"
       :pin="editingPin"
-      :presets="presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
@@ -319,15 +326,17 @@ function openSettings() {
       @manage="managePresets"
     />
     <PresetManagerDialog
-      v-if="presetManagerOpen"
-      :presets="presets"
+      v-if="presetManagerPin"
+      :key="presetManagerPin.id"
+      :pin-name="presetManagerPin.name"
+      :presets="presetManagerPin.presets"
       :capabilities="snapshot.capabilities"
       :busy="busy"
       :error="error"
-      :write="writePreset"
-      :remove="deletePreset"
+      :write="(input, presetId) => writePreset(presetManagerPin!.id, input, presetId)"
+      :remove="(id) => deletePreset(presetManagerPin!.id, id)"
       @close="
-        presetManagerOpen = false;
+        presetManagerPinId = null;
         error = null;
       "
     />

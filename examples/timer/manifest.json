@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "name": "时间工具",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": true,
+    "transparentBackground": false,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 420,
+    "height": 360,
+    "fx": 0.5,
+    "fy": 0.5,
+    "fullscreen": false
+  },
+  "windowPresets": [
+    {
+      "id": "standard",
+      "name": "标准",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 420,
+      "height": 360,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "compact",
+      "name": "紧凑",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 300,
+      "height": 240,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "strip",
+      "name": "横条",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 480,
+      "height": 150,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    }
+  ]
+}

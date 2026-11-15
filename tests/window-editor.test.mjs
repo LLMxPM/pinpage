@@ -20,6 +20,30 @@ const hooks = registerHooks({
 const { useLiveWindow } = await import('../src/features/pins/useLiveWindow.ts');
 hooks.deregister();
 
+test('透明开关只提交自身，失败保留草稿，重试不覆盖页面几何与开关状态', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    if (calls.length === 1) return null;
+    actual.value = { ...actual.value, ...patch };
+    return actual.value;
+  });
+  live.input.transparentBackground = true;
+  await live.commit('transparentBackground');
+  assert.equal(live.failed, true);
+  assert.equal(live.input.transparentBackground, true);
+  assert.equal(pin.value.transparentBackground, false);
+  pin.value.x = -900;
+  pin.value.enabled = false;
+  await nextTick();
+  await live.commit('transparentBackground');
+  assert.equal(live.failed, false);
+  assert.equal(pin.value.transparentBackground, true);
+  assert.equal(pin.value.x, -900);
+  assert.equal(pin.value.enabled, false);
+  assert.deepEqual(calls, [{ transparentBackground: true }, { transparentBackground: true }]);
+});
+
 /// 创建不连接 IPC 的真实字段模型，原生状态通过响应式快照模拟。
 function setup(t, apply) {
   const pin = ref({
@@ -36,8 +60,10 @@ function setup(t, apply) {
     enabled: true,
     mode: 'floating',
     rounded: true,
+    transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
+    pageContextMenu: false,
     preset: null,
   });
   const scope = effectScope();
@@ -161,4 +187,64 @@ test('即时调整、另存和删除按调用顺序执行，中途失败不丢�
   assert.equal(await second, 'preset-id');
   await third;
   assert.deepEqual(calls, ['调整', '另存', '删除']);
+});
+
+test('右键开关只提交自身，不夹带其他字段', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    actual.value = { ...actual.value, ...patch };
+    return actual.value;
+  });
+  live.input.pageContextMenu = true;
+  await live.commit('pageContextMenu');
+  assert.deepEqual(calls, [{ pageContextMenu: true }]);
+  assert.equal(pin.value.pageContextMenu, true);
+  assert.equal(live.dirty, false);
+});
+
+test('边框样式联动一次提交 decorations 与 rounded，未变化的字段不夹带', async (t) => {
+  const calls = [];
+  const { pin, live } = setup(t, async (patch, actual) => {
+    calls.push(patch);
+    const next = { ...actual.value, ...patch };
+    if (next.decorations) next.rounded = false;
+    actual.value = next;
+    await nextTick();
+    return actual.value;
+  });
+  // 初始为无边框圆角，切到系统边框：两个字段一起进入同一笔原生事务。
+  live.input.decorations = true;
+  live.input.rounded = false;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls, [{ decorations: true, rounded: false }]);
+  assert.equal(pin.value.decorations, true);
+  assert.equal(pin.value.rounded, false);
+  assert.equal(live.dirty, false);
+  // 切到无边框：decorations 变化、rounded 不变，只提交 decorations。
+  live.input.decorations = false;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls[1], { decorations: false });
+  // 切到无边框圆角：仅 rounded 变化。
+  live.input.rounded = true;
+  await live.commit(['decorations', 'rounded']);
+  assert.deepEqual(calls[2], { rounded: true });
+  assert.equal(live.dirty, false);
+});
+
+test('边框联动的原生校正按字段回填，系统边框自动取消圆角', async (t) => {
+  const { pin, live } = setup(t, async (patch, actual) => {
+    const next = { ...actual.value, ...patch };
+    if (next.decorations) next.rounded = false;
+    actual.value = next;
+    await nextTick();
+    return actual.value;
+  });
+  live.input.decorations = true;
+  live.input.rounded = true;
+  await live.commit(['decorations', 'rounded']);
+  assert.equal(pin.value.rounded, false);
+  assert.equal(live.input.rounded, false);
+  assert.equal(live.input.decorations, true);
+  assert.equal(live.dirty, false);
 });

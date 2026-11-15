@@ -6,7 +6,7 @@ use std::collections::HashMap;
 mod editor;
 mod workspace;
 pub use editor::{PinContentInput, PresetInput, WindowChange, WindowPatch};
-pub use workspace::{GestureModifier, Settings, SettingsInput, WorkspaceSettings};
+pub use workspace::{GestureModifier, Settings, SettingsInput, WorkspaceSettings, SCHEMA_VERSION};
 
 /// 用户语言偏好，随配置持久化；`system` 表示由平台解析。
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,13 +84,25 @@ pub struct PinConfig {
     pub mode: WindowMode,
     #[serde(default)]
     pub rounded: bool,
+    /// 允许网页透明像素透出桌面；旧配置保持不透明。
+    #[serde(default)]
+    pub transparent_background: bool,
     #[serde(default)]
     pub position_locked: bool,
     #[serde(default)]
     pub size_locked: bool,
+    /// 裸右键交给页面自己的右键菜单；默认由宿主打开窗口菜单，修饰键组合不受此开关影响。
+    #[serde(default)]
+    pub page_context_menu: bool,
     /// 当前匹配的预设 ID；调整窗口参数后清空，内容修改不影响它。
     #[serde(default)]
     pub preset: Option<String>,
+    /// 页面自己的预设列表，ID 只需在本页内唯一；v1 全局库已在加载时迁移。
+    #[serde(default, deserialize_with = "lenient_pin_presets")]
+    pub presets: Vec<WindowPreset>,
+    /// 内容页文件夹能力的授权根目录；仅 Rust 持有，不随页面包导出，更换来源时清除。
+    #[serde(default)]
+    pub folder_root: Option<String>,
 }
 
 impl PinConfig {
@@ -98,6 +110,18 @@ impl PinConfig {
     pub fn effective_decorations(&self) -> bool {
         self.mode == WindowMode::Floating && self.decorations
     }
+}
+
+/// 逐条解析页面内预设，跳过字段缺失或取值非法的条目，避免单条坏数据丢失整个页面。
+fn lenient_pin_presets<'de, D>(deserializer: D) -> Result<Vec<WindowPreset>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let values = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(values
+        .into_iter()
+        .filter_map(|value| serde_json::from_value(value).ok())
+        .collect())
 }
 
 /// 预设包含的外观与几何字段；内置表与用户自定义项共用同一份结构。
@@ -111,6 +135,8 @@ pub struct PresetFields {
     pub always_on_top: bool,
     pub decorations: bool,
     pub rounded: bool,
+    #[serde(default)]
+    pub transparent_background: bool,
     pub position_locked: bool,
     pub size_locked: bool,
     pub width: f64,
@@ -122,7 +148,7 @@ pub struct PresetFields {
     pub fullscreen: bool,
 }
 
-/// 用户自定义预设；内置预设不落盘，配置里只保存它的 ID 引用。
+/// 用户自定义预设，随所属页面持久化；不再附带只读内置项。
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowPreset {
@@ -130,17 +156,6 @@ pub struct WindowPreset {
     /// 自定义名称；预留在反序列化时容忍缺失，便于旧配置演进。
     #[serde(default)]
     pub name: String,
-    #[serde(flatten)]
-    pub fields: PresetFields,
-}
-
-/// 下发给管理界面的预设视图：内置项不带名称，由前端按 i18n 键渲染。
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PresetView {
-    pub id: String,
-    pub name: Option<String>,
-    pub builtin: bool,
     #[serde(flatten)]
     pub fields: PresetFields,
 }
@@ -153,8 +168,13 @@ pub struct PinSettingsInput {
     pub always_on_top: bool,
     pub decorations: bool,
     pub rounded: bool,
+    #[serde(default)]
+    pub transparent_background: bool,
     pub position_locked: bool,
     pub size_locked: bool,
+    /// 缺省保持默认：裸右键打开窗口菜单。
+    #[serde(default)]
+    pub page_context_menu: bool,
     pub width: f64,
     pub height: f64,
     pub x: i32,
@@ -194,6 +214,7 @@ pub enum PlatformDragModifier {
 pub struct PlatformCapabilities {
     pub desktop_mode: bool,
     pub rounded: bool,
+    pub transparent_background: bool,
     pub position_lock: bool,
     pub size_lock: bool,
     /// 是否允许配置手势修饰键；固定手势只通过 drag_modifier 表达。
@@ -208,8 +229,6 @@ pub struct Snapshot {
     pub settings: Settings,
     pub runtime: HashMap<String, PinRuntime>,
     pub notices: Vec<AppMessage>,
-    /// 内置与自定义预设，Rust 是唯一来源，前端只负责渲染。
-    pub presets: Vec<PresetView>,
     /// Rust 已解析的有效语言，前端不再自行猜测系统语言。
     pub resolved_locale: AppLocale,
     /// 当前构建支持的窗口能力，管理界面据此裁剪所有入口。
@@ -239,6 +258,8 @@ pub struct ExportResult {
     pub with_data: bool,
     /// 页面数据快照的字节数，未包含数据时为 0。
     pub data_bytes: u64,
+    pub preset_count: usize,
+    pub revision: u64,
 }
 
 #[derive(Deserialize)]
@@ -250,6 +271,17 @@ pub struct CreatePin {
     pub decorations: bool,
     #[serde(default)]
     pub mode: WindowMode,
+    /// 仅新建时按用户选择应用包内默认布局；字段来自原生解包结果，前端不直接提交布局。
+    #[serde(default)]
+    pub use_package_preset: bool,
+    /// 新建时默认导入命名预设，是否立即应用默认布局由另一字段独立控制。
+    #[serde(default = "default_import_presets")]
+    pub import_package_presets: bool,
+}
+
+/// 旧调用方不传此字段时也保留新包里的命名预设。
+fn default_import_presets() -> bool {
+    true
 }
 
 /// 原生选择器完成扫描后返回的导入预览，前端确认入口后才真正复制文件。
@@ -264,4 +296,7 @@ pub struct ImportPreview {
     pub candidates: Vec<String>,
     pub files: u64,
     pub bytes: u64,
+    /// 预览用于提示与选择；创建时重新读取并校验实际页面包。
+    pub window_preset: Option<PresetFields>,
+    pub window_presets: usize,
 }

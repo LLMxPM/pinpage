@@ -1,0 +1,123 @@
+/* 功能：布局待办输入、受限滚动列表和行内编辑，保留键盘操作与删除撤销入口。 */
+#task-form {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+#task-input {
+  flex: 1;
+  width: 0;
+  font-size: 13px;
+}
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+.task-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.task-tools label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.task-tools button {
+  font-size: 10px;
+  padding: 3px 5px;
+  border-color: transparent;
+}
+#tasks {
+  list-style: none;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  scrollbar-width: none;
+}
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  padding: 10px 0;
+}
+.task-row > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.6;
+  font-size: var(--editor-size);
+  cursor: pointer;
+}
+.task-row input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin: 5px 0 0;
+}
+.task-row span {
+  overflow-wrap: anywhere;
+}
+.task-row.done > label span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1px;
+  max-width: 84px;
+  opacity: 0.45;
+}
+.task-row:hover .row-actions,
+.task-row:focus-within .row-actions {
+  opacity: 1;
+}
+.row-actions button {
+  border: 0;
+  padding: 4px;
+  font-size: 10px;
+}
+.task-edit {
+  flex: 1;
+  width: 0;
+  font-size: 13px;
+}
+.empty-hint {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+  margin: auto 0;
+  padding: 12px;
+}
+.task-footer {
+  padding-top: 4px;
+}
+.task-footer button {
+  font-size: 10px;
+  padding: 3px 5px;
+}
+@media (max-width: 260px) {
+  .task-row {
+    flex-wrap: wrap;
+  }
+  .task-row > label {
+    flex-basis: 100%;
+  }
+  .row-actions {
+    margin-left: auto;
+    max-width: none;
+  }
+}

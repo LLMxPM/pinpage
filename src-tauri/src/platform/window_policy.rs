@@ -29,15 +29,23 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
     } else {
         std::ptr::null_mut()
     };
+    let transparent_desktop = pin.mode == WindowMode::Desktop && pin.transparent_background;
     let rules = unsafe {
         &*rules::install(hwnd)
             .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?
     };
     rules.configuring.set(true);
+    rules
+        .desktop_child
+        .set(!desired_parent.is_null() && !transparent_desktop);
+    rules.desktop_popup.set(transparent_desktop);
     let result = (|| {
         // 切回浮动层后再恢复 Tauri 的顶层窗口样式。
-        if desired_parent.is_null() {
-            desktop::set_parent(hwnd, desired_parent)?;
+        if desired_parent.is_null() || transparent_desktop {
+            desktop::set_parent(hwnd, std::ptr::null_mut())?;
+        }
+        if desktop::child_parent(hwnd).is_null() {
+            desktop::set_owner(hwnd, std::ptr::null_mut())?;
         }
         let decorated = pin.effective_decorations();
         window
@@ -48,8 +56,11 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
             .and_then(|_| {
                 window.set_always_on_top(pin.mode == WindowMode::Floating && pin.always_on_top)
             })
+            .and_then(|_| window.set_always_on_bottom(transparent_desktop))
             .map_err(|error| AppMessage::new("errors.windowApplyFailed").detail(error))?;
-        if !desired_parent.is_null() {
+        if transparent_desktop {
+            desktop::set_owner(hwnd, desired_parent)?;
+        } else if !desired_parent.is_null() {
             desktop::set_parent(hwnd, desired_parent)?;
         }
         window
@@ -69,11 +80,9 @@ fn apply_on_ui(window: &WebviewWindow, pin: &PinConfig) -> Result<(), AppMessage
         rules.rounded.set(pin.rounded);
         rules.decorated.set(decorated);
         rules.scale.set(scale);
+        // 每次都双向应用，清除系统边框切回无边框时遗留的描边和阴影。
+        caption::apply(hwnd, decorated)?;
         corners::apply(hwnd, pin.rounded, decorated, scale)?;
-        // 只有系统边框才存在标题栏；无边框窗口不写入 DWM 配色。
-        if decorated {
-            caption::apply(hwnd);
-        }
         rules.anchor.set(unsafe { desktop::parent_rect(hwnd) });
         Ok(())
     })();

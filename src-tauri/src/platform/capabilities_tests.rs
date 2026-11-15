@@ -19,7 +19,7 @@ fn full_pin() -> PinConfig {
         "rounded": true,
         "positionLocked": true,
         "sizeLocked": true,
-        "preset": "bottomRight"
+        "preset": "custom-demo"
     }))
     .unwrap()
 }
@@ -29,6 +29,7 @@ fn limited() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: false,
         rounded: false,
+        transparent_background: false,
         position_lock: false,
         size_lock: false,
         window_gestures: false,
@@ -41,6 +42,7 @@ fn full() -> PlatformCapabilities {
     PlatformCapabilities {
         desktop_mode: true,
         rounded: true,
+        transparent_background: true,
         position_lock: true,
         size_lock: true,
         window_gestures: true,
@@ -55,6 +57,7 @@ fn current_capabilities_match_platform() {
     if cfg!(windows) {
         assert!(capabilities.desktop_mode);
         assert!(capabilities.rounded);
+        assert!(capabilities.transparent_background);
         assert!(capabilities.position_lock);
         assert!(capabilities.size_lock);
         assert!(capabilities.window_gestures);
@@ -65,6 +68,7 @@ fn current_capabilities_match_platform() {
     } else {
         assert!(!capabilities.desktop_mode);
         assert!(!capabilities.rounded);
+        assert!(!capabilities.transparent_background);
         assert!(!capabilities.position_lock);
         assert!(!capabilities.size_lock);
         assert!(!capabilities.window_gestures);
@@ -104,7 +108,7 @@ fn supported_pin_is_not_rewritten() {
     assert!(!fallback_pin(full(), &mut pin));
     assert_eq!(pin.mode, WindowMode::Desktop);
     assert!(pin.rounded);
-    assert_eq!(pin.preset.as_deref(), Some("bottomRight"));
+    assert_eq!(pin.preset.as_deref(), Some("custom-demo"));
 
     let mut limited_pin = pin.clone();
     limited_pin.mode = WindowMode::Floating;
@@ -153,6 +157,7 @@ fn preset_validation_checks_each_capability() {
         always_on_top: false,
         decorations: false,
         rounded: true,
+        transparent_background: false,
         position_locked: true,
         size_locked: true,
         width: 320.,
@@ -171,9 +176,44 @@ fn preset_validation_checks_each_capability() {
         mode: WindowMode::Floating,
         decorations: true,
         rounded: false,
+        transparent_background: false,
         position_locked: false,
         size_locked: false,
         ..desktop
     };
     assert!(validate_preset(limited(), &standard).is_ok());
+}
+
+#[test]
+/// 透明能力独立校验；跨平台回退关闭透明并清除预设，保留来源和开启状态。
+fn transparency_has_its_own_capability_boundary() {
+    let mut pin = full_pin();
+    pin.mode = WindowMode::Floating;
+    pin.rounded = false;
+    pin.position_locked = false;
+    pin.size_locked = false;
+    pin.transparent_background = true;
+    assert!(validate_pin(limited(), &pin).is_err());
+    let source = pin.source.clone();
+    assert!(fallback_pin(limited(), &mut pin));
+    assert!(!pin.transparent_background);
+    assert!(pin.preset.is_none());
+    assert!(pin.enabled);
+    assert_eq!(pin.source, source);
+    let mut fields = PresetFields {
+        mode: WindowMode::Floating,
+        always_on_top: false,
+        decorations: true,
+        rounded: false,
+        transparent_background: false,
+        position_locked: false,
+        size_locked: false,
+        width: 960.,
+        height: 720.,
+        fx: 0.5,
+        fy: 0.5,
+        fullscreen: false,
+    };
+    fields.transparent_background = true;
+    assert!(validate_preset(limited(), &fields).is_err());
 }

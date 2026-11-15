@@ -1,0 +1,5 @@
+# 功能：统一应用、CLI、协议与公开技能模块的依赖锁和构建目录。
+[workspace]
+members = ["src-tauri", "crates/pinpage-protocol", "crates/pinpage-cli", "crates/pinpage-skills"]
+default-members = ["src-tauri", "crates/pinpage-cli", "crates/pinpage-protocol", "crates/pinpage-skills"]
+resolver = "2"

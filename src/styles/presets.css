@@ -40,14 +40,8 @@
   flex-wrap: wrap;
   gap: 8px 14px;
 }
-.inline-actions .preset-save-toggle {
-  margin-top: 0;
-}
 .preset-section {
   margin-top: 18px;
-}
-.preset-section > .section-head {
-  margin-bottom: 12px;
 }
 .preset-section .inline-actions {
   margin-top: 12px;

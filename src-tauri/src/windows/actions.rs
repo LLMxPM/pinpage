@@ -32,8 +32,27 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
     match action {
         "open" | "reopen" => {
             super::open_pin(app, &previous)?;
+            if let Err(error) = state.save() {
+                if !previous.enabled {
+                    if let Some(pin) = state
+                        .settings
+                        .lock()
+                        .unwrap()
+                        .pins
+                        .iter_mut()
+                        .find(|p| p.id == id)
+                    {
+                        pin.enabled = false;
+                    }
+                    if let Some(window) = app.get_webview_window(id) {
+                        let _ = window.destroy();
+                    }
+                }
+                return Err(error);
+            }
         }
         "close" | "delete" => {
+            let before = state.settings.lock().unwrap().clone();
             if let Some(pin) = state
                 .settings
                 .lock()
@@ -43,6 +62,10 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 .find(|pin| pin.id == id)
             {
                 pin.enabled = false;
+            }
+            if let Err(error) = state.save() {
+                *state.settings.lock().unwrap() = before;
+                return Err(error);
             }
             if let Some(window) = app.get_webview_window(id) {
                 if let Err(error) = window.destroy() {
@@ -56,6 +79,9 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                     {
                         pin.enabled = previous.enabled;
                     }
+                    if let Err(rollback) = state.save() {
+                        state::report(app, rollback);
+                    }
                     return Err(AppMessage::new("errors.windowApplyFailed").detail(error));
                 }
             }
@@ -66,6 +92,14 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                     .unwrap()
                     .pins
                     .retain(|pin| pin.id != id);
+                state
+                    .settings
+                    .lock()
+                    .unwrap()
+                    .automation_clients
+                    .retain(|_, value| value["pageId"] != id);
+                state.settings.lock().unwrap().site_commits.remove(id);
+                state.save()?;
                 state.runtime.lock().unwrap().remove(id);
                 // 删除记录时一并清理导入的站点副本；外部引用来源没有副本可删。
                 if matches!(&previous.source, PageSource::Bundled { .. }) {
@@ -80,7 +114,8 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 runtime.error = None;
             }
         }
-        "top" | "border" | "desktop" | "recover" | "rounded" | "positionLock" | "sizeLock" => {
+        "top" | "border" | "desktop" | "recover" | "frameSystem" | "frameBorderless"
+        | "frameRounded" | "positionLock" | "sizeLock" => {
             let mut next = previous.clone();
             match action {
                 "top" => {
@@ -99,12 +134,19 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                         WindowMode::Desktop
                     };
                 }
-                "rounded" => next.rounded = !next.rounded,
+                // 边框样式三选一：桌面模式不写系统边框偏好，切回浮动时沿用原有选择。
+                "frameSystem" | "frameBorderless" | "frameRounded" => {
+                    if next.mode == WindowMode::Floating {
+                        next.decorations = action == "frameSystem";
+                    }
+                    next.rounded = action == "frameRounded";
+                }
                 "positionLock" => next.position_locked = !next.position_locked,
                 "sizeLock" => next.size_locked = !next.size_locked,
                 "recover" => {
                     next.mode = WindowMode::Floating;
                     next.decorations = true;
+                    next.transparent_background = false;
                     next.position_locked = false;
                 }
                 _ => unreachable!(),
@@ -147,6 +189,7 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 "minimize" => window.minimize().map_err(window_failed)?,
                 "hide" => window.hide().map_err(window_failed)?,
                 "reload" => {
+                    crate::automation::begin_load(app, id);
                     window.reload().map_err(window_failed)?;
                     super::events::watch_load(app, id);
                 }
@@ -156,6 +199,14 @@ pub fn action(app: &AppHandle, id: &str, action: &str) -> Result<(), AppMessage>
                 runtime.visible = window.is_visible().unwrap_or(true);
             }
         }
+    }
+    if matches!(action, "close" | "delete") {
+        crate::automation::load_error(
+            app,
+            id,
+            pinpage_protocol::Failure::new("pageClosed", "页面已关闭"),
+        );
+        crate::automation::diagnostics::close_page(app, id);
     }
     state::schedule_save(app);
     state::notify(app);

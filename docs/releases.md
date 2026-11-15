@@ -2,7 +2,13 @@
 
 PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安装包只从 `LLMxPM/pinpage` 的 GitHub Releases 获取；更新包使用 Tauri updater 签名，Windows 安装包代码签名暂未配置。应用内更新只在 Windows x64 正式构建启用，其他平台范围见[平台支持](platforms.md)。
 
-签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[开发与构建](development.md#当前状态与验收)。
+签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[当前状态与验收](acceptance.md)。
+
+## v0.3.0 发布说明
+
+本版变更、配置迁移与验收边界见[更新说明](release-notes/0.3.0.md)。发布工作流优先读取 `docs/release-notes/<版本>.md`，并用于 Release 正文与更新清单；未提供该文件时沿用 GitHub 自动生成的说明。根目录 `release-notes.md` 是工作流生成文件，不作为人工维护源。
+
+CI 保留 Windows x64、macOS 默认与 Option 实验三组 workspace 检查；正式 Release 仍只发布 Windows x64。非 Windows 打包跳过 NSIS 专用 CLI 资源，CLI／协议／技能源码继续由 workspace 检查覆盖。
 
 ## v0.2.0 发布记录
 
@@ -17,9 +23,9 @@ PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安�
 
 - 应用版本采用 SemVer，例如 `0.2.0`、`0.2.1`、`0.3.0`；预发布可用 `0.3.0-beta.1`。
 - `package.json` 是版本来源，脚本同步 `src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 与 `Cargo.lock` 中的应用版本，不修改依赖版本。
-- Git 标签固定为 `v<版本>`。构建元数据和非规范版本会被脚本拒绝；CI 校验四处版本一致。
+- Git 标签固定为 `v<版本>`。构建元数据和非规范版本会被脚本拒绝；CI 校验应用、CLI 与共享 crate 的版本一致。
 - 应用只接收高于当前版本的正式版，不自动降级。预发布 Release 不设置为 Latest。
-- 配置的 `schemaVersion` 与应用版本独立。当前配置格式仍为 `1`；读取未来格式时保留原文件、停止写入并提示使用新程序。
+- 配置的 `schemaVersion` 与应用版本独立。v0.3.0 为 `2`（v1 升级时自动迁移，v0.2.0 发布时为 `1`）；读取未来格式时保留原文件、停止写入并提示使用新程序。
 - 已发布版本禁止覆盖安装包或签名；修复应发布更高版本。草稿允许重试上传。
 
 ```powershell
@@ -109,3 +115,9 @@ https://github.com/LLMxPM/pinpage/releases/latest/download/latest.json
 - [Tauri updater](https://v2.tauri.app/plugin/updater/)：静态清单、构建签名及 Windows 安装方式。
 - [Tauri Update API](https://docs.rs/tauri-plugin-updater/2.14.1/tauri_plugin_updater/struct.Update.html)：下载验签和安装退出行为。
 - [GitHub Release 管理](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)：草稿、附件和正式发布。
+
+## CLI 与技能分发（v0.3.0）
+
+工作区锁文件已迁到仓库根 Cargo.lock，原 --manifest-path src-tauri/Cargo.toml 与 src-tauri/target 产物路径保留。版本脚本同步应用及三个新增 crate，并在 CLI 构建时核对 --version。pnpm release:build 的前置步骤构建 CLI，NSIS 安装钩子将其放在应用旁；CLI 无独立发布附件。技能资源编译内置，按 skillVersion 和最低能力清单管理；技能主版本、次版本与应用一致，补丁号独立递增。pnpm version:check 校验所属系列，version:set 在同系列保留技能补丁号、跨系列重置为新系列的 .0；pnpm check:skill 校验唯一页面技能、内嵌文件集合、自包含引用与示例接入链接。公共规范直接维护在技能参考中，仓库通过 AGENTS.md 和[示例接入文档](examples-development.md)引用。
+
+安装器仅提供当前用户 PATH 选项，静默升级不弹新选择，卸载只移除本安装添加的路径和随包 CLI；不修改所有用户 PATH，不自动安装或覆盖用户技能。已生成本地 NSIS 与 updater 签名，独立测试包的静默安装、同版本更新、卸载和用户文件保留已通过；交互式 PATH 选择、真实跨版本升级及代码签名仍需在干净环境验收，不重发或覆盖已公开的 v0.2.0。

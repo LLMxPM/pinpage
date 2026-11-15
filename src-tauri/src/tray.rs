@@ -110,7 +110,10 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
                     _ => {
                         let parts: Vec<_> = id.split('|').collect();
                         if parts.len() == 3 && parts[0] == "pin" {
-                            if let Err(error) = windows::action(&app, parts[1], parts[2]) {
+                            // 页面设置是管理界面导航，不属于窗口操作，单独分发。
+                            if parts[2] == "settings" {
+                                windows::open_pin_settings(&app, parts[1]);
+                            } else if let Err(error) = windows::action(&app, parts[1], parts[2]) {
                                 state::report(&app, error);
                                 windows::show_manager(&app);
                             }

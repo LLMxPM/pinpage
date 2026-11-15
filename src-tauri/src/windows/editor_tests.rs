@@ -31,6 +31,19 @@ fn patch_preserves_unrelated_state() {
 }
 
 #[test]
+/// 右键开关属于页面行为而非预设字段，切换后保留匹配标记，撤销比较覆盖该字段。
+fn page_context_menu_patch_keeps_preset() {
+    let previous = pin();
+    let patch: WindowPatch = serde_json::from_value(json!({"pageContextMenu": true})).unwrap();
+    let next = merge_window(&previous, &patch).unwrap();
+    assert!(next.page_context_menu);
+    assert_eq!(next.preset, previous.preset);
+    assert!(matches_expected(&next, &patch));
+    let stale: WindowPatch = serde_json::from_value(json!({"pageContextMenu": false})).unwrap();
+    assert!(!matches_expected(&next, &stale));
+}
+
+#[test]
 /// 未发生变化的字段保留匹配标记，位置锁与大小锁可以独立更新。
 fn no_op_and_independent_locks() {
     let previous = pin();
@@ -82,4 +95,25 @@ fn undo_checks_latest_native_fields() {
     assert!(!matches_expected(&actual, &expected));
     let only_top = serde_json::from_value(json!({"alwaysOnTop": false})).unwrap();
     assert!(matches_expected(&actual, &only_top));
+}
+
+#[test]
+/// 透明开关保留关闭状态与几何，参与预设失配、往返存储及过期撤销校验。
+fn transparency_is_independent_and_undo_checks_it() {
+    let previous = pin();
+    assert!(!previous.transparent_background);
+    let patch = serde_json::from_value(json!({"transparentBackground": true})).unwrap();
+    let next = merge_window(&previous, &patch).unwrap();
+    assert!(next.transparent_background);
+    assert!(!next.enabled);
+    assert_eq!(
+        (next.x, next.y, next.width, next.height),
+        (previous.x, previous.y, previous.width, previous.height)
+    );
+    assert_eq!(next.source, previous.source);
+    assert!(next.preset.is_none());
+    assert!(matches_expected(&next, &patch));
+    assert!(!matches_expected(&previous, &patch));
+    let restored: PinConfig = serde_json::from_str(&serde_json::to_string(&next).unwrap()).unwrap();
+    assert!(restored.transparent_background);
 }

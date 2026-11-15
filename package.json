@@ -1,11 +1,14 @@
 {
   "name": "pinpage",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "scripts": {
+    "examples:pack": "cargo run --manifest-path src-tauri/Cargo.toml --example pack-examples",
+    "cli:build": "node scripts/build-cli.mjs",
+    "check:skill": "node scripts/check-skill.mjs",
     "version:set": "node scripts/version.mjs",
     "version:check": "node scripts/version.mjs --check",
     "test:release": "node --test tests/release.test.mjs",
@@ -16,11 +19,12 @@
     "check:limits": "node scripts/check-limits.mjs",
     "format": "prettier --write src locales scripts examples tests index.html vite.config.ts package.json tsconfig.json \"src-tauri/tauri*.conf.json\" src-tauri/capabilities",
     "format:check": "prettier --check src locales scripts examples tests index.html vite.config.ts package.json tsconfig.json \"src-tauri/tauri*.conf.json\" src-tauri/capabilities",
-    "build": "pnpm check:limits && pnpm check:i18n && pnpm check && vite build",
+    "build": "pnpm check:limits && pnpm check:i18n && pnpm check:skill && pnpm check && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "test:ui": "node --experimental-strip-types --test tests/pin-actions.test.mjs tests/pin-settings-form.test.mjs tests/pin-source-draft.test.mjs tests/window-editor.test.mjs tests/platform-capabilities.test.mjs"
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --workspace",
+    "test:ui": "node --experimental-strip-types --test tests/pin-actions.test.mjs tests/pin-settings-form.test.mjs tests/pin-source-draft.test.mjs tests/window-editor.test.mjs tests/platform-capabilities.test.mjs",
+    "test:examples": "node --test tests/examples-state.test.mjs tests/stocks.test.mjs tests/stocks-trend.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

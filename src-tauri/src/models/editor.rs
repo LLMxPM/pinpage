@@ -17,8 +17,11 @@ pub struct WindowPatch {
     pub always_on_top: Option<bool>,
     pub decorations: Option<bool>,
     pub rounded: Option<bool>,
+    pub transparent_background: Option<bool>,
     pub position_locked: Option<bool>,
     pub size_locked: Option<bool>,
+    /// 页面行为开关，不属于预设字段；切换不清除预设匹配标记。
+    pub page_context_menu: Option<bool>,
     pub width: Option<f64>,
     pub height: Option<f64>,
     pub x: Option<i32>,

@@ -1,0 +1,220 @@
+/* 功能：按窗口比例切换紧凑、标准和宽屏布局，保留小窗口滚动与设置入口。 */
+@media (min-width: 640px) {
+  .widget {
+    padding: 18px 20px;
+  }
+  .dashboard {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.15fr);
+    gap: 22px;
+  }
+  .list-panel {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+  }
+  .market-panel {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-left: 21px;
+    border-left: 1px solid var(--line);
+  }
+  .chart-stage {
+    flex: 1;
+    min-height: 65px;
+    height: auto;
+  }
+  .selected-value {
+    margin: 14px 0 18px;
+  }
+  .selected-details {
+    margin-top: 15px;
+  }
+  .trend-caption {
+    font-size: 8px;
+  }
+}
+@media (max-width: 340px), (max-height: 500px) and (max-width: 639px) {
+  body {
+    padding: 8px;
+  }
+  .widget {
+    padding: 11px;
+    min-height: 320px;
+    border-radius: 14px;
+  }
+  .brand-mark {
+    display: none;
+  }
+  .heading .eyebrow {
+    display: none;
+  }
+  .heading h1 {
+    font-size: 15px;
+  }
+  .eyebrow {
+    font-size: 7px;
+  }
+  .connection {
+    margin: 10px 0 11px;
+  }
+  .dashboard {
+    gap: 12px;
+  }
+  .market-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
+  }
+  .market-heading {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .market-heading > div {
+    min-width: 0;
+  }
+  .market-code {
+    display: none;
+  }
+  .market-heading h2 {
+    font-size: 13px;
+  }
+  .session-tag {
+    display: none;
+  }
+  #selected-price {
+    font-size: 24px;
+  }
+  .selected-value {
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0;
+    gap: 3px;
+  }
+  #selected-change {
+    display: none;
+  }
+  .selected-changes {
+    font-size: 10px;
+    gap: 7px;
+  }
+  .chart-stage {
+    height: 46px;
+  }
+  .chart-heading,
+  .chart-stage,
+  .chart-axis,
+  .trend-caption {
+    grid-column: 1 / -1;
+  }
+  .chart-heading {
+    margin-top: 8px;
+  }
+  .chart-axis {
+    font-size: 7px;
+    padding-top: 4px;
+  }
+  .chart-heading {
+    font-size: 7px;
+  }
+  .selected-details {
+    display: none;
+  }
+  .trend-caption {
+    margin-top: 7px;
+    font-size: 7px;
+  }
+  #selected-time {
+    display: none;
+  }
+  .columns,
+  .quote {
+    grid-template-columns: minmax(0, 1fr) 58px 54px;
+    gap: 5px;
+  }
+  .columns {
+    padding: 0 5px 6px;
+    font-size: 8px;
+  }
+  .quote {
+    padding: 8px 4px;
+    min-height: 43px;
+  }
+  .name {
+    font-size: 11px;
+  }
+  .quote-meta {
+    font-size: 7px;
+  }
+  .price {
+    font-size: 14px;
+  }
+  .percent {
+    font-size: 10px;
+  }
+  .list-heading {
+    margin-bottom: 7px;
+  }
+  .list-heading h2 {
+    font-size: 11px;
+  }
+  .list-heading > span {
+    font-size: 8px;
+  }
+  footer {
+    margin-top: 8px;
+    font-size: 7px;
+  }
+  footer > span {
+    display: none;
+  }
+}
+:root[data-trend='false'] .dashboard {
+  display: flex;
+}
+:root[data-trend='false'] .list-panel {
+  width: 100%;
+}
+@media (max-width: 239px) {
+  body {
+    padding: 4px;
+  }
+  .widget {
+    padding: 8px;
+  }
+  .columns,
+  .quote {
+    grid-template-columns: minmax(0, 1fr) 51px 46px;
+    gap: 3px;
+  }
+  .percent {
+    font-size: 9px;
+  }
+  .price {
+    font-size: 12px;
+  }
+  .quote-meta {
+    word-break: break-all;
+  }
+  .chart-heading .baseline-key {
+    display: none;
+  }
+}
+@media (max-height: 300px) {
+  .widget {
+    height: auto;
+    min-height: 360px;
+  }
+  .dashboard {
+    min-height: 240px;
+  }
+  .quotes {
+    max-height: 160px;
+  }
+}

@@ -17,8 +17,10 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
         always_on_top,
         decorations,
         rounded,
+        transparent_background,
         position_locked,
         size_locked,
+        page_context_menu,
         width,
         height
     );
@@ -33,6 +35,7 @@ pub fn merge_window(previous: &PinConfig, input: &WindowPatch) -> Result<PinConf
         || next.always_on_top != previous.always_on_top
         || next.decorations != previous.decorations
         || next.rounded != previous.rounded
+        || next.transparent_background != previous.transparent_background
         || next.position_locked != previous.position_locked
         || next.size_locked != previous.size_locked
         || next.width != previous.width
@@ -53,8 +56,10 @@ pub fn matches_expected(pin: &PinConfig, expected: &WindowPatch) -> bool {
         always_on_top,
         decorations,
         rounded,
+        transparent_background,
         position_locked,
-        size_locked
+        size_locked,
+        page_context_menu
     ) && expected
         .width
         .is_none_or(|value| value == pin.width.round())
@@ -115,6 +120,7 @@ pub fn update_window(
         }
         return Err(error);
     }
+    crate::automation::touch(app, id);
     Ok(WindowChange {
         before: previous,
         after: current(&state, id)?,
@@ -139,7 +145,9 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
     let mut candidate = previous.clone();
     candidate.name = name.into();
     if let Some(source) = &source {
-        candidate.source = source.clone();
+        candidate.source = source.source.clone();
+        // 来源更换后内容不再受信任，清除既有文件夹授权。
+        candidate.folder_root = None;
     }
     let target = if source.is_some() && app.get_webview_window(id).is_some() {
         Some(super::initial_url(app, &candidate)?)
@@ -157,6 +165,11 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
     {
         pin.name = candidate.name.clone();
         pin.source = candidate.source.clone();
+        pin.folder_root = candidate.folder_root.clone();
+    }
+    let previous_commits = state.settings.lock().unwrap().site_commits.clone();
+    if let Some(source) = &source {
+        source.mark(app, id);
     }
     if let Err(error) = state.save() {
         if let Some(pin) = state
@@ -169,9 +182,15 @@ pub fn update_content(app: &AppHandle, id: &str, input: PinContentInput) -> Resu
         {
             pin.name = previous.name;
             pin.source = previous.source;
+            pin.folder_root = previous.folder_root;
         }
+        state.settings.lock().unwrap().site_commits = previous_commits;
         return Err(error);
     }
+    if let Some(source) = source {
+        source.committed();
+    }
+    crate::automation::touch(app, id);
     if let Some(window) = app.get_webview_window(id) {
         if let Err(error) = window.set_title(&super::window_title(app, name)) {
             state::report(

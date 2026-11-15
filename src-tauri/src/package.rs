@@ -1,16 +1,17 @@
 // 功能：把导入页的站点副本与页面数据打包成 .pinpage，并支持解包回站点副本。
 use crate::{
     errors::AppMessage,
-    import,
-    models::{PageSource, PinConfig},
+    models::{PresetFields, WindowPreset},
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    io::{Read, Write},
+    io::{Cursor, Read, Seek},
     path::{Component, Path},
-    time::{SystemTime, UNIX_EPOCH},
 };
-use tauri::AppHandle;
+mod export;
+pub use export::write;
+#[cfg(test)]
+use export::write_dir;
 
 /// 包格式版本，与配置版本独立演进。
 const PACKAGE_VERSION: u32 = 1;
@@ -21,7 +22,7 @@ const STORAGE: &str = "data/storage.json";
 const MAX_FILES: u64 = 4000;
 const MAX_BYTES: u64 = 256 * 1024 * 1024;
 /// 随包页面数据的体积上限；IndexedDB 与内嵌二进制会让数据明显变大。
-const MAX_STORAGE: u64 = 16 * 1024 * 1024;
+pub(crate) const MAX_STORAGE: u64 = 16 * 1024 * 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,81 +33,20 @@ pub struct Manifest {
     /// Unix 秒，避免为导出时间引入日期库。
     pub exported_at: u64,
     pub files: u64,
+    /// 可选的默认窗口布局；旧版包缺失时沿用创建表单的设置，不导入全局预设记录。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_preset: Option<PresetFields>,
+    /// 页面自己的命名预设列表，稳定 ID 和保存顺序随包迁移，与默认布局独立。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub window_presets: Vec<WindowPreset>,
 }
 
 /// 解包结果：相对入口与随包页面数据。
 pub struct Extracted {
     pub entry: String,
     pub storage: Option<String>,
-}
-
-/// 把站点副本、页面数据与清单写成 ZIP 包，返回写入的文件数。
-pub fn write(
-    app: &AppHandle,
-    pin: &PinConfig,
-    storage: Option<&str>,
-    target: &Path,
-) -> Result<u64, AppMessage> {
-    let PageSource::Bundled { entry } = &pin.source else {
-        return Err(AppMessage::new("errors.exportNeedsImport"));
-    };
-    let site = import::site_root(app, &pin.id)?;
-    if !site.is_dir() {
-        return Err(AppMessage::new("errors.importContentLost"));
-    }
-    write_dir(&site, &pin.name, entry, storage, target)
-}
-
-/// 不依赖应用句柄的打包实现，便于直接对目录做往返测试。
-pub fn write_dir(
-    site: &Path,
-    name: &str,
-    entry: &str,
-    storage: Option<&str>,
-    target: &Path,
-) -> Result<u64, AppMessage> {
-    let (files, _) = import::measure(site)?;
-    let manifest = Manifest {
-        schema_version: PACKAGE_VERSION,
-        name: name.to_string(),
-        entry: entry.to_string(),
-        exported_at: SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|value| value.as_secs())
-            .unwrap_or_default(),
-        files,
-    };
-    let file = std::fs::File::create(target)
-        .map_err(|error| AppMessage::new("errors.createExportFailed").detail(error))?;
-    let mut zip = zip::ZipWriter::new(file);
-    let options = zip::write::SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
-    zip.start_file(MANIFEST, options)
-        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-    let manifest = serde_json::to_string_pretty(&manifest)
-        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-    zip.write_all(manifest.as_bytes())
-        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-    import::walk(site, &mut |path, relative, _| {
-        // 包内统一使用正斜杠，跨平台解包时不必再处理分隔符差异。
-        let name = format!("site/{}", relative.to_string_lossy().replace('\\', "/"));
-        zip.start_file(name, options)
-            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-        let mut source = std::fs::File::open(path)
-            .map_err(|error| AppMessage::new("errors.copyFileFailed").detail(error))?;
-        std::io::copy(&mut source, &mut zip)
-            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-        Ok(())
-    })?;
-    if let Some(payload) = storage {
-        zip.start_file(STORAGE, options)
-            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-        zip.write_all(payload.as_bytes())
-            .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-    }
-    zip.finish()
-        .map_err(|error| AppMessage::new("errors.writePackageFailed").detail(error))?;
-    Ok(files)
+    pub window_preset: Option<PresetFields>,
+    pub window_presets: Vec<WindowPreset>,
 }
 
 /// 只读取清单，用于导入前的预览与校验。
@@ -115,31 +55,72 @@ pub fn read_manifest(path: &Path) -> Result<Manifest, AppMessage> {
         .map_err(|error| AppMessage::new("errors.readPackageFailed").detail(error))?;
     let mut archive = zip::ZipArchive::new(file)
         .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+    archive_manifest(&mut archive)
+}
+
+/// 内置示例与外部页面包使用同一清单解析器，内存来源不需要创建临时包文件。
+pub fn read_manifest_bytes(bytes: &[u8]) -> Result<Manifest, AppMessage> {
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+    archive_manifest(&mut archive)
+}
+
+/// 在有界清单中读取入口和窗口布局；解析后才允许创建站点文件。
+fn archive_manifest<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+) -> Result<Manifest, AppMessage> {
     let mut entry = archive
         .by_name(MANIFEST)
         .map_err(|_| AppMessage::new("errors.packageNoManifest"))?;
+    if entry.size() > 256 * 1024 {
+        return Err(AppMessage::new("errors.packageManifestInvalid"));
+    }
     let mut text = String::new();
     entry
         .read_to_string(&mut text)
         .map_err(|error| AppMessage::new("errors.packageManifestInvalid").detail(error))?;
-    let manifest: Manifest = serde_json::from_str(&text)
+    let mut manifest: Manifest = serde_json::from_str(&text)
         .map_err(|error| AppMessage::new("errors.packageManifestInvalid").detail(error))?;
+    validate_manifest(&mut manifest)?;
+    Ok(manifest)
+}
+
+/// 版本与入口严格校验；随包预设检查数值边界但允许跨平台传输，应用时再做能力回退。
+fn validate_manifest(manifest: &mut Manifest) -> Result<(), AppMessage> {
     if manifest.schema_version != PACKAGE_VERSION {
         return Err(AppMessage::new("errors.packageVersion"));
     }
     if !valid_entry(&manifest.entry) {
         return Err(AppMessage::new("errors.packageEntryInvalid"));
     }
-    Ok(manifest)
+    if let Some(fields) = &mut manifest.window_preset {
+        crate::windows::presets::validation::validate_fields(fields)?;
+    }
+    crate::windows::presets::validation::validate_list(&mut manifest.window_presets)
 }
 
 /// 解包到站点副本，拒绝越界路径、超量文件和非 HTML 入口。
 pub fn extract(source: &Path, target: &Path) -> Result<Extracted, AppMessage> {
-    let manifest = read_manifest(source)?;
     let file = std::fs::File::open(source)
         .map_err(|error| AppMessage::new("errors.readPackageFailed").detail(error))?;
-    let mut archive = zip::ZipArchive::new(file)
+    let archive = zip::ZipArchive::new(file)
         .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+    extract_archive(archive, target)
+}
+
+/// 从内嵌标准页面包解出站点，沿用外部包的路径、体积和数据校验。
+pub fn extract_bytes(bytes: &[u8], target: &Path) -> Result<Extracted, AppMessage> {
+    let archive = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|error| AppMessage::new("errors.packageInvalid").detail(error))?;
+    extract_archive(archive, target)
+}
+
+/// 统一解包磁盘和内存中的 ZIP，站点资源允许安全的子目录结构。
+fn extract_archive<R: Read + Seek>(
+    mut archive: zip::ZipArchive<R>,
+    target: &Path,
+) -> Result<Extracted, AppMessage> {
+    let manifest = archive_manifest(&mut archive)?;
     std::fs::create_dir_all(target)
         .map_err(|error| AppMessage::new("errors.createDirFailed").detail(error))?;
     let mut files = 0;
@@ -199,6 +180,8 @@ pub fn extract(source: &Path, target: &Path) -> Result<Extracted, AppMessage> {
     Ok(Extracted {
         entry: manifest.entry,
         storage,
+        window_preset: manifest.window_preset,
+        window_presets: manifest.window_presets,
     })
 }
 
@@ -206,6 +189,7 @@ pub fn extract(source: &Path, target: &Path) -> Result<Extracted, AppMessage> {
 fn valid_entry(entry: &str) -> bool {
     let path = Path::new(entry);
     !path.as_os_str().is_empty()
+        && !entry.contains(['\\', ':', '\0'])
         && path
             .components()
             .all(|part| matches!(part, Component::Normal(_)))

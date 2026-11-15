@@ -1,0 +1,271 @@
+<!-- 功能：在同一窗口提供专注倒计时、三种时钟外观和可恢复秒表。 -->
+<!doctype html>
+<html
+  lang="zh-CN"
+  data-style="digital"
+  data-theme="light"
+  data-surface="card"
+  data-seconds="false"
+  data-mode="timer"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>时间工具</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./faces.css" />
+    <link rel="stylesheet" href="./settings.css" />
+    <link rel="stylesheet" href="./responsive.css" />
+    <link rel="stylesheet" href="./tool.css" />
+  </head>
+  <body>
+    <main class="time-app" aria-label="时间工具">
+      <header class="tool-heading">
+        <div class="mode-tabs" role="tablist" aria-label="时间模式">
+          <button id="tab-timer" role="tab" aria-controls="timer-panel" data-mode-button="timer">
+            计时</button
+          ><button id="tab-clock" role="tab" aria-controls="clock-panel" data-mode-button="clock">
+            时钟</button
+          ><button
+            id="tab-stopwatch"
+            role="tab"
+            aria-controls="stopwatch-panel"
+            data-mode-button="stopwatch"
+          >
+            秒表
+          </button>
+        </div>
+        <button
+          id="tool-settings"
+          class="icon-button"
+          aria-label="时间工具外观设置"
+          title="外观设置"
+        >
+          ⚙
+        </button>
+      </header>
+      <section
+        id="timer-panel"
+        class="time-panel"
+        role="tabpanel"
+        aria-labelledby="tab-timer"
+        data-panel="timer"
+      >
+        <div id="presets" aria-label="计时预设"></div>
+        <div class="time-center">
+          <p id="status" role="status">准备就绪</p>
+          <div id="time" role="timer" aria-live="off">25:00</div>
+          <div class="time-actions">
+            <button id="toggle" class="primary">开始专注</button><button id="reset">重置</button>
+          </div>
+          <p id="completion" class="completion" role="status" hidden></p>
+        </div>
+        <div class="timer-options">
+          <form id="custom-duration">
+            <label for="custom-minutes">自定义</label
+            ><input
+              id="custom-minutes"
+              type="number"
+              min="1"
+              max="1440"
+              step="1"
+              value="25"
+              required
+            /><span>分钟</span><button type="submit">应用</button>
+          </form>
+          <label class="sound-option"><input id="timer-sound" type="checkbox" />提示音</label>
+        </div>
+        <footer class="time-footer">
+          <span id="record-count"></span>
+        </footer>
+      </section>
+      <section
+        id="clock-panel"
+        role="tabpanel"
+        aria-labelledby="tab-clock"
+        class="clock-stage"
+        data-panel="clock"
+        hidden
+      >
+        <section class="widget">
+          <button
+            id="open-settings"
+            class="icon-button settings-trigger"
+            aria-label="时钟设置"
+            title="时钟设置"
+            aria-haspopup="dialog"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="9" cy="7" r="2.5" />
+              <circle cx="15" cy="17" r="2.5" />
+            </svg>
+          </button>
+          <div class="clock-content">
+            <p class="clock-caption">
+              <span class="status-dot"></span>此时此刻<span class="local-label"> / 本地时间</span>
+            </p>
+            <time id="clock-accessible" class="sr-only" aria-live="off">正在读取本地时间</time>
+            <div class="digital-face" aria-hidden="true">
+              <span class="time-unit" id="digital-hour">00</span><span class="time-colon">:</span
+              ><span class="time-unit" id="digital-minute">00</span>
+              <span class="digital-seconds seconds-detail"
+                ><span id="digital-second">00</span><span class="seconds-label">秒</span></span
+              >
+            </div>
+            <div class="flip-face" aria-hidden="true">
+              <div class="flip-tile">
+                <span id="flip-hour">00</span><span class="tile-label">时</span>
+              </div>
+              <span class="flip-colon">:</span>
+              <div class="flip-tile">
+                <span id="flip-minute">00</span><span class="tile-label">分</span>
+              </div>
+              <div class="flip-tile flip-second seconds-detail">
+                <span id="flip-second">00</span><span class="tile-label">秒</span>
+              </div>
+            </div>
+            <div class="analog-face" aria-hidden="true">
+              <svg id="dial" viewBox="0 0 240 240">
+                <circle class="dial-rim" cx="120" cy="120" r="116" />
+                <g id="dial-ticks"></g>
+                <g class="dial-numbers">
+                  <text x="120" y="43">12</text>
+                  <text x="202" y="125">3</text>
+                  <text x="120" y="207">6</text>
+                  <text x="38" y="125">9</text>
+                </g>
+                <text class="dial-signature" x="120" y="88">此时此刻</text>
+                <line id="hour-hand" class="hand hour-hand" x1="120" y1="128" x2="120" y2="66" />
+                <line
+                  id="minute-hand"
+                  class="hand minute-hand"
+                  x1="120"
+                  y1="131"
+                  x2="120"
+                  y2="40"
+                />
+                <line
+                  id="second-hand"
+                  class="hand second-hand seconds-detail"
+                  x1="120"
+                  y1="140"
+                  x2="120"
+                  y2="31"
+                />
+                <circle class="dial-pin" cx="120" cy="120" r="4" />
+              </svg>
+            </div>
+            <div class="clock-calendar">
+              <span id="clock-date" class="date-detail"></span
+              ><span class="calendar-divider date-detail"></span
+              ><span id="clock-weekday" class="date-detail"></span
+              ><span id="clock-period" hidden></span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section
+        id="stopwatch-panel"
+        class="time-panel"
+        data-panel="stopwatch"
+        role="tabpanel"
+        aria-labelledby="tab-stopwatch"
+        hidden
+      >
+        <div class="time-center">
+          <p class="muted">记录此刻开始的投入</p>
+          <div id="stopwatch-time" class="large-time" role="timer" aria-live="off">00:00</div>
+          <div class="time-actions">
+            <button id="stopwatch-toggle" class="primary">开始 / 继续</button
+            ><button id="stopwatch-reset">归零</button>
+          </div>
+        </div>
+        <p class="time-footer">切换模式、刷新和关闭重开后继续计时</p>
+      </section>
+      <p id="timer-save-status" class="tool-notice" role="status"></p>
+    </main>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-heading">
+        <div>
+          <p class="settings-eyebrow">配色适用于整个时间工具</p>
+          <h1 id="settings-title">时间工具外观</h1>
+        </div>
+        <button id="close-settings" class="icon-button" aria-label="关闭设置" autofocus>×</button>
+      </div>
+      <form id="clock-settings">
+        <fieldset>
+          <legend>样式</legend>
+          <div class="choice-grid style-choices">
+            <label
+              ><input type="radio" name="style" value="digital" /><span
+                ><b class="style-sample sample-digital" aria-hidden="true">09:41</b>简约</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="style" value="flip" /><span
+                ><b class="style-sample sample-flip" aria-hidden="true"><i>09</i><i>41</i></b
+                >翻页</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="style" value="analog" /><span
+                ><b class="style-sample sample-analog" aria-hidden="true"><i></i></b>表盘</span
+              ></label
+            >
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>配色</legend>
+          <div class="choice-grid theme-choices">
+            <label
+              ><input type="radio" name="theme" value="light" /><span
+                ><i class="swatch swatch-light"></i>浅色</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="theme" value="dark" /><span
+                ><i class="swatch swatch-dark"></i>深色</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="theme" value="sage" /><span
+                ><i class="swatch swatch-sage"></i>苔绿</span
+              ></label
+            >
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>底板</legend>
+          <div class="choice-grid surface-choices">
+            <label><input type="radio" name="surface" value="bare" /><span>无底板</span></label>
+            <label><input type="radio" name="surface" value="card" /><span>柔光卡片</span></label>
+          </div>
+          <p class="field-hint">搭配 PinPage「背景透明」可露出桌面；深色配色适合深色壁纸。</p>
+        </fieldset>
+        <div class="toggle-row">
+          <label for="show-seconds">显示秒数</label
+          ><input id="show-seconds" name="seconds" type="checkbox" role="switch" />
+        </div>
+        <div class="toggle-row">
+          <label for="show-date">显示日期与星期</label
+          ><input id="show-date" name="date" type="checkbox" role="switch" />
+        </div>
+        <div class="toggle-row">
+          <label for="hour12">12 小时制</label
+          ><input id="hour12" name="hour12" type="checkbox" role="switch" />
+        </div>
+        <p id="save-status" class="field-hint" role="status">自动保存 · 随窗口大小调整布局</p>
+      </form>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

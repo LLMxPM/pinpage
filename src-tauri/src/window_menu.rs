@@ -1,19 +1,18 @@
-// 功能：为内容窗口构建带状态勾选的原生快捷菜单，复用托盘的操作分发与权限边界。
+// 功能：为内容窗口构建预设平铺的原生快捷菜单，提供页面设置直达入口，复用托盘的操作分发与权限边界。
 use crate::{
     errors::AppMessage,
     i18n,
-    models::WindowMode,
     state::{self, AppState},
 };
 use tauri::{
-    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu},
+    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     AppHandle, Manager,
 };
 
-/// 按弹出时的最新配置生成菜单；不包含删除操作，关闭只释放 WebView 并保留配置。
+/// 按弹出时的最新配置生成菜单；预设平铺单选，外观与锁定等细节归口页面设置弹窗。
 #[cfg(windows)]
 pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<(), AppMessage> {
-    if !request.ready() {
+    if !request.valid() {
         return Ok(());
     }
     let id = &request.id;
@@ -36,84 +35,55 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
     else {
         return Ok(());
     };
-    let custom = app
-        .state::<AppState>()
-        .settings
-        .lock()
-        .unwrap()
-        .window_presets
-        .clone();
     let locale = state::locale(app);
     let text = |key: &str| i18n::text(locale, key, &Default::default());
     let failed = |error: tauri::Error| AppMessage::new("errors.windowMenuFailed").detail(error);
     let menu = Menu::new(app).map_err(failed)?;
-    let desktop = pin.mode == WindowMode::Desktop;
-    for (action, key, enabled, checked) in [
-        (
-            "top",
-            "window.menu.top",
-            !desktop,
-            !desktop && pin.always_on_top,
-        ),
-        ("desktop", "window.menu.desktop", true, desktop),
-        (
-            "border",
-            "window.menu.border",
-            !desktop,
-            pin.effective_decorations(),
-        ),
-        (
-            "rounded",
-            "window.menu.rounded",
-            !pin.effective_decorations(),
-            pin.rounded,
-        ),
-        (
-            "positionLock",
-            "window.menu.positionLock",
-            true,
-            pin.position_locked,
-        ),
-        ("sizeLock", "window.menu.sizeLock", true, pin.size_locked),
-    ] {
+    // 预设是切换重点：平铺单选勾选，切换走外观与几何的组合应用；只展示该页面自己的模板。
+    let presets = &pin.presets;
+    let matched = presets
+        .iter()
+        .any(|preset| pin.preset.as_deref() == Some(preset.id.as_str()));
+    for preset in presets {
         menu.append(
             &CheckMenuItem::with_id(
                 app,
-                format!("pin|{id}|{action}"),
-                text(key),
-                enabled,
-                checked,
+                format!("pin|{id}|preset:{}", preset.id),
+                preset.name.clone(),
+                true,
+                pin.preset.as_deref() == Some(preset.id.as_str()),
                 None::<&str>,
             )
             .map_err(failed)?,
         )
         .map_err(failed)?;
     }
-    // 预设子菜单按当前标记勾选，切换后再次弹出即反映最新状态。
-    let presets = Submenu::new(app, text("window.menu.presets"), true).map_err(failed)?;
-    for preset in crate::windows::presets::all(&custom) {
-        let name = crate::windows::presets::label(app, &preset);
-        presets
-            .append(
-                &CheckMenuItem::with_id(
-                    app,
-                    format!("pin|{id}|preset:{}", preset.id),
-                    name,
-                    true,
-                    pin.preset.as_deref() == Some(preset.id.as_str()),
-                    None::<&str>,
-                )
-                .map_err(failed)?,
+    // 无匹配预设时以禁用行标明当前状态；尚无预设时引导到页面设置保存。
+    if !matched {
+        let key = if presets.is_empty() {
+            "window.menu.noPresets"
+        } else {
+            "window.menu.custom"
+        };
+        menu.append(
+            &MenuItem::with_id(
+                app,
+                format!("pin|{id}|presetStatus"),
+                text(key),
+                false,
+                None::<&str>,
             )
-            .map_err(failed)?;
+            .map_err(failed)?,
+        )
+        .map_err(failed)?;
     }
-    menu.append(&presets).map_err(failed)?;
     menu.append(&PredefinedMenuItem::separator(app).map_err(failed)?)
         .map_err(failed)?;
+    // 页面设置直达管理界面对应弹窗；底部只保留设置弹窗没有的生命周期操作。
     for (menu_id, key) in [
+        (format!("pin|{id}|settings"), "window.menu.settings"),
         (format!("pin|{id}|reload"), "tray.reload"),
         (format!("pin|{id}|hide"), "window.menu.hide"),
-        ("manager".into(), "tray.openManager"),
         (format!("pin|{id}|close"), "tray.close"),
     ] {
         menu.append(
@@ -131,7 +101,7 @@ pub fn show(app: &AppHandle, request: crate::platform::MenuRequest) -> Result<()
                 Graphics::Gdi::ScreenToClient,
                 UI::WindowsAndMessaging::{IsWindow, IsWindowVisible, PostMessageW, WM_NULL},
             };
-            if !request.ready() {
+            if !request.valid() {
                 return;
             }
             let handle = hwnd as windows_sys::Win32::Foundation::HWND;

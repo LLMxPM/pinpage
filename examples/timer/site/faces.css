@@ -1,0 +1,165 @@
+/* 功能：绘制简约数字、静态翻页卡片和 SVG 指针表盘，不使用持续动画。 */
+.digital-face,
+.flip-face {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: 'Bahnschrift', 'DIN Alternate', 'Segoe UI', sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 300;
+  line-height: 1;
+  white-space: nowrap;
+}
+.digital-face {
+  font-size: min(25cqw, 45cqh);
+  gap: 0.015em;
+  letter-spacing: -0.055em;
+}
+.time-unit {
+  min-width: 1.1em;
+  text-align: center;
+}
+.time-colon {
+  color: var(--accent);
+  font-size: 0.75em;
+  align-self: center;
+  margin-top: -0.12em;
+}
+.digital-seconds {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  gap: 0.3em;
+  font-size: 0.25em;
+  letter-spacing: 0;
+  padding: 0 0 0.23em 0.4em;
+  color: var(--muted);
+}
+.seconds-label {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 0.4em;
+  text-align: center;
+}
+[data-seconds='true'] .digital-face {
+  font-size: min(22cqw, 45cqh);
+}
+[data-seconds='false'] .seconds-detail {
+  display: none;
+}
+.flip-face {
+  gap: 0.07em;
+  font-size: min(22cqw, 35cqh);
+}
+.flip-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.07em;
+  width: 1.37em;
+  height: 1.55em;
+  border-radius: 0.11em;
+  background: var(--tile);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+  padding-top: 0.08em;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+}
+.flip-tile::after {
+  position: absolute;
+  content: '';
+  inset: 49% 0 auto;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.tile-label {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 0.12em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.flip-colon {
+  align-self: center;
+  color: var(--accent);
+  font-size: 0.5em;
+  margin-top: -0.25em;
+}
+[data-seconds='true'] .flip-face {
+  font-size: min(18cqw, 35cqh);
+}
+.flip-second {
+  width: 1.1em;
+  font-size: 0.65em;
+  align-self: center;
+  margin-left: 0.13em;
+}
+.analog-face {
+  width: min(76cqw, 65cqh);
+  aspect-ratio: 1;
+  flex-shrink: 0;
+}
+#dial {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.dial-rim {
+  fill: color-mix(in srgb, var(--panel) 28%, transparent);
+  stroke: var(--line);
+  stroke-width: 0.8;
+}
+.dial-tick {
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+.dial-tick.major {
+  stroke: var(--ink);
+  stroke-width: 2;
+  opacity: 0.8;
+}
+.dial-numbers {
+  fill: var(--ink);
+  font-size: 16px;
+  font-family: 'Bahnschrift', 'Segoe UI', sans-serif;
+  text-anchor: middle;
+}
+.dial-signature {
+  fill: var(--muted);
+  font-size: 8px;
+  letter-spacing: 3px;
+  text-anchor: middle;
+}
+.hand {
+  stroke: var(--ink);
+  stroke-linecap: round;
+}
+.hour-hand {
+  stroke-width: 5;
+}
+.minute-hand {
+  stroke-width: 3;
+}
+.second-hand {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.dial-pin {
+  fill: var(--accent);
+  stroke: var(--panel);
+  stroke-width: 1;
+}
+[data-style='digital'] :is(.flip-face, .analog-face),
+[data-style='flip'] :is(.digital-face, .analog-face),
+[data-style='analog'] :is(.digital-face, .flip-face) {
+  display: none;
+}
+[data-style='analog'] .clock-caption {
+  display: none;
+}
+[data-style='analog'] .clock-content {
+  gap: clamp(8px, 4cqh, 20px);
+}

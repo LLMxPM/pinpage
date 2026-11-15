@@ -9,7 +9,6 @@ import type { PinConfig, PlatformCapabilities, WindowPreset } from '../../types'
 
 const props = defineProps<{
   pin: PinConfig;
-  presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   apply: (id: string) => Promise<boolean>;
   save: (name: string, presetId?: string) => Promise<boolean>;
@@ -24,8 +23,8 @@ const overwrite = ref<WindowPreset | null>(null);
 // 记录最近选择项，调整窗口成为自定义后仍可明确覆盖原模板。
 const selectedId = ref(props.pin.preset);
 /// 当前平台不支持的预设不进入应用入口，管理器仍负责旧模板的删除与回退编辑。
-const visiblePresets = computed(() => supportedPresets(props.presets, props.capabilities));
-const selected = computed(() => props.presets.find((preset) => preset.id === selectedId.value));
+const visiblePresets = computed(() => supportedPresets(props.pin.presets, props.capabilities));
+const selected = computed(() => props.pin.presets.find((preset) => preset.id === selectedId.value));
 /// 同名预设（常见于保存过的副本）追加尺寸，避免胶囊看起来完全重复。
 const duplicateLabels = computed(() => {
   const counts = new Map<string, number>();
@@ -77,30 +76,47 @@ async function save() {
 </script>
 
 <template>
-  <div class="preset-section">
-    <div class="section-head">
-      <h3>{{ t('ui.pinSettings.presets') }}</h3>
+  <div class="preset-section" role="group" :aria-label="t('ui.pinSettings.presets')">
+    <div class="preset-bar">
+      <div class="preset-chips">
+        <button
+          v-for="preset in visiblePresets"
+          :key="preset.id"
+          type="button"
+          class="preset-chip"
+          :class="{ active: pin.preset === preset.id }"
+          :title="`${presetLabel(preset)} · ${presetSummary(preset)}`"
+          :disabled="disabled || saving"
+          @click="pick(preset.id)"
+        >
+          <AppIcon v-if="pin.preset === preset.id" name="check" :size="14" />{{ chipLabel(preset) }}
+        </button>
+        <button
+          v-if="!naming && !overwrite"
+          type="button"
+          class="preset-save-toggle"
+          :disabled="disabled || saving"
+          @click="naming = true"
+        >
+          <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
+        </button>
+        <button
+          v-if="selected && !pin.preset && !naming && !overwrite"
+          type="button"
+          class="text-button"
+          :disabled="disabled || saving"
+          @click="overwrite = selected"
+        >
+          {{ t('ui.presets.updateFromWindow', { name: chipLabel(selected) }) }}
+        </button>
+      </div>
       <button
         type="button"
-        class="text-button"
+        class="text-button preset-manage"
         :disabled="disabled || saving"
         @click="emit('manage')"
       >
         {{ t('ui.presets.manage') }}
-      </button>
-    </div>
-    <div class="preset-chips">
-      <button
-        v-for="preset in visiblePresets"
-        :key="preset.id"
-        type="button"
-        class="preset-chip"
-        :class="{ active: pin.preset === preset.id }"
-        :title="`${presetLabel(preset)} · ${presetSummary(preset)}`"
-        :disabled="disabled || saving"
-        @click="pick(preset.id)"
-      >
-        <AppIcon v-if="pin.preset === preset.id" name="check" :size="14" />{{ chipLabel(preset) }}
       </button>
     </div>
     <div v-if="overwrite" class="preset-confirm" role="status">
@@ -132,25 +148,6 @@ async function save() {
         @click="save"
       >
         {{ t('ui.presets.save') }}
-      </button>
-    </div>
-    <div v-else class="inline-actions">
-      <button
-        type="button"
-        class="preset-save-toggle"
-        :disabled="disabled || saving"
-        @click="naming = true"
-      >
-        <AppIcon name="plus" :size="14" />{{ t('ui.pinSettings.presetSave') }}
-      </button>
-      <button
-        v-if="selected && !selected.builtin && !pin.preset"
-        type="button"
-        class="text-button"
-        :disabled="disabled || saving"
-        @click="overwrite = selected"
-      >
-        {{ t('ui.presets.updateFromWindow', { name: chipLabel(selected) }) }}
       </button>
     </div>
   </div>

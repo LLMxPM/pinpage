@@ -53,6 +53,14 @@
   font-size: 13px;
   font-weight: 600;
 }
+/* 边框样式三态与显示模式并列，单独占一行、三列均分，窄屏回落单列。 */
+.frame-picker {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+.frame-picker strong {
+  font-weight: 500;
+}
 /* 来源区块：当前来源一行展示，重新选择与新建页共用平铺按钮（dialogs.css）。 */
 .source-current {
   display: flex;
@@ -85,7 +93,7 @@
   margin-top: 14px;
   flex-wrap: wrap;
 }
-/* 无边框圆角旁的说明入口：气泡样式在 HintTip 组件内。 */
+/* 窗口外观选项旁的说明入口：气泡样式在 HintTip 组件内。 */
 .check-with-tip {
   display: inline-flex;
   align-items: center;
@@ -139,9 +147,26 @@
     grid-template-columns: 1fr;
   }
 }
-/* 预设区块：胶囊按钮自动换行，命名输入与保存按钮同排，与外观分组保持一致的间距。 */
+/* 预设快捷条：无分组标题，胶囊与另存为同排、管理入口靠右，窄屏整体换行。 */
 .window-settings .preset-section {
   margin-top: 0;
+}
+.preset-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+.preset-bar .preset-chips {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.preset-bar .preset-save-toggle {
+  margin-top: 0;
+}
+.preset-manage {
+  flex-shrink: 0;
 }
 .preset-chips {
   display: flex;

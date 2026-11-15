@@ -1,4 +1,4 @@
-<!-- 功能：统一管理内置与自定义预设，支持副本、编辑、重命名和删除确认。 -->
+<!-- 功能：管理单个页面的自定义预设，支持副本、编辑、重命名和删除确认。 -->
 <script setup lang="ts">
 import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -10,6 +10,7 @@ import { text } from '../../i18n/messages';
 import type { PlatformCapabilities, PresetInput, UiMessage, WindowPreset } from '../../types';
 
 const props = defineProps<{
+  pinName: string;
   presets: WindowPreset[];
   capabilities: PlatformCapabilities;
   busy: boolean;
@@ -78,6 +79,7 @@ function discard() {
 <template>
   <AppDialog
     :title="t(editing ? 'ui.presets.edit' : 'ui.presets.manage')"
+    :description="pinName"
     :busy="busy"
     wide
     @close="close"
@@ -110,7 +112,6 @@ function discard() {
         <li v-for="preset in presets" :key="preset.id">
           <div class="preset-summary">
             <strong>{{ presetLabel(preset) }}</strong
-            ><span v-if="preset.builtin" class="preset-badge">{{ t('ui.presets.builtin') }}</span
             ><span v-if="!supportsWindow(preset, capabilities)" class="preset-badge">{{
               t('ui.presets.platformLimited')
             }}</span>
@@ -130,17 +131,10 @@ function discard() {
             <button type="button" class="text-button" :disabled="busy" @click="edit(preset, true)">
               {{ t('ui.presets.copy') }}
             </button>
-            <button
-              v-if="!preset.builtin"
-              type="button"
-              class="text-button"
-              :disabled="busy"
-              @click="edit(preset)"
-            >
+            <button type="button" class="text-button" :disabled="busy" @click="edit(preset)">
               {{ t('ui.presets.edit') }}
             </button>
             <button
-              v-if="!preset.builtin"
               type="button"
               class="text-button danger-text"
               :disabled="busy"
@@ -151,8 +145,8 @@ function discard() {
           </div>
         </li>
       </ul>
-      <p v-if="!presets.some((preset) => !preset.builtin)" class="settings-hint">
-        {{ t('ui.settings.presetEmpty') }}
+      <p v-if="!presets.length" class="settings-hint">
+        {{ t('ui.presets.empty') }}
       </p>
     </div>
     <template #footer>

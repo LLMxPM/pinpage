@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "系统监控",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": true,
+    "transparentBackground": true,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 320,
+    "height": 230,
+    "fx": 0.5,
+    "fy": 0.5,
+    "fullscreen": false
+  },
+  "windowPresets": [
+    {
+      "id": "standard",
+      "name": "标准",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": true,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 320,
+      "height": 230,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "strip",
+      "name": "横条",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": true,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 560,
+      "height": 160,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    }
+  ]
+}

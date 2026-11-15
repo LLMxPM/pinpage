@@ -66,14 +66,14 @@ fn locale_round_trips_as_bcp47() {
 }
 
 #[test]
-/// 新配置与空配置均使用 Alt，序列化字段保持前后端约定的驼峰命名。
-fn gesture_modifier_defaults_to_alt() {
-    assert_eq!(GestureModifier::default(), GestureModifier::Alt);
+/// 新配置与空配置均使用 Ctrl，序列化字段保持前后端约定的驼峰命名。
+fn gesture_modifier_defaults_to_ctrl() {
+    assert_eq!(GestureModifier::default(), GestureModifier::Ctrl);
     for settings in [Settings::default(), settings_from("{}")] {
-        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
         assert_eq!(
             serde_json::to_value(settings).unwrap()["gestureModifier"],
-            "alt"
+            "ctrl"
         );
     }
 }
@@ -84,7 +84,7 @@ fn missing_gesture_modifier_keeps_legacy_settings() {
     let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
     legacy["locale"] = serde_json::json!("en-US");
     let settings: Settings = serde_json::from_value(legacy).unwrap();
-    assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+    assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
     assert_eq!(settings.locale, LocalePreference::EnUs);
     assert!(!settings.restore_session);
     assert_eq!(settings.pins.len(), 1);
@@ -93,7 +93,7 @@ fn missing_gesture_modifier_keeps_legacy_settings() {
 }
 
 #[test]
-/// 坏手势值只回退该字段，全部页面属性及其他全局设置保持原样。
+/// 坏手势值与已移除的旧版 Alt 只回退该字段为 Ctrl，全部页面属性及其他全局设置保持原样。
 fn invalid_gesture_modifier_keeps_other_settings() {
     let mut legacy: serde_json::Value = serde_json::from_str(&legacy_config()).unwrap();
     legacy["locale"] = serde_json::json!("en-US");
@@ -101,6 +101,7 @@ fn invalid_gesture_modifier_keeps_other_settings() {
     let expected = serde_json::to_value(expected).unwrap();
     for value in [
         "\"meta\"",
+        "\"alt\"",
         "\"Alt\"",
         "\" ctrl\"",
         "123",
@@ -111,7 +112,7 @@ fn invalid_gesture_modifier_keeps_other_settings() {
     ] {
         legacy["gestureModifier"] = serde_json::from_str(value).unwrap();
         let settings: Settings = serde_json::from_value(legacy.clone()).unwrap();
-        assert_eq!(settings.gesture_modifier, GestureModifier::Alt);
+        assert_eq!(settings.gesture_modifier, GestureModifier::Ctrl);
         assert_eq!(
             serde_json::to_value(settings).unwrap(),
             expected,
@@ -121,10 +122,9 @@ fn invalid_gesture_modifier_keeps_other_settings() {
 }
 
 #[test]
-/// 四个修饰键值都按稳定字面量在配置中往返，包括显式关闭。
+/// 三个修饰键值都按稳定字面量在配置中往返，包括显式关闭。
 fn gesture_modifiers_round_trip() {
     for (modifier, text) in [
-        (GestureModifier::Alt, "alt"),
         (GestureModifier::Ctrl, "ctrl"),
         (GestureModifier::Shift, "shift"),
         (GestureModifier::Disabled, "disabled"),
@@ -190,6 +190,74 @@ fn broken_config_is_backed_up_with_notice() {
         })
         .count();
     assert_eq!(backups, 1, "原配置应被保留为一份备份");
+    let _ = std::fs::remove_dir_all(&directory);
+}
+
+#[test]
+/// v1 全局预设库迁移：被引用的模板复制进对应页面，未引用的丢弃，标记与外观保持。
+fn legacy_global_presets_migrate_into_referencing_pins() {
+    let directory = std::env::temp_dir().join(format!("pinpage-migrate-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&directory).unwrap();
+    let path = directory.join("settings.json");
+    std::fs::write(
+        &path,
+        serde_json::to_string(&serde_json::json!({
+            "schemaVersion": 1,
+            "pins": [
+                {
+                    "id": "p-used", "name": "计时器",
+                    "source": {"kind": "bundled", "entry": "index.html"},
+                    "width": 420, "height": 360, "x": 10, "y": 20, "scale": 1.,
+                    "alwaysOnTop": true, "decorations": false,
+                    "preset": "custom-keep"
+                },
+                {
+                    "id": "p-clean", "name": "看板",
+                    "source": {"kind": "bundled", "entry": "index.html"},
+                    "width": 420, "height": 360, "x": null, "y": null, "scale": 1.,
+                    "alwaysOnTop": false, "decorations": true
+                }
+            ],
+            "windowPresets": [
+                {
+                    "id": "custom-keep", "name": "右上角",
+                    "mode": "floating", "alwaysOnTop": true, "decorations": false,
+                    "rounded": true, "positionLocked": false, "sizeLocked": false,
+                    "width": 320, "height": 480, "fx": 1., "fy": 0.
+                },
+                {
+                    "id": "custom-unused", "name": "从未应用",
+                    "mode": "desktop", "alwaysOnTop": false, "decorations": false,
+                    "rounded": true, "positionLocked": false, "sizeLocked": false,
+                    "width": 600, "height": 240, "fx": 0.5, "fy": 0.5
+                }
+            ]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let state = AppState::load(path.clone());
+    let settings = state.settings.lock().unwrap();
+    assert_eq!(settings.schema_version, crate::models::SCHEMA_VERSION);
+    let used = settings.pins.iter().find(|pin| pin.id == "p-used").unwrap();
+    assert_eq!(used.presets.len(), 1, "只迁移被引用的模板");
+    assert_eq!(used.presets[0].id, "custom-keep");
+    assert_eq!(used.presets[0].name, "右上角");
+    assert_eq!(used.preset.as_deref(), Some("custom-keep"));
+    assert_eq!(used.width, 420., "迁移不改变窗口几何");
+    let clean = settings
+        .pins
+        .iter()
+        .find(|pin| pin.id == "p-clean")
+        .unwrap();
+    assert!(clean.presets.is_empty() && clean.preset.is_none());
+    drop(settings);
+    state.save().unwrap();
+    let saved = std::fs::read_to_string(&path).unwrap();
+    assert!(!saved.contains("windowPresets"), "旧全局库不再写出");
+    assert!(!saved.contains("custom-unused"), "未引用模板被丢弃");
+    assert!(saved.contains("custom-keep"));
+    assert!(saved.contains("\"schemaVersion\": 2"));
     let _ = std::fs::remove_dir_all(&directory);
 }
 

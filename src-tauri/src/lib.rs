@@ -1,14 +1,19 @@
 // 功能：装配应用状态、本地资源协议、托盘及会话恢复。
+mod automation;
 mod commands;
 mod content;
 mod data;
 mod errors;
 mod examples;
+mod folder;
+mod host;
 mod i18n;
 mod import;
 mod models;
 mod package;
+mod pathguard;
 mod platform;
+mod services;
 mod source;
 mod state;
 mod tray;
@@ -22,9 +27,21 @@ use tauri::Manager;
 
 /// 启动应用；关闭所有窗口后由托盘继续管理，显式退出时保存会话。
 pub fn run() {
+    let context = tauri::generate_context!();
+    // 默认开发运行使用独立标识；显式验证标识保持调用方选择，Release 继续使用正式标识。
+    #[cfg(debug_assertions)]
+    let context = {
+        let mut context = context;
+        if context.config().identifier == pinpage_protocol::DEFAULT_APP {
+            context.config_mut().identifier = "com.pinpage.development".into();
+        }
+        context
+    };
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            windows::show_manager(app)
+        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            if !args.iter().any(|argument| argument == "--tray") {
+                windows::show_manager(app);
+            }
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -37,12 +54,16 @@ pub fn run() {
             });
         })
         .invoke_handler(tauri::generate_handler![
+            commands::automation::automation_snapshot,
+            commands::automation::automation_control,
+            commands::automation::automation_skill,
             commands::snapshot,
             commands::create_pin,
             commands::session::import_page,
             commands::session::export_page,
             commands::session::submit_page_data,
             commands::pin_action,
+            commands::take_pending_pin_settings,
             commands::update_pin,
             commands::editor::update_window,
             commands::editor::update_content,
@@ -52,11 +73,20 @@ pub fn run() {
             commands::settings::update_settings,
             commands::updates::updates_snapshot,
             commands::updates::update_action,
-            commands::quit_app
+            commands::quit_app,
+            commands::host::host_info,
+            commands::host::system_stats,
+            commands::folder::folder_pick,
+            commands::folder::folder_list,
+            commands::folder::folder_open,
+            commands::folder::folder_reveal
         ])
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(AppState::load(path));
+            app.manage(automation::AutomationState::default());
+            services::transaction::recover(app.handle())?;
+            automation::start(app.handle());
             // 跨平台降级只在首次加载时提示；尽快落盘，避免每次启动重复提醒。
             if app.state::<AppState>().platform_fallback {
                 state::schedule_save(app.handle());
@@ -68,6 +98,8 @@ pub fn run() {
             tray::create(app.handle())?;
             let settings = app.state::<AppState>().settings.lock().unwrap().clone();
             platform::start(app.handle());
+            // 系统监控共享采样器：所有页面读同一份缓存，退出标记置位后结束。
+            host::start_sampler(app.handle());
             // 托盘启动适用于已有会话，也便于独立采样内容窗口的资源开销。
             if !std::env::args().any(|argument| argument == "--tray") {
                 windows::show_manager(app.handle());
@@ -94,10 +126,11 @@ pub fn run() {
             }
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("PinPage 启动失败")
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                automation::stop(app);
                 platform::stop();
             }
             if let tauri::RunEvent::ExitRequested { api, .. } = event {

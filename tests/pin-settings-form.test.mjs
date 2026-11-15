@@ -20,8 +20,10 @@ function createPin(id = 'p-test') {
     enabled: true,
     mode: 'floating',
     rounded: false,
+    transparentBackground: false,
     positionLocked: false,
     sizeLocked: false,
+    pageContextMenu: false,
   };
 }
 

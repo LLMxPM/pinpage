@@ -32,11 +32,12 @@ pub async fn update_content(
     windows::editor::update_content(&app, &id, input)
 }
 
-/// 创建或更新自定义预设；内置项、输入范围和写入状态均由 Rust 校验。
+/// 创建或更新页面自己的自定义预设；页面归属、输入范围和写入状态均由 Rust 校验。
 #[tauri::command]
 pub async fn write_preset(
     window: WebviewWindow,
     app: AppHandle,
+    pin_id: String,
     preset_id: Option<String>,
     input: PresetInput,
 ) -> Result<String, AppMessage> {
@@ -44,5 +45,5 @@ pub async fn write_preset(
     let state = app.state::<AppState>();
     let _operation = state.operation.lock().unwrap();
     state.ensure_mutable()?;
-    windows::presets::write(&app, preset_id.as_deref(), input)
+    windows::presets::write(&app, &pin_id, preset_id.as_deref(), input)
 }

@@ -1,0 +1,99 @@
+<!-- 功能：只读文件夹桌面组件，授权后浏览根目录并打开或定位文件。 -->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件夹</title>
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./icons.css" />
+  </head>
+  <body>
+    <main class="folder-app" aria-label="文件夹组件">
+      <header class="toolbar">
+        <div class="root-line">
+          <span class="root-icon icon-folder" aria-hidden="true"></span>
+          <h1 id="root-label">文件夹</h1>
+        </div>
+        <div class="toolbar-actions">
+          <button
+            id="toggle-hidden"
+            class="icon-button"
+            aria-pressed="false"
+            aria-label="显示隐藏文件"
+            title="显示隐藏文件"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+          <button id="refresh" class="icon-button" aria-label="刷新列表" title="刷新">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+              <path d="M20 4v4h-4" />
+            </svg>
+          </button>
+          <button
+            id="change-root"
+            class="icon-button"
+            aria-label="更换授权文件夹"
+            title="更换文件夹"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
+              />
+              <path d="M12 11v5M9.5 13.5 12 11l2.5 2.5" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <nav id="breadcrumb" class="breadcrumb" aria-label="目录路径" hidden></nav>
+      <p id="demo-banner" class="banner" hidden>浏览器预览 · 演示数据，不会读取真实文件</p>
+      <p id="error-banner" class="banner error" role="alert" hidden></p>
+      <section id="empty-state" class="empty-state" hidden>
+        <span class="empty-icon icon-folder" aria-hidden="true"></span>
+        <p class="empty-title">尚未授权文件夹</p>
+        <p class="hint">授权后只读浏览该文件夹，可随时更换；不会写入或删除文件。</p>
+        <button id="pick-folder" class="primary">选择文件夹</button>
+      </section>
+      <div class="filter-row">
+        <label class="sr-only" for="filter">筛选当前目录</label
+        ><input id="filter" type="search" maxlength="100" placeholder="筛选当前目录…" /><label
+          class="sr-only"
+          for="sort"
+          >排序方式</label
+        ><select id="sort">
+          <option value="name">名称</option>
+          <option value="modified">最近修改</option>
+          <option value="size">文件大小</option>
+        </select>
+      </div>
+      <ul id="entry-list" class="entry-list" aria-label="文件列表" tabindex="0"></ul>
+      <p id="empty-list" class="hint" hidden></p>
+      <footer class="status-line">
+        <span id="status-text" role="status"></span>
+      </footer>
+    </main>
+    <script type="module" src="./controller.js"></script>
+  </body>
+</html>

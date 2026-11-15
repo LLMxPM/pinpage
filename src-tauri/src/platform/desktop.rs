@@ -1,4 +1,4 @@
-// 功能：定位 Windows 桌面图标宿主，将网页窗口嵌入或移出桌面层。
+// 功能：定位桌面宿主，管理普通页面的子窗口挂载和透明页面的顶层桌面拥有关系。
 use crate::errors::AppMessage;
 use std::ptr::null_mut;
 use windows_sys::Win32::Graphics::Gdi::MapWindowPoints;
@@ -56,7 +56,7 @@ unsafe extern "system" fn find_icon_view(window: HWND, data: LPARAM) -> i32 {
 /// 改变父窗口与必要样式；失败时恢复原样式并返回系统错误。
 pub fn set_parent(window: HWND, parent: HWND) -> Result<(), AppMessage> {
     unsafe {
-        let old_parent = GetParent(window);
+        let old_parent = child_parent(window);
         let old_style = GetWindowLongPtrW(window, GWL_STYLE);
         let next_style = if parent.is_null() {
             (old_style & !(WS_CHILD as isize)) | WS_POPUP as isize
@@ -84,23 +84,72 @@ pub fn set_parent(window: HWND, parent: HWND) -> Result<(), AppMessage> {
     Ok(())
 }
 
-/// 将屏幕物理坐标转换为当前父窗口的客户区坐标，再更新位置和层级。
+/// 只返回真实子窗口的父级；顶层拥有关系不得参与客户区坐标换算。
+pub fn child_parent(window: HWND) -> HWND {
+    unsafe {
+        if GetWindowLongPtrW(window, GWL_STYLE) as u32 & WS_CHILD != 0 {
+            GetParent(window)
+        } else {
+            null_mut()
+        }
+    }
+}
+
+/// 透明桌面页保留顶层合成，由 Explorer 顶层宿主拥有；不修改 Explorer 的窗口样式或位置。
+pub fn set_owner(window: HWND, owner: HWND) -> Result<(), AppMessage> {
+    unsafe {
+        if !child_parent(window).is_null() {
+            return Err(
+                AppMessage::new("errors.windowApplyFailed").detail("子窗口不能设置顶层拥有关系")
+            );
+        }
+        let owner = if owner.is_null() {
+            null_mut()
+        } else {
+            let root = GetAncestor(owner, GA_ROOT);
+            if root.is_null() {
+                return Err(AppMessage::new("errors.desktopUnavailable"));
+            }
+            root
+        };
+        if GetWindow(window, GW_OWNER) == owner {
+            return Ok(());
+        }
+        SetLastError(0);
+        if SetWindowLongPtrW(window, GWLP_HWNDPARENT, owner as isize) == 0 && GetLastError() != 0 {
+            return Err(
+                AppMessage::new("errors.desktopModeFailed").detail(std::io::Error::last_os_error())
+            );
+        }
+    }
+    Ok(())
+}
+
+/// 仅子窗口换算父坐标；透明桌面拥有窗口保留屏幕坐标，并置于普通应用窗口之下。
 pub fn place(window: HWND, x: i32, y: i32) -> Result<(), AppMessage> {
     unsafe {
-        let parent = GetParent(window);
+        let parent = child_parent(window);
         let mut point = POINT { x, y };
         if !parent.is_null() {
             MapWindowPoints(null_mut(), parent, &mut point, 1);
         }
-        let after = if parent.is_null() {
-            null_mut()
-        } else {
+        let owned = !GetWindow(window, GW_OWNER).is_null();
+        let after = if !parent.is_null() {
             HWND_TOP
+        } else if owned {
+            HWND_BOTTOM
+        } else {
+            null_mut()
         };
         let flags = SWP_NOSIZE
             | SWP_NOACTIVATE
             | SWP_FRAMECHANGED
-            | if parent.is_null() { SWP_NOZORDER } else { 0 };
+            | SWP_NOOWNERZORDER
+            | if parent.is_null() && !owned {
+                SWP_NOZORDER
+            } else {
+                0
+            };
         if SetWindowPos(window, after, point.x, point.y, 0, 0, flags) == 0 {
             return Err(AppMessage::new("errors.setWindowPosFailed")
                 .detail(std::io::Error::last_os_error()));
@@ -109,11 +158,11 @@ pub fn place(window: HWND, x: i32, y: i32) -> Result<(), AppMessage> {
     Ok(())
 }
 
-/// 获取父坐标系中的窗口矩形，供原生几何锁保存锚点。
+/// 子窗口使用父坐标，顶层拥有窗口保留屏幕坐标，供几何锁保存锚点。
 pub unsafe fn parent_rect(window: HWND) -> RECT {
     let mut rect = RECT::default();
     GetWindowRect(window, &mut rect);
-    let parent = GetParent(window);
+    let parent = child_parent(window);
     if !parent.is_null() {
         MapWindowPoints(null_mut(), parent, &mut rect as *mut RECT as *mut POINT, 2);
     }

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "日历与倒数日",
+  "entry": "index.html",
+  "windowPreset": {
+    "mode": "floating",
+    "alwaysOnTop": true,
+    "decorations": false,
+    "rounded": true,
+    "transparentBackground": false,
+    "positionLocked": false,
+    "sizeLocked": false,
+    "width": 340,
+    "height": 500,
+    "fx": 0.5,
+    "fy": 0.5,
+    "fullscreen": false
+  },
+  "windowPresets": [
+    {
+      "id": "standard",
+      "name": "月历",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 340,
+      "height": 500,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    },
+    {
+      "id": "compact",
+      "name": "日期卡片",
+      "mode": "floating",
+      "alwaysOnTop": true,
+      "decorations": false,
+      "rounded": true,
+      "transparentBackground": false,
+      "positionLocked": false,
+      "sizeLocked": false,
+      "width": 300,
+      "height": 220,
+      "fx": 0.5,
+      "fy": 0.5,
+      "fullscreen": false
+    }
+  ]
+}

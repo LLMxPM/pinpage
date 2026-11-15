@@ -101,21 +101,56 @@ fn merge_never_applies_the_submitted_source() {
 }
 
 #[test]
+/// 右键开关缺省为窗口菜单，旧配置与表单缺省都不改变默认，显式提交才交给页面。
+fn page_context_menu_defaults_off_and_merges() {
+    let previous = old_pin();
+    assert!(!previous.page_context_menu);
+    let mut value = input();
+    assert!(!value.page_context_menu);
+    assert!(!merge(&previous, &value).unwrap().page_context_menu);
+    value.page_context_menu = true;
+    assert!(merge(&previous, &value).unwrap().page_context_menu);
+}
+
+#[test]
 /// 预设标记随表单提交落库，缺省时视为自定义，不影响其他字段。
 fn merge_carries_preset_marker() {
     let value = serde_json::json!({
         "name": "计时器", "mode": "floating", "alwaysOnTop": false,
         "decorations": false, "rounded": true, "positionLocked": false,
         "sizeLocked": false, "width": 320, "height": 480, "x": 10, "y": 10,
-        "preset": "topRight"
+        "preset": "custom-demo"
     });
     let tagged: PinSettingsInput = serde_json::from_value(value.clone()).unwrap();
     let next = merge(&old_pin(), &tagged).unwrap();
-    assert_eq!(next.preset.as_deref(), Some("topRight"));
+    assert_eq!(next.preset.as_deref(), Some("custom-demo"));
     assert_eq!(next.width, 320.);
 
     let mut untagged = value;
     untagged.as_object_mut().unwrap().remove("preset");
     let plain: PinSettingsInput = serde_json::from_value(untagged).unwrap();
     assert!(merge(&old_pin(), &plain).unwrap().preset.is_none());
+}
+
+#[test]
+/// 页面级预设列表随窗口设置提交整体保留，表单不携带也不清空模板库。
+fn merge_keeps_page_preset_library() {
+    let mut previous = old_pin();
+    previous.presets = vec![serde_json::from_value(serde_json::json!({
+        "id": "custom-demo", "name": "右上角",
+        "mode": "floating", "alwaysOnTop": true, "decorations": false,
+        "rounded": true, "positionLocked": false, "sizeLocked": false,
+        "width": 320, "height": 480, "fx": 1., "fy": 0.
+    }))
+    .unwrap()];
+    previous.presets[0].fields.transparent_background = false;
+    previous.presets[0].fields.fullscreen = false;
+    let next = merge(&previous, &input()).unwrap();
+    assert_eq!(next.presets.len(), 1);
+    assert_eq!(next.presets[0].id, "custom-demo");
+    // 损坏的单条预设不应拖累整个页面：lenient 解析逐条跳过。
+    let mut broken = serde_json::to_value(&previous).unwrap();
+    broken["presets"][0].as_object_mut().unwrap().remove("id");
+    let restored: PinConfig = serde_json::from_value(broken).unwrap();
+    assert!(restored.presets.is_empty());
 }

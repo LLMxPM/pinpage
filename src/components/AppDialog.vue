@@ -18,8 +18,8 @@ const titleId = useId();
 const dialog = ref<HTMLElement>();
 const previousFocus = document.activeElement as HTMLElement | null;
 const root = document.getElementById('app');
-const previousInert = root?.inert ?? false;
-const previousOverflow = document.body.style.overflow;
+let previousInert = false;
+let previousOverflow = '';
 let popDialog: (() => void) | undefined;
 
 /// 视图切换移除了原焦点时，将焦点放回当前可见表单或弹窗容器。
@@ -69,6 +69,9 @@ function onKeydown(event: KeyboardEvent) {
 
 onMounted(async () => {
   if (dialog.value) popDialog = pushDialog(dialog.value);
+  // 挂载时才记录背景状态，避免热更新中新旧实例交替时继承旧弹窗的禁用状态。
+  previousInert = root?.inert ?? false;
+  previousOverflow = document.body.style.overflow;
   if (root) root.inert = true;
   document.body.style.overflow = 'hidden';
   await nextTick();
