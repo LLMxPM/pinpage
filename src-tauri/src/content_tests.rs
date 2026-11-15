@@ -107,12 +107,25 @@ fn validates_bundled_origins() {
         &Url::parse("https://example.com").unwrap()
     ));
     // 入口必须是纯相对路径，越界路径在生成地址前就被拒绝。
-    for entry in ["", "../outside.html", "/abs.html", "C:/x.html"] {
+    // Unix 也拒绝盘符式名称、反斜杠和 ADS，与后续资源协议的路径规则保持一致。
+    for entry in [
+        "",
+        "../outside.html",
+        "/abs.html",
+        "C:/x.html",
+        "sub\\index.html",
+        "index.html:stream",
+        "index\0.html",
+    ] {
         let invalid = PageSource::Bundled {
             entry: entry.into(),
         };
         assert!(source_url("p-one", &invalid).is_err(), "应拒绝入口 {entry}");
     }
+    let nested = PageSource::Bundled {
+        entry: "子目录/测试 文件.html".into(),
+    };
+    assert!(source_url("p-one", &nested).is_ok());
 }
 
 #[cfg(windows)]

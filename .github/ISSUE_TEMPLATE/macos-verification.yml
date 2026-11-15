@@ -1,0 +1,60 @@
+# 功能：收集可追溯的 macOS 实机验收环境、逐项结果和复现信息。
+name: macOS 能力验收
+description: 提交默认或 Option 实验构建的实机验证结果
+title: '[macOS 验收] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先阅读 docs/macos-development.md。未测试的项目保留“未测”，不要按其他设备的结果填写。
+        日志中的个人路径、网址和页面数据请先脱敏。
+  - type: input
+    id: revision
+    attributes:
+      label: 提交 SHA 与关联 PR
+      placeholder: 完整或短 SHA，及对应 PR 链接
+    validations:
+      required: true
+  - type: dropdown
+    id: variant
+    attributes:
+      label: 构建变体
+      options:
+        - 默认构建
+        - experimental-macos-drag（固定 Option 拖动）
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境与构建来源
+      value: |
+        - macOS 版本：
+        - 芯片（Apple Silicon / Intel）：
+        - 显示器与缩放：
+        - 构建命令或 CI 运行链接：
+        - build-info.txt（CI 包）：
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: 验收结果（通过／失败／未测）
+      value: |
+        - 工作台、托盘与退出：未测
+        - 页面创建、关闭、重开与删除：未测
+        - 置顶、边框、尺寸、坐标与撤销：未测
+        - 托盘／卡片找回：未测
+        - 不支持能力禁用与 Windows 配置回退：未测
+        - 目录导入、页面包与数据回填：未测
+        - Retina／多显示器／断开副屏：未测
+        - 中英文与系统语言回退：未测
+        - Option 拖动与网页事件隔离（实验）：未测
+        - 手势边界与退出清理（实验）：未测
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 失败复现、预期／实际结果与日志
+      description: 每个失败项分别描述，允许附截图或录屏；没有失败也请写明已知限制。

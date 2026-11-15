@@ -1,7 +1,7 @@
 # 功能：提供不依赖 Tauri 的本机控制协议与 Windows 安全传输。
 [package]
 name = "pinpage-protocol"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]

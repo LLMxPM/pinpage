@@ -1,7 +1,7 @@
 # 功能：独立于运行实例的公开 skill 安装、更新及导出模块。
 [package]
 name = "pinpage-skills"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]

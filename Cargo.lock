@@ -2851,12 +2851,15 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pinpage"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "auto-launch",
  "base64 0.22.1",
+ "block2",
  "mime_guess",
  "minisign-verify",
+ "objc2",
+ "objc2-app-kit",
  "percent-encoding",
  "pinpage-protocol",
  "pinpage-skills",
@@ -2882,7 +2885,7 @@ dependencies = [
 
 [[package]]
 name = "pinpage-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "pinpage-protocol",
@@ -2898,7 +2901,7 @@ dependencies = [
 
 [[package]]
 name = "pinpage-protocol"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2909,7 +2912,7 @@ dependencies = [
 
 [[package]]
 name = "pinpage-skills"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "pinpage-protocol",
  "semver",

@@ -45,19 +45,20 @@ _Source, window appearance, and size._
 
 Full instructions live in the [user guide](docs/user-guide.md) (Chinese). To build from source, see [Development and build](docs/development.md).
 
-The current Windows x64 release is [v0.2.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0), the first version with in-app updates. Users on v0.1.0 need to install this version manually once.
+Windows x64 [v0.3.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.3.0) adds transparent desktop tools, page-scoped presets, the bundled CLI, and seven examples. Users on v0.2.0 can use in-app updates; users on v0.1.0 need to install manually. See the [release notes](docs/release-notes/0.3.0.md) (Chinese).
 
-Windows is the fully supported platform. macOS currently covers standard floating windows only—desktop mode, rounded corners, transparent backgrounds, window locks, and gestures are unavailable, and the macOS build has not yet been verified on real hardware. See [Platform support](docs/platforms.md).
+Windows is the fully supported platform. macOS is experimental: default builds expose standard floating windows, while `experimental-macos-drag` enables a fixed Option-drag implementation for community testing. Desktop mode, rounded corners, transparent backgrounds, window locks, and configurable gestures remain unavailable. Both macOS variants passed ARM64 CI checks, tests, and verification bundle builds, and core window flows have been verified on one Apple Silicon Mac; Intel, Retina, multi-display, import/page-package, and gesture-boundary acceptance are still pending. See [Platform support](docs/platforms.md) and [macOS development and verification](docs/macos-development.md) (Chinese).
 
 ## Documentation
 
 - [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
 - [Example development and integration](docs/examples-development.md) (Chinese) — examples follow repository `AGENTS.md` and reuse the shared references from the single `pinpage-pages` skill; covers registration, packaging, and verification.
-- [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, named window presets, page package export, desktop screenshots, diagnostics and portable skill management; not yet released. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/acceptance.md).
+- [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, named window presets, page package export, desktop screenshots, diagnostics and portable skill management; included in v0.3.0. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/acceptance.md).
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and acceptance scripts.
 - [Implementation and acceptance status](docs/acceptance.md) (Chinese) — implementation status, check results, desktop verification records, and pending acceptance.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
+- [macOS development and verification](docs/macos-development.md) (Chinese) — setup, default and experimental builds, CI artifacts, and community test reports.
 - [Versioning and updates](docs/releases.md) (Chinese) — version scripts, signed builds, GitHub Release publishing, and update behavior.
 
 ## License

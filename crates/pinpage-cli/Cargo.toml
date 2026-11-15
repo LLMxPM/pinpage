@@ -1,7 +1,7 @@
 # 功能：随 PinPage 分发的短生命周期控制台入口和桌面采集器。
 [package]
 name = "pinpage-cli"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]

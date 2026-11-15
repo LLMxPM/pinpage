@@ -12,7 +12,7 @@ use std::{
 
 pub const ID: &str = "pinpage-pages";
 /// 技能与应用保持主版本、次版本一致，补丁号可独立递增。
-pub const VERSION: &str = "0.2.0";
+pub const VERSION: &str = "0.3.0";
 pub const MANIFEST: &str = "pinpage-skill.json";
 pub const RECORD: &str = ".pinpage-install.json";
 pub type Bundle = BTreeMap<String, Vec<u8>>;

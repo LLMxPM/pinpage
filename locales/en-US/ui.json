@@ -50,7 +50,7 @@
     "windowOptions": "Window options",
     "usePackagePreset": "Apply the package default layout ({width} × {height})",
     "importPackagePresets": "Import package window presets ({count})",
-    "platformLimited": "This platform supports standard floating windows only; desktop mode and native drag gestures are unavailable"
+    "platformLimited": "This platform supports floating windows only; desktop mode is unavailable"
   },
   "pins": {
     "title": "My pages",

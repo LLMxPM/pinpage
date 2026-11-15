@@ -10,6 +10,7 @@
 | [开发与构建](development.md) | 环境准备、目录结构、检查与测试、打包、独立验证实例、性能测量与验收脚本 |
 | [当前状态与验收](acceptance.md) | 实现状态、自动检查结果、桌面实测记录与待验收项 |
 | [平台支持](platforms.md) | Windows 与 macOS／其他平台的能力矩阵、配置回退、macOS 当前范围与验收状态 |
+| [macOS 开发与社区验收](macos-development.md) | 默认／Option 实验构建、环境与打包、CI 验证包、实机报告和协作门槛 |
 | [版本与升级](releases.md) | 统一版本号、本地签名构建、GitHub Release 发布与升级数据保护 |
 
 项目概览见英文 [README](../README.md) 或中文 [README](../README.zh-CN.md)。

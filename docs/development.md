@@ -7,7 +7,7 @@
 - Visual Studio Build Tools，包含桌面 C++ 工作负载
 - WebView2 Runtime
 
-当前完整支持 Windows x64；macOS 与其他平台的能力边界见[平台支持](platforms.md)。
+以上为 Windows 环境。macOS 的前置环境、源码开发、打包和报告方式见[macOS 开发与社区验收](macos-development.md)。当前完整支持 Windows x64；平台能力边界见[平台支持](platforms.md)。
 
 ## 安装与启动
 
@@ -39,7 +39,7 @@ src-tauri/src/
   windows/                窗口生命周期、事件与几何
   windows/editor.rs       窗口局部事务与内容独立保存
   windows/presets/         页面级预设查找、相对几何、读写及测试
-  platform.rs / platform/ 跨平台能力声明、回退校验与 Windows 专用适配
+  platform.rs / platform/ 跨平台能力、回退校验、Windows 适配与 macOS 实验拖动
   updates/                GitHub 更新检查、下载验签与安装
   content.rs              URL 与本地资源协议
   import.rs               导入复制与站点副本
@@ -101,16 +101,17 @@ pnpm release:build
 - NSIS 安装包：`src-tauri/target/release/bundle/nsis/`
 - 构建产物不提交 Git。
 
-当前只配置 Windows NSIS 目标；本地签名构建与离线验签命令见[版本与升级](releases.md)，其他平台的构建限制见[平台支持](platforms.md#构建与验收状态)。Windows 安装包代码签名暂未配置。
+正式发布只提供 Windows NSIS 目标；本地签名构建与离线验签命令见[版本与升级](releases.md)。macOS 使用独立平台配置构建验证 `.app`，命令见[macOS 开发指南](macos-development.md#本地打包与独立实例)。Windows 安装包代码签名暂未配置。
 
 直接运行可执行文件时可追加 `--tray`，只创建托盘并按设置恢复悬浮窗，工作台按需打开。
 
 ## 持续集成与发布
 
-`.github/workflows/ci.yml` 在推送到 `main` 和合并请求时运行：
+`.github/workflows/ci.yml` 在推送到 `main`、`feature/macos-*` 和合并请求时运行，也可手动触发：
 
 - 前端（Ubuntu）：Prettier、文案检查、类型检查、UI 测试与生产构建。
 - Rust（Windows）：Rustfmt、Clippy、单元测试与原生窗口集成测试。
+- Rust（macOS 默认／Option 实验）：Rustfmt、Clippy、单元测试，构建 `com.pinpage.verification` 标识的 Debug `.app` 并归档上传。任务使用 runner 原生架构；未运行的分支不能记录为 CI 通过，构建成功不替代实机验收。
 
 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签时构造 Windows 安装包并创建 GitHub Release：
 
@@ -128,11 +129,11 @@ pnpm release:build
 
 ```powershell
 pnpm build
-$env:CARGO_TARGET_DIR = "target/i18n-verify"
+$env:CARGO_TARGET_DIR = Join-Path (Get-Location) "target/i18n-verify"
 pnpm tauri build --config src-tauri/tauri.verification.conf.json --no-bundle
 ```
 
-验证实例使用独立标识（`com.pinpage.verification`）与独立配置目录，产物写入自定义目标目录；验证结束后删除验证目录，不修改正常应用的配置。
+验证实例使用独立标识（`com.pinpage.verification`）与独立配置目录，产物写入自定义目标目录；验证结束后删除验证目录，不修改正常应用的配置。macOS 的对应命令见[开发指南](macos-development.md#本地打包与独立实例)。
 
 ## 性能测量
 
