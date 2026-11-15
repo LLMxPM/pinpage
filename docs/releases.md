@@ -4,11 +4,18 @@ PinPage 从 `0.2.0` 起接入 Windows x64 应用内更新。版本清单和安�
 
 签名构建、离线验签和界面检查已完成；真实发布后的跨版本安装、重启及数据保留仍待验收，详见[当前状态与验收](acceptance.md)。
 
-## v0.3.0 发布说明
+## v0.3.0 发布记录与说明
 
 本版变更、配置迁移与验收边界见[更新说明](release-notes/0.3.0.md)。发布工作流优先读取 `docs/release-notes/<版本>.md`，并用于 Release 正文与更新清单；未提供该文件时沿用 GitHub 自动生成的说明。根目录 `release-notes.md` 是工作流生成文件，不作为人工维护源。
 
 CI 保留 Windows x64、macOS 默认与 Option 实验三组 workspace 检查；正式 Release 仍只发布 Windows x64。非 Windows 打包跳过 NSIS 专用 CLI 资源，CLI／协议／技能源码继续由 workspace 检查覆盖。
+
+2026-11-15，[Windows x64 v0.3.0](https://github.com/LLMxPM/pinpage/releases/tag/v0.3.0) 已公开并设为 Latest，[补发工作流](https://github.com/LLMxPM/pinpage/actions/runs/43718127749) 完成构建、验签与发布。应用源码固定为标签提交 `c890bc1`；发布工具修复为 `83b0a98`，补发未移动标签。
+
+- [发布源码 CI](https://github.com/LLMxPM/pinpage/actions/runs/43716836459) 和[工具修复 CI](https://github.com/LLMxPM/pinpage/actions/runs/43718122008) 全部通过；两组 macOS 同时完成默认／Option `.app` 验证包构建与上传。
+- 安装包、`.sig`、`.sha256` 与 `latest.json` 四项附件齐全。从公开 Release 重新下载后，安装包 SHA-256 与校验文件、GitHub 附件摘要一致；签名、版本绑定、篡改包及错误版本拒绝检查通过。
+- 固定更新入口实际返回 `0.3.0`，平台、安装包 URL 与签名内容匹配公开附件。
+- 首轮在新草稿创建后的立即查询阶段停止；补充有限重试及测试后按原标签补发。真实跨版本安装、重启及数据保留仍待专项验收。
 
 ## v0.2.0 发布记录
 
