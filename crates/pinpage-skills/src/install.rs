@@ -236,6 +236,8 @@ mod tests {
     fn failed_activation_rolls_back() {
         let root =
             std::env::temp_dir().join(format!("pinpage-skill-rollback-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).unwrap();
+        let root = root.canonicalize().unwrap();
         let target = root.join(ID);
         let stage = root.join("stage");
         std::fs::create_dir_all(&target).unwrap();

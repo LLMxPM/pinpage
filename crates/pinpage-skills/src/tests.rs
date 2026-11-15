@@ -3,18 +3,21 @@ use super::*;
 /// 临时根目录只用于本测试，析构时删除自身内容。
 struct Temp(PathBuf);
 impl Temp {
+    /// 使用真实临时目录，避免 macOS 的 /var 别名被来源边界规则提前拒绝。
     fn new() -> Self {
         let p = std::env::temp_dir().join(format!("pinpage-skills-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&p).unwrap();
-        Self(p)
+        Self(p.canonicalize().unwrap())
     }
 }
 impl Drop for Temp {
+    /// 清理本用例的独立临时目录。
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.0);
     }
 }
 #[test]
+/// 导出与安装往返保持技能一致，并拒绝覆盖本地修改。
 fn export_install_roundtrip_and_conflicts() {
     let temp = Temp::new();
     let zip = temp.0.join("技能包.zip");
@@ -43,6 +46,7 @@ fn export_install_roundtrip_and_conflicts() {
     assert_eq!(export(&zip, false).unwrap_err().code, "outputExists");
 }
 #[test]
+/// 同名未知目录和非法包内路径不能被安装流程接管。
 fn rejects_unknown_target_and_unsafe_paths() {
     let temp = Temp::new();
     std::fs::create_dir_all(temp.0.join(ID)).unwrap();
@@ -141,4 +145,25 @@ fn zip_traversal_is_rejected() {
     zip.finish().unwrap();
     assert!(load(Some(&path)).is_err());
     assert!(!temp.0.join("outside").exists());
+}
+
+#[cfg(unix)]
+#[test]
+/// 技能安装与导出拒绝经符号链接重定向的目标目录。
+fn rejects_symbolic_link_targets() {
+    let temp = Temp::new();
+    let target = temp.0.join("target");
+    std::fs::create_dir(&target).unwrap();
+    let link = temp.0.join("linked-target");
+    std::os::unix::fs::symlink(&target, &link).unwrap();
+    assert_eq!(
+        install(Some(&link), None, false, false).unwrap_err().code,
+        "invalidArgument"
+    );
+    assert_eq!(
+        export(&link.join("skill.zip"), false).unwrap_err().code,
+        "invalidArgument"
+    );
+    assert!(!target.join(ID).exists());
+    assert!(!target.join("skill.zip").exists());
 }
