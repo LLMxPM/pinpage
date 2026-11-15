@@ -63,10 +63,12 @@ pinpage-cli --json pages update $pageId --source ./site --entry index.html --exp
 | [SKILL.md](../skills/pinpage-pages/SKILL.md)                           | 产品与运行机制、按任务阅读导航、工作流程和执行边界。                            |
 | [页面制作指南](../skills/pinpage-pages/references/page-development.md) | 统一说明目录与产物、HTML／CSS、布局滚动、透明背景、外部数据、持久状态和页面包。 |
 | [页面包文件格式](../skills/pinpage-pages/references/package-format.md) | 自包含说明 manifest.json、storage.json、预设字段、存储类型编码与迁移限制。 |
-| [宿主能力契约](../skills/pinpage-pages/references/host-api.md)         | 页面 JavaScript 的能力探测、L0／L1 接口、权限、CSP 与降级；从统一契约生成。     |
+| [宿主能力契约](../skills/pinpage-pages/references/host-api.md)         | 页面 JavaScript 的能力探测、L0／L1 接口、权限、CSP 与降级；作为共享契约直接维护。 |
 | [CLI 手册](../skills/pinpage-pages/references/cli.md)                  | 智能体终端的连接与身份、页面操作、窗口配置、诊断截图、失败恢复和技能管理。      |
 
 技能自包含，具体说明按主题保留一处，通过链接关联，不依赖用户克隆仓库。已安装旧技能需要在独立面板明确更新，再刷新智能体技能列表或开启新会话；更新会替换旧版参考文件。
+
+仓库只维护这一份技能。示例开发通过 `AGENTS.md` 和[仓库接入文档](examples-development.md)直接引用公共参考，注册与 Rust 打包使用仓库流程；`pnpm check:skill` 检查技能唯一性、内嵌文件、自包含引用与示例接入链接。
 
 ```powershell
 # 功能：离线管理技能，--dir 始终表示 skills 根目录。

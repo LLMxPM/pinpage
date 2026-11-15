@@ -1,4 +1,0 @@
-# 功能：提供项目内 PinPage 示例页技能的中文展示信息，沿用默认自动发现策略。
-interface:
-  display_name: "PinPage 示例页"
-  short_description: "创建与扩展 PinPage 离线示例页，遵循资源打包、透明背景与状态保存约束"

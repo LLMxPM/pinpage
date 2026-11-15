@@ -26,6 +26,12 @@
 - 窗口以唯一 ID 标识，Rust 层维护窗口注册表和持久化状态。
 - 原生窗口与 WebView 创建采用适合 Tauri/WebView2 的异步入口，避免在同步命令或回调中阻塞创建。
 
+## 示例页面与公共规范
+
+- 仓库只维护 [pinpage-pages](skills/pinpage-pages/SKILL.md) 一份页面技能；页面制作、宿主能力与页面包格式统一维护在该目录的 `references/`，不另写示例技能或复制公共规范。
+- 创建、修改 `examples/` 页面，或调整对应的示例注册、预览卡片与资源打包时，先读 [examples/AGENTS.md](examples/AGENTS.md) 和[示例开发与接入](docs/examples-development.md)，再按任务读取其中引用的公共参考。
+- 仓库示例按接入文档维护源码清单、注册与构建；只有安装、更新运行副本或进行桌面诊断时才使用技能的 CLI 流程。仅编写示例源码不要求连接应用或安装页面。
+
 ## WebView 与本地内容
 
 - 管理界面与内容 WebView 分离，权限精确匹配受信任的 WebView 标签。

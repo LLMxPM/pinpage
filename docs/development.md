@@ -24,7 +24,7 @@ pnpm tauri dev
 
 ```text
 crates/                  CLI、协议与离线技能管理模块（共享根 Cargo.lock）
-skills/pinpage-pages/     公开技能及随包参考
+skills/pinpage-pages/     唯一页面技能及仓库共用的随包参考
 src/
   features/launcher/      添加页面、来源导入
   features/pins/          工作台、即时窗口设置、独立内容保存与页面级预设管理器
@@ -50,7 +50,7 @@ src-tauri/src/
   tray.rs                 托盘
   lib.rs / main.rs        应用装配与入口
 locales/                  中英文界面与原生消息
-examples/                 四个内置离线工具及独立行情验证示例的 manifest.json + site/ 标准包源码
+examples/                 六个内置离线工具及独立行情验证示例的 manifest.json + site/ 标准包源码
 scripts/                  版本同步、发布、签名构建、文案检查与性能采样
 tests/                    UI 表单测试与本地路径样例
 docs/                     用户、架构、开发、平台与发布文档
@@ -60,7 +60,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 创建示例库页面
 
-项目内技能 [pinpage-examples](../.agents/skills/pinpage-examples/SKILL.md) 说明独立工具页的资源边界、透明背景、小窗口布局与状态保存约束，并提供接入内置示例库的文件清单和验证指引。在本仓库中可使用 `$pinpage-examples` 发起页面创建或修改任务。
+仓库只维护 [pinpage-pages](../skills/pinpage-pages/SKILL.md) 一份页面技能。示例任务由根 [AGENTS.md](../AGENTS.md) 与 [examples/AGENTS.md](../examples/AGENTS.md) 引导，按[示例开发与接入](examples-development.md)直接复用公共页面制作、宿主能力和包格式参考；示例注册、预览卡片、中英文文案与 Rust 打包由接入文档说明。仅编写源码无需先连接应用或安装页面。
 
 页面包清单和默认窗口布局见[页面包与示例制作](page-packages.md)。运行 `pnpm examples:pack` 在 `dist/examples/` 生成标准 `.pinpage`；Rust 构建自动使用同一打包器生成内嵌包，`site/` 中的资源按相对目录自动收集。修改 Rust 构建内嵌的示例后需使用对应新构建验证，已添加的独立副本不会自动更新。
 
@@ -71,8 +71,9 @@ docs/                     用户、架构、开发、平台与发布文档
 | `pnpm examples:pack` | 将标准示例源码打包到 `dist/examples/`，不启动桌面应用 |
 | `pnpm check:i18n` | 中英文资源的键、参数、原生资源语法，以及代码中引用的消息键是否落库 |
 | `pnpm check:limits` | 前端与原生窗口尺寸上下限是否一致 |
+| `pnpm check:skill` | 唯一技能、随包资源完整性、自包含文件与章节引用、示例接入文档链接 |
 | `pnpm check` | TypeScript 类型检查（`vue-tsc --noEmit`） |
-| `pnpm build` | 文案、尺寸限制、技能契约、类型检查及 Vite 生产构建 |
+| `pnpm build` | 文案、尺寸限制、技能资源与引用、类型检查及 Vite 生产构建 |
 | `pnpm test:ui` | 设置表单回传合并、连续输入、失败保留、另存前等待、操作队列及平台能力过滤与回退，不连接真实配置 |
 | `pnpm test:rust` | Rust 单元测试与原生窗口集成测试 |
 | `pnpm version:check` | 前端、Tauri、Cargo 与 Cargo 锁文件的应用版本一致性 |
@@ -87,7 +88,7 @@ docs/                     用户、架构、开发、平台与发布文档
 
 ## 当前状态与验收
 
-截至 2026-11-12，应用版本 `0.2.0`，未发布配置格式 `schemaVersion = 2`（v0.2.0 发布时为 1，升级时自动迁移）。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
+截至 2026-11-15，应用版本 `0.2.0`，未发布配置格式 `schemaVersion = 2`（v0.2.0 发布时为 1，升级时自动迁移）。Windows x64 [v0.2.0 已正式发布](https://github.com/LLMxPM/pinpage/releases/tag/v0.2.0)，为完整支持平台；macOS 仅声明标准浮动窗口，尚未交叉编译或实机验收，详见[平台支持](platforms.md)。历史改动不再逐条保留，以 Git 提交和[版本与升级](releases.md)为准。
 
 ### 已实现
 
@@ -96,6 +97,12 @@ docs/                     用户、架构、开发、平台与发布文档
 - **数据与安全**：工作台与内容页独立 WebView、命令与资源协议边界、localStorage／sessionStorage／IndexedDB 页面包、配置原子写入与跨平台回退。
 - **页面能力层（未发布）**：L0 宿主信息与共享系统采样、L1 文件夹只读逐页授权、内容页独立 CSP 响应头；文件夹与系统监控两个参考示例已注册示例库。
 - **系统集成**：托盘、按需工作台、中英文界面、GitHub Release 应用内更新、可配置的 Windows 登录自启（未发布）。
+
+### 2026-11-15 统一页面技能与示例规范（未发布）
+
+- 只保留 `skills/pinpage-pages/` 一份技能。根目录和 `examples/` 的 `AGENTS.md` 引用[示例开发与接入](examples-development.md)，公共页面制作、宿主 API 与包格式直接复用技能参考；仓库文档保留注册、源码清单、Rust 打包及验收要求。
+- 移除原示例技能和宿主契约生成脚本，`host-api.md` 直接作为共享契约维护源；`pnpm check:skill` 改为校验技能唯一性、内嵌文件集合、自包含文件与章节引用、示例接入链接，前端构建继续执行此检查。
+- 本轮技能结构校验、`pnpm check:skill`、相关 Prettier、脚本语法与本地引用检查通过；技能 Rust 测试 6 项通过。临时副本验证正常引用和同页章节，并确认重复技能、漏打包、包外依赖、缺失引用、失效章节和内嵌源缺失均被拒绝。本轮仅调整技能、文档和检查脚本，未改页面或原生行为，不新增桌面实测结论。
 
 ### 2026-11-13 技能版本编号（未发布）
 

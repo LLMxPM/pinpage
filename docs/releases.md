@@ -112,6 +112,6 @@ https://github.com/LLMxPM/pinpage/releases/latest/download/latest.json
 
 ## CLI 与技能分发（未发布）
 
-工作区锁文件已迁到仓库根 Cargo.lock，原 --manifest-path src-tauri/Cargo.toml 与 src-tauri/target 产物路径保留。版本脚本同步应用及三个新增 crate，并在 CLI 构建时核对 --version。pnpm release:build 的前置步骤构建 CLI，NSIS 安装钩子将其放在应用旁；CLI 无独立发布附件。技能资源编译内置，按 skillVersion 和最低能力清单管理；技能主版本、次版本与应用一致，补丁号独立递增。pnpm version:check 校验所属系列，version:set 在同系列保留技能补丁号、跨系列重置为新系列的 .0；pnpm check:skill 检查公开宿主契约与仓库原始契约一致。
+工作区锁文件已迁到仓库根 Cargo.lock，原 --manifest-path src-tauri/Cargo.toml 与 src-tauri/target 产物路径保留。版本脚本同步应用及三个新增 crate，并在 CLI 构建时核对 --version。pnpm release:build 的前置步骤构建 CLI，NSIS 安装钩子将其放在应用旁；CLI 无独立发布附件。技能资源编译内置，按 skillVersion 和最低能力清单管理；技能主版本、次版本与应用一致，补丁号独立递增。pnpm version:check 校验所属系列，version:set 在同系列保留技能补丁号、跨系列重置为新系列的 .0；pnpm check:skill 校验唯一页面技能、内嵌文件集合、自包含引用与示例接入链接。公共规范直接维护在技能参考中，仓库通过 AGENTS.md 和[示例接入文档](examples-development.md)引用。
 
 安装器仅提供当前用户 PATH 选项，静默升级不弹新选择，卸载只移除本安装添加的路径和随包 CLI；不修改所有用户 PATH，不自动安装或覆盖用户技能。已生成本地 NSIS 与 updater 签名，独立测试包的静默安装、同版本更新、卸载和用户文件保留已通过；交互式 PATH 选择、真实跨版本升级及代码签名仍需在干净环境验收，不重发或覆盖已公开的 v0.2.0。

@@ -8,8 +8,7 @@
   "scripts": {
     "examples:pack": "cargo run --manifest-path src-tauri/Cargo.toml --example pack-examples",
     "cli:build": "node scripts/build-cli.mjs",
-    "skill:sync": "node scripts/sync-skill.mjs",
-    "check:skill": "node scripts/sync-skill.mjs --check",
+    "check:skill": "node scripts/check-skill.mjs",
     "version:set": "node scripts/version.mjs",
     "version:check": "node scripts/version.mjs --check",
     "test:release": "node --test tests/release.test.mjs",

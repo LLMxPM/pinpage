@@ -53,6 +53,7 @@ Windows is the fully supported platform. macOS currently covers standard floatin
 
 - [User guide](docs/user-guide.md) (Chinese) — install, pages, window control, tray, data migration, FAQ.
 - [Architecture and data](docs/architecture.md) (Chinese) — window lifecycle, security boundaries, local copies, page packages, configuration, performance.
+- [Example development and integration](docs/examples-development.md) (Chinese) — examples follow repository `AGENTS.md` and reuse the shared references from the single `pinpage-pages` skill; covers registration, packaging, and verification.
 - [Agent CLI and skill](docs/agent-cli.md) (Chinese) — a dedicated "Agents and CLI" panel in the workspace toolbar; implemented in current source: app-bundled CLI, page updates, named window presets, page package export, desktop screenshots, diagnostics and portable skill management; not yet released. See the [implementation plan](docs/agent-cli-plan.md) and [acceptance status](docs/development.md#当前状态与验收).
 - [Development and build](docs/development.md) (Chinese) — environment, checks, packaging, verification instances, and current acceptance status.
 - [Platform support](docs/platforms.md) (Chinese) — Windows capabilities, macOS floating-window fallback, and acceptance status.
